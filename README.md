@@ -17,16 +17,33 @@ Malley is a X-like social media platform.
 ![Vercel](https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-
 ## Documentation
 
-Install:
+### Prerequisites
 
-- NodeJS
-- PNPM
+- [NodeJS](https://nodejs.org)
+- [PNPM](https://pnpm.io)
+- [Deno](https://deno.com)
+- [Docker](https://www.docker.com) or [Podman](https://podman.io)
+
+### Run project
 
 ```sh
 pnpm install
 
+supabase start
+```
+
+Populate the `.env.local` file with data from the `supabase start` output.
+
+```properties
+VITE_SUPABASE_URL="http://127.0.0.1:54321"
+VITE_SUPABASE_ANON_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+```
+
+```sh
 pnpm run dev
+
+# Afterwards you may want to stop the supabase containers
+supabase stop
 ```

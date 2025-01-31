@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "pkief.material-icon-theme",
+    "github.vscode-github-actions",
+    "editorconfig.editorconfig",
+    "redhat.vscode-yaml"
+  ]
+}

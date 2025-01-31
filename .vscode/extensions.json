@@ -6,6 +6,7 @@
     "pkief.material-icon-theme",
     "github.vscode-github-actions",
     "editorconfig.editorconfig",
-    "redhat.vscode-yaml"
+    "redhat.vscode-yaml",
+    "denoland.vscode-deno"
   ]
 }

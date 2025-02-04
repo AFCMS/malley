@@ -17,6 +17,15 @@ interface ImportMetaEnv {
    * @see https://supabase.com/docs/guides/getting-started/quickstarts/reactjs
    */
   readonly VITE_SUPABASE_ANON_KEY: string;
+
+  /**
+   * The Google site verification key.
+   *
+   * This is used to claim the website property on the Google Search Console (via meta tags).
+   *
+   * @see https://search.google.com/search-console
+   */
+  readonly VITE_GOOGLE_SITE_VERIFICATION: string;
 }
 
 interface ImportMeta {

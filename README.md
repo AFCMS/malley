@@ -48,10 +48,8 @@ pnpm run dev
 ./node_modules/.bin/supabase stop
 ```
 
----
-
-[![Made with Supabase](https://supabase.com/badge-made-with-supabase-dark.svg)](https://supabase.com)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/project?template=https://github.com/AFCMS/malley)
+<!--[![Made with Supabase](https://supabase.com/badge-made-with-supabase-dark.svg)](https://supabase.com)-->
+<!--[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/project?template=https://github.com/AFCMS/malley)-->
 
 ---
 

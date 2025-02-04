@@ -7,6 +7,8 @@
     "github.vscode-github-actions",
     "editorconfig.editorconfig",
     "redhat.vscode-yaml",
-    "denoland.vscode-deno"
+    "denoland.vscode-deno",
+    "bierner.github-markdown-preview",
+    "yzhang.markdown-all-in-one"
   ]
 }

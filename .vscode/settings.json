@@ -2,6 +2,7 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.detectIndentation": false,
+  "git.autoStash": true,
   "deno.enablePaths": [
     "supabase/functions"
   ],

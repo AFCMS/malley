@@ -31,7 +31,7 @@ Malley is a X-like social media platform.
 ```sh
 pnpm install
 
-./node_modules/supabase/bin/supabase start
+./node_modules/.bin/supabase start
 ```
 
 Populate the `.env.local` file with data from the `supabase start` output.
@@ -45,5 +45,23 @@ VITE_SUPABASE_ANON_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 pnpm run dev
 
 # Afterwards you may want to stop the supabase containers
-supabase stop
+./node_modules/.bin/supabase stop
 ```
+
+---
+
+[![Made with Supabase](https://supabase.com/badge-made-with-supabase-dark.svg)](https://supabase.com)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/project?template=https://github.com/AFCMS/malley)
+
+---
+
+<img align="right" src="https://www.ecole-hexagone.com/fr/img/Hexa_Logo_Sign_RVB.svg" width="300px"/>
+
+Made with ❤️ by:
+
+- [AFCMS](https://github.com/AFCMS)
+- [Roceann](https://github.com/Roceann)
+- [AKArien0](https://github.com/AKArien0)
+- [weyrito](https://github.com/weyrito)
+
+During our studies at [Ecole Hexagone](https://www.ecole-hexagone.com) 🇫🇷

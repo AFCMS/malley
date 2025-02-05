@@ -31,7 +31,7 @@ Malley is a X-like social media platform.
 ```sh
 pnpm install
 
-./node_modules/.bin/supabase start
+pnpm run supabase start
 ```
 
 Populate the `.env.local` file with data from the `supabase start` output.
@@ -45,7 +45,7 @@ VITE_SUPABASE_ANON_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 pnpm run dev
 
 # Afterwards you may want to stop the supabase containers
-./node_modules/.bin/supabase stop
+pnpm run supabase stop
 ```
 
 <!--[![Made with Supabase](https://supabase.com/badge-made-with-supabase-dark.svg)](https://supabase.com)-->

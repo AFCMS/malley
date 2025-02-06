@@ -16,7 +16,7 @@ importers:
         version: 2.48.1
       '@tailwindcss/vite':
         specifier: ^4.0.3
-        version: 4.0.3(vite@6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))
+        version: 4.0.3(vite@6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))
       '@types/react':
         specifier: ^19.0.8
         version: 19.0.8
@@ -31,7 +31,7 @@ importers:
         version: 1.1.0(react@19.0.0)
       '@vitejs/plugin-react-swc':
         specifier: ^3.7.2
-        version: 3.7.2(vite@6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))
+        version: 3.7.2(vite@6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))
       daisyui:
         specifier: 5.0.0-beta.6
         version: 5.0.0-beta.6
@@ -66,8 +66,8 @@ importers:
         specifier: ^7.1.5
         version: 7.1.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       supabase:
-        specifier: ^2.9.6
-        version: 2.9.6
+        specifier: ^2.11.0
+        version: 2.11.0
       tailwindcss:
         specifier: ^4.0.3
         version: 4.0.3
@@ -78,8 +78,8 @@ importers:
         specifier: ^8.23.0
         version: 8.23.0(eslint@9.19.0(jiti@2.4.2))(typescript@5.7.3)
       vite:
-        specifier: ^6.0.11
-        version: 6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1)
+        specifier: ^6.1.0
+        version: 6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1)
 
 packages:
 
@@ -1773,8 +1773,8 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
-  supabase@2.9.6:
-    resolution: {integrity: sha512-oPJXgvyuZCsbR/SQ5/0Jvab3zHqUg+lunnweYMCN8EdT9Q0ANChrn1lCKUJ4toXJXdq8gdVgNvTgIDu/JljbMw==}
+  supabase@2.11.0:
+    resolution: {integrity: sha512-Opg3TTRRXOxX5xGxDKfjVjqCsqGclyZoHZ0RNp4rlmOB9vU3T6bG0uXKoqMXvDpYdjBcgzkVYoJgrj2S4EMRiw==}
     engines: {npm: '>=8'}
     hasBin: true
 
@@ -1855,8 +1855,8 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
-  vite@6.0.11:
-    resolution: {integrity: sha512-4VL9mQPKoHy4+FE0NnRE/kbY51TOfaknxAjt3fJbGJxhIpBZiqVzlZDEesWWsuREXHwNdAoOFZ9MkPEVXczHwg==}
+  vite@6.1.0:
+    resolution: {integrity: sha512-RjjMipCKVoR4hVfPY6GQTgveinjNuyLw+qruksLDvA5ktI1150VmcMBKmQaEWJhg/j6Uaf6dNCNA0AfdzUb/hQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
     peerDependencies:
@@ -2326,13 +2326,13 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.0.3
       '@tailwindcss/oxide-win32-x64-msvc': 4.0.3
 
-  '@tailwindcss/vite@4.0.3(vite@6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))':
+  '@tailwindcss/vite@4.0.3(vite@6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))':
     dependencies:
       '@tailwindcss/node': 4.0.3
       '@tailwindcss/oxide': 4.0.3
       lightningcss: 1.29.1
       tailwindcss: 4.0.3
-      vite: 6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1)
+      vite: 6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1)
 
   '@types/cookie@0.6.0': {}
 
@@ -2443,10 +2443,10 @@ snapshots:
     optionalDependencies:
       react: 19.0.0
 
-  '@vitejs/plugin-react-swc@3.7.2(vite@6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))':
+  '@vitejs/plugin-react-swc@3.7.2(vite@6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1))':
     dependencies:
       '@swc/core': 1.10.12
-      vite: 6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1)
+      vite: 6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1)
     transitivePeerDependencies:
       - '@swc/helpers'
 
@@ -3667,7 +3667,7 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  supabase@2.9.6:
+  supabase@2.11.0:
     dependencies:
       bin-links: 5.0.0
       https-proxy-agent: 7.0.6
@@ -3769,7 +3769,7 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  vite@6.0.11(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1):
+  vite@6.1.0(@types/node@22.12.0)(jiti@2.4.2)(lightningcss@1.29.1):
     dependencies:
       esbuild: 0.24.2
       postcss: 8.5.1

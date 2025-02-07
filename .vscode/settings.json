@@ -3,6 +3,7 @@
   "editor.formatOnPaste": true,
   "editor.detectIndentation": false,
   "git.autoStash": true,
+  "typescript.validate.enable": true,
   "deno.enablePaths": [
     "supabase/functions"
   ],

@@ -10,7 +10,73 @@ on:
       - master
 
 jobs:
-  main:
+  supabase_database_checks:
+    name: Supabase Database Checks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Use Node.js LTS/Jod
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/jod"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Start Database
+        run: pnpm run supabase db start
+
+      - name: Run Database Tests
+        run: pnpm run supabase test db
+
+      - name: Verify generated types match Postgres schema
+        run: |
+          pnpm --silent run supabase gen types typescript --local > src/contexts/supabase/database.d.ts
+          if ! git diff --ignore-space-at-eol --exit-code --quiet src/contexts/supabase/database.d.ts; then
+            echo "Detected uncommitted changes after build. See status below:"
+            git diff
+            exit 1
+          fi
+
+  # TODO: enable again if functions are added
+  supabase_functions_checks:
+    name: Supabase Functions Checks
+    runs-on: ubuntu-latest
+    if: false
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Print Deno Version
+        run: deno --version
+
+      - name: Format Check
+        run: deno task check-format-functions
+
+      - name: Type Check
+        run: deno task check-functions
+
+      - name: Lint
+        run: deno task lint-functions
+
+      - name: Tests
+        # TODO: enable again if tests are added to functions
+        if: false
+        run: deno task test-functions
+
+  frontend_checks:
+    name: Frontend Checks
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repository
@@ -33,3 +99,33 @@ jobs:
 
       - name: Lint project
         run: pnpm run lint
+
+  supabase_deploy:
+    name: Supabase Deploy
+    runs-on: ubuntu-24.04
+    needs: [supabase_database_checks]
+    if: github.event_name == 'push'
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DATABASE_PASSWORD: ${{ secrets.SUPABASE_DATABASE_PASSWORD }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Use Node.js LTS/Jod
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/jod"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - run: pnpm run supabase link --project-ref $SUPABASE_PROJECT_ID
+      - run: pnpm run supabase db push --password $SUPABASE_DATABASE_PASSWORD
+      - run: pnpm run supabase functions deploy
+        if: false

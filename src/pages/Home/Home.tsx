@@ -34,10 +34,10 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto flex min-h-full max-w-3xl bg-amber-300 md:max-w-7xl lg:px-8">
-        <div className="hidden lg:block lg:w-full lg:max-w-72 lg:shrink-0 lg:pt-[30px] lg:pr-8">
+        <div className="lg:block lg:w-full lg:max-w-72 lg:shrink-0 lg:pt-[30px] lg:pr-8">
           <div className="flex flex-col"></div>
           <h1>Home</h1>
-          {JSON.stringify(data2?.data.user)}
+          <span>{JSON.stringify(data2?.data.user)}</span>
           <br />
           {auth.isAuthenticated ? <div>{auth.profile?.handle}</div> : <div>Not authenticated</div>}
           {data?.data?.map((user) => {

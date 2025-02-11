@@ -39,6 +39,7 @@ Populate the `.env.local` file with data from the `supabase start` output.
 ```properties
 VITE_SUPABASE_URL="http://127.0.0.1:54321"
 VITE_SUPABASE_ANON_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+VITE_GOOGLE_SITE_VERIFICATION=""
 ```
 
 ```sh

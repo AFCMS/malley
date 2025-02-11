@@ -20,7 +20,7 @@
     "@vercel/speed-insights": "^1.1.0",
     "@vitejs/plugin-react-swc": "^3.7.2",
     "daisyui": "5.0.0-beta.6",
-    "eslint": "^9.19.0",
+    "eslint": "^9.20.1",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.18",

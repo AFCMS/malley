@@ -52,6 +52,28 @@ pnpm run supabase stop
 <!--[![Made with Supabase](https://supabase.com/badge-made-with-supabase-dark.svg)](https://supabase.com)-->
 <!--[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/project?template=https://github.com/AFCMS/malley)-->
 
+### Create Migrations
+
+Create a new migration file in `supabase/migrations`:
+
+```sh
+pnpm run supabase migration new migration_name
+```
+
+Modify the database from Supabase Studio and export the DB diff to the file, then refine it (formating, comments, etc):
+
+```sh
+pnpm run supabase db diff --schema public > supabase/migrations/<migration_file>.sql
+```
+
+Reset DB (or apply the migration if possible):
+
+```sh
+pnpm run supabase db reset
+# or if your local edits can be reapplied without errors
+pnpm run supabase migration up
+```
+
 ---
 
 <img align="right" src="https://www.ecole-hexagone.com/fr/img/Hexa_Logo_Sign_RVB.svg" width="300px"/>

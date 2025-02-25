@@ -66,8 +66,8 @@ importers:
         specifier: ^7.1.5
         version: 7.1.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       supabase:
-        specifier: ^2.11.0
-        version: 2.11.0
+        specifier: ^2.15.8
+        version: 2.15.8
       tailwindcss:
         specifier: ^4.0.4
         version: 4.0.4
@@ -1053,8 +1053,8 @@ packages:
     resolution: {integrity: sha512-kKaIINnFpzW6ffJNDjjyjrk21BkDx38c0xa/klsT8VzLCaMEefv4ZTacrcVR4DmgTeBra++jMDAfS/tS799YDw==}
     engines: {node: '>= 0.4'}
 
-  foreground-child@3.3.0:
-    resolution: {integrity: sha512-Ld2g8rrAyMYFXBhEqMz8ZAHBi4J4uS1i/CxGMDnjyFWddMXLVcDp051DZfu+t7+ab7Wv6SMqpWmyFIj5UbfFvg==}
+  foreground-child@3.3.1:
+    resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
 
   formdata-polyfill@4.0.10:
@@ -1773,8 +1773,8 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
-  supabase@2.11.0:
-    resolution: {integrity: sha512-Opg3TTRRXOxX5xGxDKfjVjqCsqGclyZoHZ0RNp4rlmOB9vU3T6bG0uXKoqMXvDpYdjBcgzkVYoJgrj2S4EMRiw==}
+  supabase@2.15.8:
+    resolution: {integrity: sha512-yY4kVpdd7x9u5QqTW/8zUXIrMgdkBDGqQwkDugBLe8uoFdH9tVZKt0L5RmuM21RJ0MEQkby2sQrTfiXvgGyx9w==}
     engines: {npm: '>=8'}
     hasBin: true
 
@@ -2943,7 +2943,7 @@ snapshots:
     dependencies:
       is-callable: 1.2.7
 
-  foreground-child@3.3.0:
+  foreground-child@3.3.1:
     dependencies:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
@@ -3002,7 +3002,7 @@ snapshots:
 
   glob@10.4.5:
     dependencies:
-      foreground-child: 3.3.0
+      foreground-child: 3.3.1
       jackspeak: 3.4.3
       minimatch: 9.0.5
       minipass: 7.1.2
@@ -3667,7 +3667,7 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  supabase@2.11.0:
+  supabase@2.15.8:
     dependencies:
       bin-links: 5.0.0
       https-proxy-agent: 7.0.6

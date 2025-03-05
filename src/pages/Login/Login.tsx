@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
-import { supabase } from "../../contexts/supabase/supabase";
 
 export default function Login() {
   const { login } = useAuth();
@@ -16,9 +15,8 @@ export default function Login() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    supabase.auth.signInWithPassword({ email, password });
     try {
-      //await login(email, password);
+      await login(email, password);
       void navigate("/");
     } catch {
       setError("Invalid email or password");

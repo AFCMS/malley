@@ -19,7 +19,6 @@ async function getProfile(id: string) {
 }
 
 async function profileNameAvaillable(name: string): Promise<boolean> {
-  alert("profileNameAvaillable");
   const req = await supabase.from("profiles").select("*").eq("handle", name).single();
   alert("req");
   if (req.error) {

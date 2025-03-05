@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../contexts/supabase/supabase";
 import { PostgrestSingleResponse, UserResponse } from "@supabase/supabase-js";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import { Link } from "react-router";
 
 export default function Home() {
   const auth = useAuth();
@@ -39,7 +40,28 @@ export default function Home() {
           <h1>Home</h1>
           <span>{JSON.stringify(data2?.data.user)}</span>
           <br />
-          {auth.isAuthenticated ? <div>{auth.profile?.handle}</div> : <div>Not authenticated</div>}
+          {auth.isAuthenticated ? (
+            <>
+              <div>{auth.profile?.handle}</div>
+              <button
+                onClick={() => {
+                  auth.logout().catch(console.error);
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <div>Not authenticated</div>
+              <Link className="mr-2 bg-amber-100 p-2" to="/login">
+                Login
+              </Link>
+              <Link className="bg-amber-100 p-2" to="/register">
+                Register
+              </Link>
+            </>
+          )}
           {data?.data?.map((user) => {
             return <div key={user.id}>{user.id + "::" + user.created_at}</div>;
           })}

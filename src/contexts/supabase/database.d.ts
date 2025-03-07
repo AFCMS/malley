@@ -34,30 +34,273 @@ export type Database = {
   }
   public: {
     Tables: {
+      authored: {
+        Row: {
+          post: string
+          profile: string
+        }
+        Insert: {
+          post: string
+          profile: string
+        }
+        Update: {
+          post?: string
+          profile?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authored_post_fkey"
+            columns: ["post"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "authored_user_fkey"
+            columns: ["profile"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category: {
+        Row: {
+          id: string
+          name: string
+        }
+        Insert: {
+          id?: string
+          name: string
+        }
+        Update: {
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      "featured-users": {
+        Row: {
+          featuree: string
+          featurer: string
+        }
+        Insert: {
+          featuree: string
+          featurer: string
+        }
+        Update: {
+          featuree?: string
+          featurer?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_featuree_fkey"
+            columns: ["featuree"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "featured_featurer_fkey"
+            columns: ["featurer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          followee: string
+          follower: string
+        }
+        Insert: {
+          followee: string
+          follower: string
+        }
+        Update: {
+          followee?: string
+          follower?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_followee_fkey"
+            columns: ["followee"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_fkey"
+            columns: ["follower"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pendingAuthors: {
+        Row: {
+          from_profile: string
+          post: string
+          to_profile: string
+        }
+        Insert: {
+          from_profile: string
+          post: string
+          to_profile: string
+        }
+        Update: {
+          from_profile?: string
+          post?: string
+          to_profile?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pendingAuthors_from_fkey"
+            columns: ["from_profile"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pendingAuthors_post_fkey"
+            columns: ["post"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pendingAuthors_to_fkey"
+            columns: ["to_profile"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          media: string[] | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          media?: string[] | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          media?: string[] | null
+        }
+        Relationships: []
+      }
+      postsCategory: {
+        Row: {
+          category: string
+          post: string
+        }
+        Insert: {
+          category?: string
+          post?: string
+        }
+        Update: {
+          category?: string
+          post?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "postsCategory_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postsCategory_post_fkey"
+            columns: ["post"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          banner: string | null
+          bio: string | null
           created_at: string
           handle: string
           id: string
+          pinned_posts: string[] | null
+          profile_pic: string | null
         }
         Insert: {
+          banner?: string | null
+          bio?: string | null
           created_at?: string
           handle: string
           id: string
+          pinned_posts?: string[] | null
+          profile_pic?: string | null
         }
         Update: {
+          banner?: string | null
+          bio?: string | null
           created_at?: string
           handle?: string
           id?: string
+          pinned_posts?: string[] | null
+          profile_pic?: string | null
         }
         Relationships: []
+      }
+      profilesCategory: {
+        Row: {
+          category: string
+          profile: string
+        }
+        Insert: {
+          category: string
+          profile: string
+        }
+        Update: {
+          category?: string
+          profile?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profilesCategory_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "category"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profilesCategory_profile_fkey"
+            columns: ["profile"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      "accept-co-authoring": {
+        Args: {
+          post_id: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

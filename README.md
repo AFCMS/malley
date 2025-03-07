@@ -63,16 +63,22 @@ pnpm run supabase stop
 
 Database documentation is [here](/supabase/README.md).
 
-Create a new migration file in `supabase/migrations`:
+Modify the database from Supabase Studio and export the DB diff to a file, then refine it (formating, comments, etc):
+
+```sh
+pnpm run --silent supabase db diff --schema public > my_file.sql
+```
+
+Create a new migration file in `supabase/migrations` and fill the given file with the content of the diff file:
 
 ```sh
 pnpm run supabase migration new migration_name
 ```
 
-Modify the database from Supabase Studio and export the DB diff to the file, then refine it (formating, comments, etc):
+Update the TypeScript definitions:
 
 ```sh
-pnpm run supabase db diff --schema public > supabase/migrations/<migration_file>.sql
+pnpm run --silent supabase gen types typescript --local > src/contexts/supabase/database.d.ts
 ```
 
 Reset DB (or apply the migration if possible):

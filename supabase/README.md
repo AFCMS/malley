@@ -1,8 +1,8 @@
 WIP, expect some more complete documentation in the coming days, or call me out to do it if i haven’t.
 
-
 Mermaid js schema of the database :
-```
+
+```mermaid
 erDiagram
     profiles {
         uuid id
@@ -56,7 +56,7 @@ erDiagram
         uuid post
         uuid category
     }
-    
+
     auth-users {
         uuid id
     }

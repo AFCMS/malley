@@ -61,6 +61,8 @@ pnpm run supabase stop
 
 ### Create Migrations
 
+Database documentation is [here](/supabase/README.md).
+
 Create a new migration file in `supabase/migrations`:
 
 ```sh

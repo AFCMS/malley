@@ -26,7 +26,14 @@ Malley is a X-like social media platform.
 - [Deno](https://deno.com)
 - [Docker](https://www.docker.com) or [Podman](https://podman.io)
 
+> [!NOTE]
+> For **Docker Desktop** users, you need to enable `Expose deamon on tcp://localhost:2375 without TLS` in the Docker settings.
+>
+> More informations [here](https://supabase.com/docs/guides/local-development/cli/getting-started?queryGroups=platform&platform=windows#running-supabase-locally).
+
 ### Run project
+
+You can use the **Supabase CLI** (recommended) or you own cloud instance of Supabase for development.
 
 ```sh
 pnpm install

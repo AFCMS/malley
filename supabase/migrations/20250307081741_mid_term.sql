@@ -1,7 +1,3 @@
-
-> malley@0.0.0 supabase /home/hue/école/2024-2025/malley
-> supabase "db" "diff" "--schema" "public"
-
 create table "public"."authored" (
     "profile" uuid not null,
     "post" uuid not null

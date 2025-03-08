@@ -682,9 +682,6 @@ with check (true);
 CREATE TRIGGER enforce_remove_authorless_posts AFTER DELETE ON public.authored FOR EACH ROW EXECUTE FUNCTION remove_authorless_posts();
 
 
-
-drop trigger if exists "enforce_user_is_author_of_post_to_pin" on "public"."profiles";
-
 set check_function_bodies = off;
 
 CREATE OR REPLACE FUNCTION public.make_poster_first_author()
@@ -697,8 +694,4 @@ END;$function$
 ;
 
 CREATE TRIGGER enforce_make_user_first_author AFTER INSERT ON public.posts FOR EACH ROW EXECUTE FUNCTION make_poster_first_author();
-
-CREATE TRIGGER enforce_user_is_author_of_post_to_pin BEFORE INSERT OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION user_is_author_of_post_to_pin();
-
-
 

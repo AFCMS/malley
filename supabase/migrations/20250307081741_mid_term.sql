@@ -167,7 +167,7 @@ alter table "public"."profilesCategory" validate constraint "profilesCategory_pr
 
 set check_function_bodies = off;
 
-CREATE OR REPLACE FUNCTION public."accept-co-authoring"(post_id integer)
+CREATE OR REPLACE FUNCTION public."accept_co_authoring"(post_id integer)
  RETURNS boolean
  LANGUAGE plpgsql
 AS $function$BEGIN
@@ -654,7 +654,44 @@ to public
 using (true);
 
 
-CREATE TRIGGER enforce_user_is_author_of_post_to_pin BEFORE INSERT OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION user_is_author_of_post_to_pin();
+CREATE TRIGGER enforce_user_is_author_of_post_to_pin BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION user_is_author_of_post_to_pin();
 
 
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.remove_authorless_posts()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$BEGIN
+  IF NOT EXISTS (SELECT 1 FROM authored WHERE id = OLD.id) THEN
+    DELETE FROM posts WHERE id = OLD.id;
+  END IF;
+  RETURN OLD;
+END;$function$
+;
+
+create policy "allow posting"
+on "public"."posts"
+as permissive
+for insert
+to authenticated
+with check (true);
+
+
+CREATE TRIGGER enforce_remove_authorless_posts AFTER DELETE ON public.authored FOR EACH ROW EXECUTE FUNCTION remove_authorless_posts();
+
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.make_poster_first_author()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$BEGIN
+  insert into authored (profile, post) values (auth.uid(), NEW.id);
+END;$function$
+;
+
+CREATE TRIGGER enforce_make_user_first_author AFTER INSERT ON public.posts FOR EACH ROW EXECUTE FUNCTION make_poster_first_author();
 

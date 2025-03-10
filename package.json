@@ -33,7 +33,7 @@
     "supabase": "^2.15.8",
     "tailwindcss": "^4.0.11",
     "typescript": "~5.8.2",
-    "typescript-eslint": "^8.26.0",
+    "typescript-eslint": "^8.26.1",
     "vite": "^6.2.1"
   },
   "packageManager": "pnpm@10.6.1",

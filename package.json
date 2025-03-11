@@ -13,7 +13,7 @@
   "dependencies": {
     "@eslint/js": "^9.22.0",
     "@supabase/supabase-js": "^2.49.1",
-    "@tailwindcss/vite": "^4.0.12",
+    "@tailwindcss/vite": "^4.0.13",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vercel/analytics": "^1.5.0",

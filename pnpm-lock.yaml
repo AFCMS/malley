@@ -33,8 +33,8 @@ importers:
         specifier: ^3.8.0
         version: 3.8.0(vite@6.2.1(@types/node@22.13.8)(jiti@2.4.2)(lightningcss@1.29.1))
       daisyui:
-        specifier: 5.0.0
-        version: 5.0.0
+        specifier: 5.0.2
+        version: 5.0.2
       eslint:
         specifier: ^9.22.0
         version: 9.22.0(jiti@2.4.2)
@@ -850,8 +850,8 @@ packages:
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
 
-  daisyui@5.0.0:
-    resolution: {integrity: sha512-U0K9Bac3Bi3zZGm6ojrw12F0vBHTpEgf46zv/BYxLe07hF0Xnx7emIQliwaRBgJuYhY0BhwQ6wSnq5cJXHA2yA==}
+  daisyui@5.0.2:
+    resolution: {integrity: sha512-AfOlwcE+Ukwuh2NSrMDE8VXOl9UWidj2Q5f64DEYqtZVW0Z9pELBA50iGEKg2FpBUvztFY5DFv7+eZgRts70BA==}
 
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
@@ -2614,7 +2614,7 @@ snapshots:
 
   csstype@3.1.3: {}
 
-  daisyui@5.0.0: {}
+  daisyui@5.0.2: {}
 
   data-uri-to-buffer@4.0.1: {}
 

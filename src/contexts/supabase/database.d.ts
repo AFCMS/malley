@@ -295,7 +295,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      "accept-co-authoring": {
+      accept_co_authoring: {
         Args: {
           post_id: number
         }

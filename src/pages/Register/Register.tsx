@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../contexts/auth/AuthContext";
 
@@ -6,17 +7,20 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const handle = formData.get("handle") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+
     try {
       await register(handle, email, password);
       void navigate("/");
-    } catch (error) {
-      alert(error);
+    } catch {
+      setError("Invalid email or password");
     }
   };
 
@@ -47,6 +51,7 @@ export default function Register() {
                 required
                 placeholder="Password"
               />
+              {error ? <div className="mt-2 text-xs font-bold text-red-600">{error}</div> : null}
               <button className="btn btn-neutral mt-4" type="submit">
                 Register
               </button>

@@ -32,11 +32,15 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     setIsAuthenticated(session && user && profile && profile.handle !== null ? true : false);
   }, [profile, session, user]);
 
+  async function handleUserUpdate(session: Session | null) {
+    setProfile(session?.user.id ? await getProfile(session.user.id) : null);
+  }
+
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setProfile(session?.user.id ? await getProfile(session.user.id) : null);
+      void handleUserUpdate(session);
     });
 
     const setData = async () => {
@@ -68,13 +72,9 @@ export function AuthProvider(props: { children: React.ReactNode }) {
         profile,
         isAuthenticated,
         register: async (handle: string, email: string, password: string) => {
-          alert("register 1");
-
           if (!(await profileNameAvaillable(handle))) {
             throw new Error("Handle already taken");
           }
-
-          alert("register 2");
 
           const { error, data } = await supabase.auth.signUp({
             email: email,
@@ -92,11 +92,6 @@ export function AuthProvider(props: { children: React.ReactNode }) {
 
           if (!id) {
             throw new Error("No user id");
-          }
-
-          const up = await supabase.from("profiles").update({ handle: handle }).eq("id", id);
-          if (up.error) {
-            throw up.error;
           }
         },
         login: async (email: string, password: string) => {

@@ -34,7 +34,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      authored: {
+      authors: {
         Row: {
           post: string
           profile: string
@@ -200,7 +200,7 @@ export type Database = {
         }
         Relationships: []
       }
-      postsCategory: {
+      postsCategories: {
         Row: {
           category: string
           post: string
@@ -260,7 +260,7 @@ export type Database = {
         }
         Relationships: []
       }
-      profilesCategory: {
+      profilesCategories: {
         Row: {
           category: string
           profile: string

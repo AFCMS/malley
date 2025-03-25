@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router";
 import { HiOutlineBell, HiOutlineHome, HiOutlineMagnifyingGlass, HiOutlineUser } from "react-icons/hi2";
 
 import { supabase } from "../../contexts/supabase/supabase";
-import { PostgrestSingleResponse, UserResponse } from "@supabase/supabase-js";
+import { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { useAuth } from "../../contexts/auth/AuthContext";
 
 export default function Home() {
@@ -17,8 +17,6 @@ export default function Home() {
     }[]
   > | null>(null);
 
-  const [data2, setData2] = useState<UserResponse | undefined>(undefined);
-
   const location = useLocation();
 
   useEffect(() => {
@@ -28,12 +26,6 @@ export default function Home() {
       .then((res) => {
         setData(res);
       });
-  }, []);
-
-  useEffect(() => {
-    void supabase.auth.getUser().then((res) => {
-      setData2(res);
-    });
   }, []);
 
   return (

@@ -69,8 +69,8 @@ importers:
         specifier: ^7.4.0
         version: 7.4.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       supabase:
-        specifier: ^2.20.3
-        version: 2.20.3
+        specifier: ^2.20.5
+        version: 2.20.5
       tailwindcss:
         specifier: ^4.0.15
         version: 4.0.15
@@ -1785,8 +1785,8 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
-  supabase@2.20.3:
-    resolution: {integrity: sha512-nUB2Tbbnr3L2RenY51J/FKcXNBAlOK6s7XL7PQUDxBhe8/EoYOLcyVke0XLNTUBeybdqoSw8ApbafLCT6Hd8mg==}
+  supabase@2.20.5:
+    resolution: {integrity: sha512-3d6YbIqEzLatw0BpYPSeQwAaVQY9WUBkGiy7a+DLJPN17UsW5KYNEik3mO8PeX1a7TaJvtWxDs/Ve05pxfvldw==}
     engines: {npm: '>=8'}
     hasBin: true
 
@@ -3686,7 +3686,7 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  supabase@2.20.3:
+  supabase@2.20.5:
     dependencies:
       bin-links: 5.0.0
       https-proxy-agent: 7.0.6

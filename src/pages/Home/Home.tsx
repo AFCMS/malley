@@ -30,7 +30,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <div className="navbar bg-base-100 shadow-sm">
+      <div className="navbar bg-base-100 shadow-sm md:hidden">
         <div className="navbar-start">
           <div className="dropdown">
             <div tabIndex={0} role="button" className="avatar">
@@ -52,11 +52,42 @@ export default function Home() {
           </div>
         </div>
         <div className="navbar-center">
-          <a className="btn btn-ghost text-xl">Malley</a>
+          <Link className="btn btn-ghost text-xl" to="/">
+            Malley
+          </Link>
         </div>
         <div className="navbar-end"></div>
       </div>
       <div className="mx-auto flex min-h-full max-w-3xl bg-amber-300 md:max-w-7xl lg:px-8">
+        <div className="hidden lg:block lg:w-full lg:max-w-72 lg:shrink-0 lg:pt-[30px] lg:pr-8">
+          <div className="sticky top-8 pb-8">
+            <div className="flex min-h-[calc(100vh-60px)] flex-col justify-between space-y-9">
+              <div className="flex flex-col space-y-6">
+                <Link className="btn btn-ghost text-xl" to="/">
+                  Malley
+                </Link>
+                <label className="input">
+                  <HiOutlineMagnifyingGlass className="h-[1em] opacity-50" />
+                  <input type="search" required placeholder="Search" />
+                </label>
+                <div className="flex flex-col space-y-2">
+                  <Link className="btn justify-start text-xl" to="/">
+                    <HiOutlineHome className="h-5 opacity-50" />
+                    Home
+                  </Link>
+                  <Link className="btn justify-start text-xl" to="/">
+                    <HiOutlineBell className="h-5 opacity-50" />
+                    Notifications
+                  </Link>
+                  <Link className="btn justify-start text-xl" to="/">
+                    <HiOutlineUser className="h-5 opacity-50" />
+                    Profile
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="lg:block lg:w-full lg:max-w-72 lg:shrink-0 lg:pt-[30px] lg:pr-8">
           <div className="flex flex-col"></div>
           <h1>Home</h1>
@@ -88,7 +119,7 @@ export default function Home() {
           })}
         </div>
         <span>content</span>
-        <div className="dock dock-xs">
+        <div className="dock dock-xs md:hidden">
           <Link className={location.pathname === "/" ? "dock-active" : undefined} to="/" title="Feed">
             <HiOutlineHome className="size-6" />
           </Link>

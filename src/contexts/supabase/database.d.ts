@@ -34,7 +34,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      authored: {
+      authors: {
         Row: {
           post: string
           profile: string
@@ -64,7 +64,7 @@ export type Database = {
           },
         ]
       }
-      category: {
+      categories: {
         Row: {
           id: string
           name: string
@@ -79,7 +79,7 @@ export type Database = {
         }
         Relationships: []
       }
-      "featured-users": {
+      featuredUsers: {
         Row: {
           featuree: string
           featurer: string
@@ -200,7 +200,7 @@ export type Database = {
         }
         Relationships: []
       }
-      postsCategory: {
+      postsCategories: {
         Row: {
           category: string
           post: string
@@ -218,7 +218,7 @@ export type Database = {
             foreignKeyName: "postsCategory_category_fkey"
             columns: ["category"]
             isOneToOne: false
-            referencedRelation: "category"
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
           {
@@ -260,7 +260,7 @@ export type Database = {
         }
         Relationships: []
       }
-      profilesCategory: {
+      profilesCategories: {
         Row: {
           category: string
           profile: string
@@ -278,7 +278,7 @@ export type Database = {
             foreignKeyName: "profilesCategory_category_fkey"
             columns: ["category"]
             isOneToOne: false
-            referencedRelation: "category"
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
           {

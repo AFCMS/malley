@@ -30,7 +30,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <div className="navbar bg-base-100 shadow-sm md:hidden">
+      <div className="navbar bg-base-100 shadow-sm lg:hidden">
         <div className="navbar-start">
           <div className="dropdown">
             <div tabIndex={0} role="button" className="avatar">
@@ -119,7 +119,7 @@ export default function Home() {
           })}
         </div>
         <span>content</span>
-        <div className="dock dock-xs md:hidden">
+        <div className="dock dock-xs lg:hidden">
           <Link className={location.pathname === "/" ? "dock-active" : undefined} to="/" title="Feed">
             <HiOutlineHome className="size-6" />
           </Link>

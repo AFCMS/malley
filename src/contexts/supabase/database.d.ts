@@ -296,15 +296,11 @@ export type Database = {
     }
     Functions: {
       accept_co_authoring: {
-        Args: {
-          post_id: string
-        }
+        Args: { post_id: string }
         Returns: boolean
       }
       id_of_ensured_category: {
-        Args: {
-          request: string
-        }
+        Args: { request: string }
         Returns: string
       }
     }

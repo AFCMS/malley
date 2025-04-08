@@ -14,7 +14,7 @@ const getUser = async () => {
 };
 
 /*
-  syntax :
+  syntax:
     queries.profile.get(id)
     queries.post.new(data)
     queries.
@@ -64,7 +64,7 @@ const queries = {
         id = v4();
       } while (
         // in the comedically rare case of a collision, regenerate it
-        // OR, if we feel spicy, put an easter egg here !
+        // OR, if we feel spicy, put an easter egg here!
         (await supabase.storage.from("posts_media").list(id)).data != null
       );
       for (let i = 0; i < media.length; i++) {

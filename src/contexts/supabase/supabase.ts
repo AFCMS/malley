@@ -6,9 +6,12 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-const {
-  data: { user },
-} = await supabase.auth.getUser();
+const getUser = async () => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+};
 
 /*
   syntax :
@@ -101,6 +104,7 @@ const queries = {
 
   pendingAuthors: {
     get: async function (): Promise<{ from: Tables<"profiles">; post: Tables<"posts"> }[]> {
+      const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }
@@ -123,6 +127,7 @@ const queries = {
     },
 
     invite: async function (profile: string, post: string): Promise<boolean> {
+      const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }
@@ -245,6 +250,7 @@ const queries = {
   follows: {
     get: async function (): Promise<Tables<"profiles">[]> {
       // gets follows of the current user
+      const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }
@@ -259,6 +265,7 @@ const queries = {
 
     add: async function (id: string): Promise<boolean> {
       // follows provided user
+      const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }
@@ -276,6 +283,7 @@ const queries = {
 
     remove: async function (id: string): Promise<boolean> {
       // unfollows provided user
+      const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }
@@ -319,6 +327,7 @@ const queries = {
 
     add: async function (id: string): Promise<boolean> {
       // features provided user
+      const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }
@@ -336,6 +345,7 @@ const queries = {
 
     remove: async function (id: string): Promise<boolean> {
       // unfeatures provided user
+      const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }

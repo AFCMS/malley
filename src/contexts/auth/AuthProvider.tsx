@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { getProfile, profileNameAvaillable, supabase } from "../supabase/supabase";
+import { queries, supabase } from "../supabase/supabase";
 import { AuthContext } from "./AuthContext";
 
 interface Profile {
@@ -33,7 +33,7 @@ export function AuthProvider(props: { children: React.ReactNode }) {
   }, [profile, session, user]);
 
   async function handleUserUpdate(session: Session | null) {
-    setProfile(session?.user.id ? await getProfile(session.user.id) : null);
+    setProfile(session?.user.id ? await queries.profiles.get(session.user.id) : null);
   }
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export function AuthProvider(props: { children: React.ReactNode }) {
 
       setSession(session);
       setUser(session?.user ?? null);
-      setProfile(session?.user.id ? await getProfile(session.user.id) : null);
+      setProfile(session?.user.id ? await queries.profiles.get(session.user.id) : null);
     };
 
     void setData();
@@ -72,7 +72,7 @@ export function AuthProvider(props: { children: React.ReactNode }) {
         profile,
         isAuthenticated,
         register: async (handle: string, email: string, password: string) => {
-          if (!(await profileNameAvaillable(handle))) {
+          if (!(await queries.profiles.isNameAvailable(handle))) {
             throw new Error("Handle already taken");
           }
 

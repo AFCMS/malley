@@ -79,7 +79,7 @@ export type Database = {
         }
         Relationships: []
       }
-      featuredUsers: {
+      features: {
         Row: {
           featuree: string
           featurer: string
@@ -184,19 +184,19 @@ export type Database = {
           body: string | null
           created_at: string
           id: string
-          media: string[] | null
+          media: string | null
         }
         Insert: {
           body?: string | null
           created_at?: string
           id?: string
-          media?: string[] | null
+          media?: string | null
         }
         Update: {
           body?: string | null
           created_at?: string
           id?: string
-          media?: string[] | null
+          media?: string | null
         }
         Relationships: []
       }
@@ -297,9 +297,15 @@ export type Database = {
     Functions: {
       accept_co_authoring: {
         Args: {
-          post_id: number
+          post_id: string
         }
         Returns: boolean
+      }
+      id_of_ensured_category: {
+        Args: {
+          request: string
+        }
+        Returns: string
       }
     }
     Enums: {

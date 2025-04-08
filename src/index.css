@@ -3,3 +3,7 @@
   themes: light --default;
   logs: false;
 }
+
+.sidebarlink {
+  @apply flex shrink-0 cursor-pointer flex-nowrap items-center justify-start gap-1.5 p-2 align-middle text-xl outline-offset-2 select-none;
+}

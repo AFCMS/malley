@@ -71,15 +71,15 @@ export default function Home() {
                   <input type="search" required placeholder="Search" />
                 </label>
                 <div className="flex flex-col space-y-2">
-                  <Link className="btn justify-start text-xl" to="/">
+                  <Link className="sidebarlink" to="/">
                     <HiOutlineHome className="h-5 opacity-50" />
                     Home
                   </Link>
-                  <Link className="btn justify-start text-xl" to="/">
+                  <Link className="sidebarlink" to="/profile">
                     <HiOutlineBell className="h-5 opacity-50" />
                     Notifications
                   </Link>
-                  <Link className="btn justify-start text-xl" to="/">
+                  <Link className="sidebarlink" to="/profile">
                     <HiOutlineUser className="h-5 opacity-50" />
                     Profile
                   </Link>

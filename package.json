@@ -27,17 +27,6 @@
     "globals": "^16.0.0",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
-<<<<<<< HEAD
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router": "^7.3.0",
-    "supabase": "^2.15.8",
-    "tailwindcss": "^4.0.11",
-    "typescript": "~5.8.2",
-    "typescript-eslint": "^8.26.0",
-    "uuid": "^11.1.0",
-    "vite": "^6.2.1"
-=======
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
@@ -48,7 +37,6 @@
     "typescript-eslint": "^8.29.1",
     "uuid": "^11.1.0",
     "vite": "^6.2.5"
->>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
   },
   "packageManager": "pnpm@10.8.0",
   "pnpm": {

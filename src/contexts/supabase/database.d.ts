@@ -296,23 +296,11 @@ export type Database = {
     }
     Functions: {
       accept_co_authoring: {
-<<<<<<< HEAD
-        Args: {
-          post_id: string
-        }
-        Returns: boolean
-      }
-      id_of_ensured_category: {
-        Args: {
-          request: string
-        }
-=======
         Args: { post_id: string }
         Returns: boolean
       }
       id_of_ensured_category: {
         Args: { request: string }
->>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
         Returns: string
       }
     }

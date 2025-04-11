@@ -6,12 +6,24 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
+<<<<<<< HEAD
 const {
   data: { user },
 } = await supabase.auth.getUser();
 
 /*
   syntax :
+=======
+const getUser = async () => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+};
+
+/*
+  syntax:
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
     queries.profile.get(id)
     queries.post.new(data)
     queries.
@@ -61,7 +73,11 @@ const queries = {
         id = v4();
       } while (
         // in the comedically rare case of a collision, regenerate it
+<<<<<<< HEAD
         // OR, if we feel spicy, put an easter egg here !
+=======
+        // OR, if we feel spicy, put an easter egg here!
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
         (await supabase.storage.from("posts_media").list(id)).data != null
       );
       for (let i = 0; i < media.length; i++) {
@@ -101,6 +117,10 @@ const queries = {
 
   pendingAuthors: {
     get: async function (): Promise<{ from: Tables<"profiles">; post: Tables<"posts"> }[]> {
+<<<<<<< HEAD
+=======
+      const user = await getUser();
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
       if (!user) {
         throw new Error("not logged in");
       }
@@ -123,6 +143,10 @@ const queries = {
     },
 
     invite: async function (profile: string, post: string): Promise<boolean> {
+<<<<<<< HEAD
+=======
+      const user = await getUser();
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
       if (!user) {
         throw new Error("not logged in");
       }
@@ -245,6 +269,10 @@ const queries = {
   follows: {
     get: async function (): Promise<Tables<"profiles">[]> {
       // gets follows of the current user
+<<<<<<< HEAD
+=======
+      const user = await getUser();
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
       if (!user) {
         throw new Error("not logged in");
       }
@@ -259,6 +287,10 @@ const queries = {
 
     add: async function (id: string): Promise<boolean> {
       // follows provided user
+<<<<<<< HEAD
+=======
+      const user = await getUser();
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
       if (!user) {
         throw new Error("not logged in");
       }
@@ -276,6 +308,10 @@ const queries = {
 
     remove: async function (id: string): Promise<boolean> {
       // unfollows provided user
+<<<<<<< HEAD
+=======
+      const user = await getUser();
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
       if (!user) {
         throw new Error("not logged in");
       }
@@ -319,6 +355,10 @@ const queries = {
 
     add: async function (id: string): Promise<boolean> {
       // features provided user
+<<<<<<< HEAD
+=======
+      const user = await getUser();
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
       if (!user) {
         throw new Error("not logged in");
       }
@@ -336,6 +376,10 @@ const queries = {
 
     remove: async function (id: string): Promise<boolean> {
       // unfeatures provided user
+<<<<<<< HEAD
+=======
+      const user = await getUser();
+>>>>>>> 796ffda604e7fe25ab7ed533726a8f38f1bfff00
       if (!user) {
         throw new Error("not logged in");
       }

@@ -5,7 +5,7 @@ import { AuthContext } from "./AuthContext";
 
 interface Profile {
   created_at: string;
-  handle: string | null;
+  handle: string;
   id: string;
 }
 
@@ -29,7 +29,7 @@ export function AuthProvider(props: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setIsAuthenticated(session && user && profile && profile.handle !== null ? true : false);
+    setIsAuthenticated(session && user && profile ? true : false);
   }, [profile, session, user]);
 
   async function handleUserUpdate(session: Session | null) {

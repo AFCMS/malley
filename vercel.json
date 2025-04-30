@@ -6,5 +6,11 @@
       "destination": "/"
     }
   ],
-  "framework": "vite"
+  "framework": "vite",
+  "git": {
+    "deploymentEnabled": false
+  },
+  "github": {
+    "enabled": false
+  }
 }

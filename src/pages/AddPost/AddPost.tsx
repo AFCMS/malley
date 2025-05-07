@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { HiOutlineBell, HiOutlineHome, HiOutlineMagnifyingGlass, HiOutlineUser } from "react-icons/hi2";
 import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
-import { useNavigate } from "react-router";
 
 export default function AddPost() {
   const [body, setBody] = useState("");
@@ -20,6 +19,7 @@ export default function AddPost() {
     }
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -31,151 +31,93 @@ export default function AddPost() {
     }
 
     try {
-      // Utilise la fonction queries.posts.new pour créer un nouveau post merci emimi
+      // Ajout d'une vérification que body n'est pas vide
+      if (!body.trim()) {
+        throw new Error("Le contenu du post ne peut pas être vide");
+      }
+      
+      console.log("Tentative de création du post...");
       await queries.posts.new(body, mediaFiles);
       
-
+      console.log("Post créé avec succès");
       setError(null);
       navigate("/");
     } catch (err) {
+      console.error("Erreur lors de la création du post:", err);
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
       setIsLoading(false);
     }
   };
-//utilisation de gpt pour le return (car je suis un vrai flemmard)
+
+// utilisation de gpt pour le return 
   return (
-    <div className="min-h-screen">
-      {/* NavBar mobile */}
-      <div className="navbar bg-base-100 shadow-sm lg:hidden">
-        <div className="navbar-start">
-          <div className="dropdown">
-            <div tabIndex={0} role="button" className="avatar">
-              <div className="w-10 rounded-full">
-                <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-              </div>
-            </div>
-            <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-              <li>
-                <a>Homepage</a>
-              </li>
-              <li>
-                <a>Portfolio</a>
-              </li>
-              <li>
-                <a>About</a>
-              </li>
-            </ul>
+    <>
+      <div className="flex flex-col">
+        <h1 className="text-2xl font-bold mb-4">Ajouter un Post</h1>
+        
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">{error}</div>}
+        
+        <form onSubmit={handleSubmit} className="mb-6">
+          <div className="mb-4">
+            <textarea
+              className="w-full p-3 border rounded-md"
+              placeholder="Écrivez votre post ici..."
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={5}
+              required
+            />
           </div>
-        </div>
-        <div className="navbar-center">
-          <Link className="btn btn-ghost text-xl" to="/">
-            Malley
+          
+          <div className="mb-4">
+            <label className="block mb-2">Ajouter des images ou médias (optionnel)</label>
+            <input 
+              type="file" 
+              className="w-full p-2 border rounded-md" 
+              multiple
+              onChange={handleFileChange}
+            />
+            {mediaFiles.length > 0 && (
+              <p className="text-sm mt-2">{mediaFiles.length} fichier(s) sélectionné(s)</p>
+            )}
+          </div>
+          
+          <div className="flex justify-end">
+            <button 
+              type="submit" 
+              className="bg-amber-100 p-2 rounded-md hover:bg-amber-200"
+              disabled={isLoading}
+            >
+              {isLoading ? "Publication en cours..." : "Publier"}
+            </button>
+          </div>
+        </form>
+        
+        <div className="mt-4">
+          <Link className="bg-amber-100 p-2 rounded-md mr-2" to="/">
+            Retour à l'accueil
           </Link>
         </div>
-        <div className="navbar-end"></div>
-      </div>
-
-      <div className="mx-auto flex min-h-full max-w-3xl bg-amber-300 md:max-w-7xl lg:px-8">
-        {/* Sidebar gauche */}
-        <div className="hidden lg:block lg:w-full lg:max-w-72 lg:shrink-0 lg:pt-[30px] lg:pr-8">
-          <div className="sticky top-8 pb-8">
-            <div className="flex min-h-[calc(100vh-60px)] flex-col justify-between space-y-9">
-              <div className="flex flex-col space-y-2">
-                <Link className="sidebarlink" to="/">
-                  <HiOutlineHome className="h-5 opacity-50" />
-                  Home
-                </Link>
-                <Link className="sidebarlink" to="/search">
-                  <HiOutlineMagnifyingGlass className="h-5 opacity-50" />
-                  Recherche
-                </Link>
-                <Link className="sidebarlink" to="/profile">
-                  <HiOutlineBell className="h-5 opacity-50" />
-                  Notifications
-                </Link>
-                <Link className="sidebarlink" to="/profile">
-                  <HiOutlineUser className="h-5 opacity-50" />
-                  Profile
-                </Link>
-              </div> 
-            </div>
-          </div>
-        </div>
-
-        {/* Contenu principal */}
-        <div className="flex-1 p-4">
-          <h1 className="text-2xl font-bold mb-6">Ajouter un Post</h1>
-          {error && <div className="alert alert-error mb-4">{error}</div>}
-          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-md">
-            <div className="card-body">
-              <textarea
-                className="textarea textarea-bordered w-full h-32"
-                placeholder="Écrivez votre post ici..."
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                required
-              />
-              
-              {/* Ajout d'un champ pour uploader des médias */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Ajouter des images ou médias (optionnel)</span>
-                </label>
-                <input 
-                  type="file" 
-                  className="file-input file-input-bordered w-full" 
-                  multiple
-                  onChange={handleFileChange}
-                />
-                {mediaFiles.length > 0 && (
-                  <p className="text-sm mt-2">{mediaFiles.length} fichier(s) sélectionné(s)</p>
-                )}
-              </div>
-              
-              <div className="card-actions justify-end mt-4">
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Publication en cours..." : "Publier"}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        {/* Menu dock mobile */}
-        <div className="lg:hidden">
-          {/* Bouton pour ajouter un post en version mobile */}
-          {auth.isAuthenticated && (
-            <div className="fixed bottom-20 right-4 z-10">
-              <Link className="btn btn-primary btn-circle shadow-lg" to="/add-post">
-                +
+        
+        <div className="mt-8">
+          {auth.isAuthenticated && auth.profile && auth.user ? (
+            <>
+              <div className="mb-2">{auth.profile.handle}</div>
+            </>
+          ) : (
+            <>
+              <div className="mb-2">Non connecté</div>
+              <Link className="mr-2 bg-amber-100 p-2 rounded-md" to="/login">
+                Connexion
               </Link>
-            </div>
+              <Link className="bg-amber-100 p-2 rounded-md" to="/register">
+                Inscription
+              </Link>
+            </>
           )}
-          
-          <div className="dock dock-xs">
-            <Link className={location.pathname === "/" ? "dock-active" : undefined} to="/" title="Feed">
-              <HiOutlineHome className="size-6" />
-            </Link>
-
-            <Link className={location.pathname === "/search" ? "dock-active" : undefined} to="/search" title="Search">
-              <HiOutlineMagnifyingGlass className="size-6" />
-            </Link>
-
-            <Link className={location.pathname === "/profile" ? "dock-active" : undefined} to="/" title="Notifications">
-              <HiOutlineBell className="size-6" />
-            </Link>
-
-            <Link className={location.pathname === "/profile" ? "dock-active" : undefined} to="/profile" title="Profile">
-              <HiOutlineUser className="size-6" />
-            </Link>
-          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

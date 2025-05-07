@@ -91,7 +91,7 @@ pnpm run supabase migration up
 
 ---
 
-<img align="right" src="https://www.ecole-hexagone.com/fr/img/Hexa_Logo_Sign_RVB.svg" width="300px"/>
+<img align="right" src=".github/Hexa_Logo_Sign_RVB_Full.svg" width="300px"/>
 
 Made with ❤️ by:
 

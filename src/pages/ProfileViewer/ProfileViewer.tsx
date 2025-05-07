@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import PostViewer from "../../Components/PostViewer/PostViewer";
+// import PostViewer from "../../Components/PostViewer/PostViewer";
 import { queries } from "../..//contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 import { useParams } from "react-router";
@@ -51,9 +51,9 @@ const ProfileViewer = () => {
       {profile.pinned_posts && profile.pinned_posts.length > 0 && (
         <div className="pinned-posts">
           <h2>Pinned Posts</h2>
-          {profile.pinned_posts.map((postId) => (
+          {/* {profile.pinned_posts.map((postId) => (
             <PostViewer key={postId} postId={postId} />
-          ))}
+          ))} */}
         </div>
       )}
 

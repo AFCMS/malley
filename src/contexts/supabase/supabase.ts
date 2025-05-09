@@ -59,20 +59,23 @@ const queries = {
     },
 
     new: async function (body: string, media: File[]): Promise<boolean> {
-      let id: string;
-      do {
-        id = v4();
-      } while (
-        // in the comedically rare case of a collision, regenerate it
-        // OR, if we feel spicy, put an easter egg here!
-        (await supabase.storage.from("posts_media").list(id)).data != null
-      );
-      for (let i = 0; i < media.length; i++) {
-        await supabase.storage.from("post_media").upload(id.toString() + "/" + i.toString(), media[i]);
+      let id: string | undefined = undefined;
+      if (media.length != 0) {
+        do {
+          id = v4();
+        } while (
+          // in the comedically rare case of a collision, regenerate it
+          // OR, if we feel spicy, put an easter egg here!
+          (await supabase.storage.from("posts-media").list(id)).data?.length !== 0
+        );
+        for (let i = 0; i < media.length; i++) {
+          console.log("uploading");
+          await supabase.storage.from("post-media").upload(id + "/" + i.toString(), media[i]);
+        }
       }
       const req = await supabase.from("posts").insert({
         body: body,
-        media: id,
+        media: media.length == 0 ? null : id,
       });
 
       if (req.error) {

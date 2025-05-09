@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-// import PostViewer from "../../Components/PostViewer/PostViewer";
+import PostViewer from "../../Components/PostViewer/PostViewer";
 import { queries } from "../..//contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 import { useParams } from "react-router";
 
 const ProfileViewer = () => {
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
-  const [nonPinnedPosts, setNonPinnedPosts] = useState<Tables<"posts">[] | null>(null);
+  const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[] | null>(null);
+  const [allPosts, setAllPosts] = useState<Tables<"posts">[] | null>(null);
   const user_id: string = useParams().id ?? "";
 
   useEffect(() => {
@@ -14,22 +15,49 @@ const ProfileViewer = () => {
       try {
         const response = await queries.profiles.get(user_id);
         setProfile(response);
+        await fetchPinnedPosts();
+        await fetchAllPosts();
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
     };
 
-    const fetchNonPinnedPosts = async () => {
+    const fetchPinnedPosts = async () => {
+      try {
+        if (!profile?.pinned_posts) {
+          return;
+        }
+
+        const pinned_tmp_array: Tables<"posts">[] = [];
+        for (const id of profile.pinned_posts) {
+          pinned_tmp_array.concat(await queries.posts.get(id));
+          setPinnedPosts(pinned_tmp_array);
+          /* Note : this is horrible. horrifying.
+            BUT !! as far as i see, it is still the most reasonable way
+            to satisfy the dreaded CI
+            things that the break it :
+            - non breaking spaces, which i would have put multiple of in this comment
+            - non-null assertions
+            - non-null check
+            - initialising the array before running this (doesn’t see it can’t be null)
+            - i think i’m forgetting some
+          */
+        }
+      } catch (error) {
+        console.error("Error fetching pinned posts:", error);
+      }
+    };
+
+    const fetchAllPosts = async () => {
       try {
         const response = await queries.authors.postsOf(user_id);
-        setNonPinnedPosts(response);
+        setAllPosts(response);
       } catch (error) {
         console.error("Error fetching non pinned posts:", error);
       }
     };
 
     void fetchProfile();
-    void fetchNonPinnedPosts();
   }, [user_id]);
 
   if (!profile) {
@@ -48,20 +76,20 @@ const ProfileViewer = () => {
       {profile.bio && <p>{profile.bio}</p>}
       <p>Joined on: {new Date(profile.created_at).toLocaleDateString()}</p>
 
-      {profile.pinned_posts && profile.pinned_posts.length > 0 && (
+      {pinnedPosts && pinnedPosts.length > 0 && (
         <div className="pinned-posts">
           <h2>Pinned Posts</h2>
-          {/* {profile.pinned_posts.map((postId) => (
-            <PostViewer key={postId} postId={postId} />
-          ))} */}
+          {pinnedPosts.map((post) => (
+            <PostViewer key={post.id} post={post} />
+          ))}
         </div>
       )}
 
-      {nonPinnedPosts && nonPinnedPosts.length > 0 && (
-        <div className="non-pinned-posts">
+      {allPosts && allPosts.length > 0 && (
+        <div className="all-posts">
           <h2>Other posts</h2>
-          {nonPinnedPosts.map((postId) => (
-            <PostViewer key={postId} postId={postId} />
+          {allPosts.map((post) => (
+            <PostViewer key={post.id} post={post} />
           ))}
         </div>
       )}

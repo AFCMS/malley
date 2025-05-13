@@ -28,20 +28,9 @@ const ProfileViewer = () => {
           return;
         }
 
-        const pinned_tmp_array: Tables<"posts">[] = [];
         for (const id of profile.pinned_posts) {
-          pinned_tmp_array.concat(await queries.posts.get(id));
-          setPinnedPosts(pinned_tmp_array);
-          /* Note : this is horrible. horrifying.
-            BUT !! as far as i see, it is still the most reasonable way
-            to satisfy the dreaded CI
-            things that the break it :
-            - non breaking spaces, which i would have put multiple of in this comment
-            - non-null assertions
-            - non-null check
-            - initialising the array before running this (doesn’t see it can’t be null)
-            - i think i’m forgetting some
-          */
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          setPinnedPosts(pinnedPosts!.concat(await queries.posts.get(id)));
         }
       } catch (error) {
         console.error("Error fetching pinned posts:", error);

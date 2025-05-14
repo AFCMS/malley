@@ -4,7 +4,7 @@ import { HiOutlineBell, HiOutlineHome, HiOutlineMagnifyingGlass, HiOutlineUser }
 
 export default function BottomDock() {
   return (
-    <div className="dock dock-xs lg:hidden">
+    <nav className="dock dock-xs lg:hidden">
       <Link className={location.pathname === "/" ? "dock-active" : undefined} to="/" title="Feed">
         <HiOutlineHome className="size-6" />
       </Link>
@@ -20,6 +20,6 @@ export default function BottomDock() {
       <Link className={location.pathname === "/profile" ? "dock-active" : undefined} to="/profile" title="Profile">
         <HiOutlineUser className="size-6" />
       </Link>
-    </div>
+    </nav>
   );
 }

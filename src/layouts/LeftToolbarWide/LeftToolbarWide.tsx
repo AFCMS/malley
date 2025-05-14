@@ -13,7 +13,7 @@ export default function LeftToolbarWide() {
       <div className="sticky top-8 flex h-[calc(100vh-60px)] flex-col">
         <div className="flex h-full flex-col justify-between">
           <div className="flex flex-col space-y-6">
-            <Link className="btn btn-ghost text-xl" to="/">
+            <Link className="flex h-10 items-center justify-center px-4 text-xl font-semibold select-none" to="/">
               Malley
             </Link>
             <label className="input">

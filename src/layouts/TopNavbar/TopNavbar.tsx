@@ -26,7 +26,7 @@ export default function TopNavbar() {
         </div>
       </div>
       <div className="navbar-center">
-        <Link className="btn btn-ghost text-xl" to="/">
+        <Link className="flex h-10 items-center justify-center px-4 text-xl font-semibold select-none" to="/">
           Malley
         </Link>
       </div>

@@ -4,7 +4,7 @@ import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import ProfileViewer from "../pages/ProfileViewer/ProfileViewer";
 import AddPost from "../pages/AddPost/AddPost";
-
+import ViewPost from "../pages/ViewPost/ViewPost";
 export default function Router() {
   return (
     <>
@@ -14,6 +14,7 @@ export default function Router() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile/:id" element={<ProfileViewer />} />
         <Route path="/add-post" element={<AddPost />} /> 
+        <Route path="/view-post/:postId" element={<ViewPost />} />
         <Route path="*" element={<div>404</div>} />
       </Routes>
     </>

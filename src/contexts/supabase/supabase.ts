@@ -58,7 +58,7 @@ const queries = {
       }
     },
 
-    new: async function (body: string, media: File[]): Promise<boolean> {
+    new: async function (body: string, media: File[]): Promise<string> {
       let id: string | undefined = undefined;
       if (media.length != 0) {
         do {
@@ -73,15 +73,22 @@ const queries = {
           await supabase.storage.from("post-media").upload(id + "/" + i.toString(), media[i]);
         }
       }
-      const req = await supabase.from("posts").insert({
-        body: body,
-        media: media.length == 0 ? null : id,
-      });
+      const { data, error } = await supabase
+        .from("posts")
+        .insert({
+          body: body,
+          media: media.length == 0 ? null : id,
+        })
+        .select("id")
+        .single();
 
-      if (req.error) {
-        throw new Error(req.error.message);
+      if (error) {
+        throw new Error(error.message);
       }
-      return true;
+      if (!data.id) {
+        throw new Error("id wasn’t returned");
+      }
+      return data.id;
     },
   },
 
@@ -168,8 +175,10 @@ const queries = {
     },
 
     match: async function (like: string): Promise<Tables<"categories">[]> {
-      const req = await supabase.from("categories").select("*").like("name", like);
-
+      const req = await supabase
+        .from("categories")
+        .select("*")
+        .ilike("name", "%" + like + "%");
       if (req.error) {
         throw new Error(req.error.message);
       }

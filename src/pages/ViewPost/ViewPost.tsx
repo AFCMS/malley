@@ -14,15 +14,14 @@ export default function ViewPost() {
     async function fetchPost() {
       try {
         setLoading(true);
-        
+
         if (!postId) {
           throw new Error("ID du post non spécifié");
         }
-        
+
         // Utilisation de la fonction get du module queries.posts
         const postData = await queries.posts.get(postId);
         setPost(postData);
-        
       } catch (err) {
         console.error("Erreur lors de la récupération du post:", err);
         setError("Impossible de charger ce post. Veuillez vérifier l'URL ou réessayer plus tard.");
@@ -31,7 +30,7 @@ export default function ViewPost() {
       }
     }
 
-    fetchPost();
+    void fetchPost();
   }, [postId]);
 
   if (loading) {

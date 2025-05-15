@@ -47,7 +47,7 @@ const ProfileViewer = () => {
     };
 
     void fetchProfile();
-  }, [user_id]);
+  }, [user_id, pinnedPosts, profile?.pinned_posts]);
 
   if (!profile) {
     return <div>Loading profile...</div>;

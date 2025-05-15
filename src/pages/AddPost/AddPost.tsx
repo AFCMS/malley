@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import CategoriesChooser from "../../Components/CategoriesChooser/CategoriesChooser";
+import { Tables } from "../../contexts/supabase/database";
 
 export default function AddPost() {
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<Tables<"categories">[]>([]);
   const auth = useAuth();
   const navigate = useNavigate();
 
@@ -25,8 +28,11 @@ export default function AddPost() {
       }
 
       console.log("Tentative de création du post...");
-      await queries.posts.new(body, mediaFiles);
+      const id: string = await queries.posts.new(body, mediaFiles);
 
+      for (const category of selectedCategories) {
+        await queries.postsCategories.add(id, await queries.categories.getEnsuredId(category.name));
+      }
       console.log("Post créé avec succès");
       setError(null);
       void navigate("/");
@@ -72,6 +78,8 @@ export default function AddPost() {
               required
             />
           </div>
+
+          <CategoriesChooser selectedCategories={selectedCategories} setSelectedCategories={setSelectedCategories} />
 
           <div className="mb-4">
             <label className="mb-2 block">Ajouter des images ou médias (optionnel)</label>

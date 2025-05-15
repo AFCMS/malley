@@ -1,160 +1,123 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
-import { HiOutlineBell, HiOutlineHome, HiOutlineMagnifyingGlass, HiOutlineUser } from "react-icons/hi2";
-import { supabase } from "../../contexts/supabase/supabase";
+import { Link, useNavigate } from "react-router";
+import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
-import { useNavigate } from "react-router";
+import CategoriesChooser from "../../Components/CategoriesChooser/CategoriesChooser";
+import { Tables } from "../../contexts/supabase/database";
 
 export default function AddPost() {
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<Tables<"categories">[]>([]);
   const auth = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!auth.isAuthenticated || !auth.profile) {
-      setError("Vous devez être connecté pour ajouter un post.");
-      return;
-    }
-
-    try {
-      // Le trigger make_poster_first_author s'occupe d'ajouter l'auteur automatiquement
-      const { error: postError } = await supabase
-        .from("posts")
-        .insert([
-          {
-            body,
-            created_at: new Date().toISOString(),
-          }
-        ]);
-
-      if (postError) {
-        throw new Error(postError.message);
-      }
-
-      // Succès !
-      setError(null);
-      navigate("/");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setMediaFiles(Array.from(e.target.files));
     }
   };
 
+  const trySubmiting = async () => {
+    try {
+      // Ajout d'une vérification que body n'est pas vide
+      if (!body.trim()) {
+        throw new Error("Le contenu du post ne peut pas être vide");
+      }
+
+      console.log("Tentative de création du post...");
+      const id: string = await queries.posts.new(body, mediaFiles);
+
+      for (const category of selectedCategories) {
+        await queries.postsCategories.add(id, await queries.categories.getEnsuredId(category.name));
+      }
+      console.log("Post créé avec succès");
+      setError(null);
+      void navigate("/");
+    } catch (err) {
+      console.error("Erreur lors de la création du post:", err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    if (!auth.isAuthenticated || !auth.profile) {
+      setError("Vous devez être connecté pour ajouter un post.");
+      setIsLoading(false);
+      return;
+    }
+
+    void trySubmiting();
+  };
+
+  // utilisation de gpt pour le return
   return (
-    <div className="min-h-screen">
-      {/* NavBar mobile */}
-      <div className="navbar bg-base-100 shadow-sm lg:hidden">
-        <div className="navbar-start">
-          <div className="dropdown">
-            <div tabIndex={0} role="button" className="avatar">
-              <div className="w-10 rounded-full">
-                <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-              </div>
-            </div>
-            <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-              <li>
-                <a>Homepage</a>
-              </li>
-              <li>
-                <a>Portfolio</a>
-              </li>
-              <li>
-                <a>About</a>
-              </li>
-            </ul>
+    <>
+      <div className="flex flex-col">
+        <h1 className="mb-4 text-2xl font-bold">Ajouter un Post</h1>
+
+        {error && <div className="mb-4 rounded-md bg-red-100 p-3 text-red-700">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="mb-6">
+          <div className="mb-4">
+            <textarea
+              className="w-full rounded-md border p-3"
+              placeholder="Écrivez votre post ici..."
+              value={body}
+              onChange={(e) => {
+                setBody(e.target.value);
+              }}
+              rows={5}
+              required
+            />
           </div>
-        </div>
-        <div className="navbar-center">
-          <Link className="btn btn-ghost text-xl" to="/">
-            Malley
+
+          <CategoriesChooser selectedCategories={selectedCategories} setSelectedCategories={setSelectedCategories} />
+
+          <div className="mb-4">
+            <label className="mb-2 block">Ajouter des images ou médias (optionnel)</label>
+            <input type="file" className="w-full rounded-md border p-2" multiple onChange={handleFileChange} />
+            {mediaFiles.length > 0 && <p className="mt-2 text-sm">{mediaFiles.length} fichier(s) sélectionné(s)</p>}
+          </div>
+
+          <div className="flex justify-end">
+            <button type="submit" className="rounded-md bg-amber-100 p-2 hover:bg-amber-200" disabled={isLoading}>
+              {isLoading ? "Publication en cours..." : "Publier"}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-4">
+          <Link className="mr-2 rounded-md bg-amber-100 p-2" to="/">
+            Retour à l’accueil
           </Link>
         </div>
-        <div className="navbar-end"></div>
-      </div>
 
-      <div className="mx-auto flex min-h-full max-w-3xl bg-amber-300 md:max-w-7xl lg:px-8">
-        {/* Sidebar gauche */}
-        <div className="hidden lg:block lg:w-full lg:max-w-72 lg:shrink-0 lg:pt-[30px] lg:pr-8">
-          <div className="sticky top-8 pb-8">
-            <div className="flex min-h-[calc(100vh-60px)] flex-col justify-between space-y-9">
-              <div className="flex flex-col space-y-2">
-                <Link className="sidebarlink" to="/">
-                  <HiOutlineHome className="h-5 opacity-50" />
-                  Home
-                </Link>
-                <Link className="sidebarlink" to="/search">
-                  <HiOutlineMagnifyingGlass className="h-5 opacity-50" />
-                  Recherche
-                </Link>
-                <Link className="sidebarlink" to="/profile">
-                  <HiOutlineBell className="h-5 opacity-50" />
-                  Notifications
-                </Link>
-                <Link className="sidebarlink" to="/profile">
-                  <HiOutlineUser className="h-5 opacity-50" />
-                  Profile
-                </Link>
-
-              </div> 
-            </div>
-          </div>
-        </div>
-
-        {/* Contenu principal */}
-        <div className="flex-1 p-4">
-          <h1 className="text-2xl font-bold mb-6">Ajouter un Post</h1>
-          {error && <div className="alert alert-error mb-4">{error}</div>}
-          <form onSubmit={handleSubmit} className="card bg-base-100 shadow-md">
-            <div className="card-body">
-              <textarea
-                className="textarea textarea-bordered w-full h-32"
-                placeholder="Écrivez votre post ici..."
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                required
-              />
-              <div className="card-actions justify-end mt-4">
-                <button type="submit" className="btn btn-primary">
-                  Publier
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        {/* Menu dock mobile */}
-        <div className="lg:hidden">
-          {/* Bouton pour ajouter un post en version mobile */}
-          {auth.isAuthenticated && (
-            <div className="fixed bottom-20 right-4 z-10">
-              <Link className="btn btn-primary btn-circle shadow-lg" to="/add-post">
-                +
+        <div className="mt-8">
+          {auth.isAuthenticated && auth.profile && auth.user ? (
+            <>
+              <div className="mb-2">{auth.profile.handle}</div>
+            </>
+          ) : (
+            <>
+              <div className="mb-2">Non connecté</div>
+              <Link className="mr-2 rounded-md bg-amber-100 p-2" to="/login">
+                Connexion
               </Link>
-            </div>
+              <Link className="rounded-md bg-amber-100 p-2" to="/register">
+                Inscription
+              </Link>
+            </>
           )}
-          
-          <div className="dock dock-xs">
-            <Link className={location.pathname === "/" ? "dock-active" : undefined} to="/" title="Feed">
-              <HiOutlineHome className="size-6" />
-            </Link>
-
-            <Link className={location.pathname === "/search" ? "dock-active" : undefined} to="/search" title="Search">
-              <HiOutlineMagnifyingGlass className="size-6" />
-            </Link>
-
-            <Link className={location.pathname === "/profile" ? "dock-active" : undefined} to="/" title="Notifications">
-              <HiOutlineBell className="size-6" />
-            </Link>
-
-            <Link className={location.pathname === "/profile" ? "dock-active" : undefined} to="/profile" title="Profile">
-              <HiOutlineUser className="size-6" />
-            </Link>
-          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

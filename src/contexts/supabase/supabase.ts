@@ -58,19 +58,8 @@ const queries = {
       }
     },
 
-    new: async function (body: string, media: File[]): Promise<boolean> {
-      let id: string;
-<<<<<<< Updated upstream
-      do {
-        id = v4();
-      } while (
-        // in the comedically rare case of a collision, regenerate it
-        // OR, if we feel spicy, put an easter egg here!
-        (await supabase.storage.from("posts_media").list(id)).data != null
-      );
-      for (let i = 0; i < media.length; i++) {
-        await supabase.storage.from("post_media").upload(id.toString() + "/" + i.toString(), media[i]);
-=======
+    new: async function (body: string, media: File[]): Promise<string> {
+      let id: string | undefined = undefined;
       if (media.length != 0) {
         do {
           id = v4();
@@ -83,18 +72,23 @@ const queries = {
           console.log("uploading");
           await supabase.storage.from("post-media").upload(id + "/" + i.toString(), media[i]);
         }
->>>>>>> Stashed changes
       }
-      console.log(id);
-      const req = await supabase.from("posts").insert({
-        body: body,
-        media: media.length == 0 ? null : id,
-      });
+      const { data, error } = await supabase
+        .from("posts")
+        .insert({
+          body: body,
+          media: media.length == 0 ? null : id,
+        })
+        .select("id")
+        .single();
 
-      if (req.error) {
-        throw new Error(req.error.message);
+      if (error) {
+        throw new Error(error.message);
       }
-      return true;
+      if (!data.id) {
+        throw new Error("id wasn’t returned");
+      }
+      return data.id;
     },
   },
 
@@ -181,8 +175,10 @@ const queries = {
     },
 
     match: async function (like: string): Promise<Tables<"categories">[]> {
-      const req = await supabase.from("categories").select("*").like("name", like);
-
+      const req = await supabase
+        .from("categories")
+        .select("*")
+        .ilike("name", "%" + like + "%");
       if (req.error) {
         throw new Error(req.error.message);
       }

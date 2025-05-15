@@ -10,6 +10,7 @@ interface CategoriesChooserProps {
 export default function CategoriesChooser({ selectedCategories, setSelectedCategories }: CategoriesChooserProps) {
   const [entry, setEntry] = useState("");
   const [matching, setMatching] = useState<Tables<"categories">[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null); // Track highlighted index
 
   useEffect(() => {
     if (entry.trim() === "") {
@@ -43,6 +44,31 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
     );
   };
 
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      setHighlightedIndex((prevIndex) => (prevIndex === null || prevIndex === matching.length - 1 ? 0 : prevIndex + 1));
+    } else if (e.key === "ArrowUp") {
+      setHighlightedIndex((prevIndex) => (prevIndex === null || prevIndex === 0 ? matching.length - 1 : prevIndex - 1));
+    } else if (e.key === "Enter") {
+      // If there's no category selected, add the entry itself
+      if (entry.trim() !== "") {
+        handleAddEntryAsCategory();
+      } else if (highlightedIndex !== null) {
+        handleSelectCategory(matching[highlightedIndex]);
+      }
+      e.preventDefault(); // Prevent form submission
+    }
+  };
+
+  const handleAddEntryAsCategory = () => {
+    const newCategory = { id: "", name: entry }; // initiate one that has a blank id, aka doesn’t exist yet
+    if (!selectedCategories.find((c) => c.name === newCategory.name)) {
+      setSelectedCategories((prev) => [...prev, newCategory].sort((a, b) => a.name.localeCompare(b.name)));
+    }
+    setEntry("");
+  };
+
   return (
     <div>
       {/* Selected category bubbles */}
@@ -64,34 +90,50 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
       </div>
 
       {/* Dropdown with input and matches */}
-      <div className="dropdown">
-        <div tabIndex={0} role="button" className="btn m-1 p-0">
+      <div className="dropdown mb-2 items-center">
+        <div className="relative w-full">
+          {/* Input field with button inside */}
           <input
             type="text"
             placeholder="Type here"
-            className="input"
+            className="input w-full pr-10" // Add padding to the right to make space for the button
             value={entry}
             onChange={(e) => {
               setEntry(e.target.value);
             }}
+            onKeyDown={handleKeyDown} // Listen for keydown events
           />
+          {/* Add button positioned inside the input */}
+          <button
+            className="btn btn-circle absolute top-1/2 right-2 -translate-y-1/2 transform"
+            onClick={handleAddEntryAsCategory}
+            disabled={entry.trim() === ""}
+            aria-label="Add Category"
+          >
+            +
+          </button>
         </div>
-        {matching.length > 0 && (
-          <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-sm">
-            {matching.map((category) => (
-              <li key={category.id}>
-                <a
-                  onClick={() => {
-                    handleSelectCategory(category);
-                  }}
-                >
-                  {category.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
+
+      {matching.length > 0 && (
+        <ul
+          tabIndex={0}
+          className="dropdown-content menu bg-base-100 rounded-box z-10 max-h-48 w-52 overflow-y-auto p-2 shadow-sm"
+        >
+          {matching.map((category, index) => (
+            <li key={category.id} className={highlightedIndex === index ? "bg-primary text-white" : ""}>
+              <a
+                onClick={() => {
+                  handleSelectCategory(category);
+                }}
+                className="cursor-pointer"
+              >
+                {category.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

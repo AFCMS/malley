@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../contexts/auth/AuthContext";
 
 export default function Register() {
-  const { register } = useAuth();
+  const { isAuthenticated, register } = useAuth();
   const navigate = useNavigate();
 
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +23,12 @@ export default function Register() {
       setError("Invalid email or password");
     }
   };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="container mx-auto mt-24 flex flex-1 grow items-center justify-center">

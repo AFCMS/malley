@@ -16,6 +16,8 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   register: (handle: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithDiscord: () => Promise<void>;
   logout: () => Promise<void>;
   logoutEverywhere: () => Promise<void>;
   logoutEverywhereElse: () => Promise<void>;
@@ -96,6 +98,22 @@ export function AuthProvider(props: { children: React.ReactNode }) {
         },
         login: async (email: string, password: string) => {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) {
+            throw error;
+          }
+        },
+        loginWithGoogle: async () => {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+          });
+          if (error) {
+            throw error;
+          }
+        },
+        loginWithDiscord: async () => {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "discord",
+          });
           if (error) {
             throw error;
           }

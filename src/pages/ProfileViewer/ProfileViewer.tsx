@@ -1,56 +1,88 @@
 import { useEffect, useState } from "react";
 import PostViewer from "../../Components/PostViewer/PostViewer";
-import { queries } from "../..//contexts/supabase/supabase";
+import { queries } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 import { useParams } from "react-router";
 
 const ProfileViewer = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
-  const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[] | null>(null);
-  const [allPosts, setAllPosts] = useState<Tables<"posts">[] | null>(null);
-  const user_id: string = useParams().id ?? "";
+  const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[]>([]);
+  const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
+
+  const { handle: urlHandle } = useParams<{ handle?: string }>();
+
+  // Remove @ symbol if present and ensure we have a string
+  // React Router v7 can't do this for us
+  // https://github.com/remix-run/react-router/discussions/9844
+  const handle = urlHandle ? urlHandle.replace(/^@/, "") : "";
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await queries.profiles.get(user_id);
-        setProfile(response);
-        await fetchPinnedPosts();
-        await fetchAllPosts();
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      }
-    };
+    // Reset state when handle changes
+    setIsLoading(true);
+    setError(null);
+    setProfile(null);
+    setPinnedPosts([]);
+    setAllPosts([]);
 
-    const fetchPinnedPosts = async () => {
+    async function loadProfileData() {
+      if (!handle) {
+        setError("No profile handle specified");
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        if (!profile?.pinned_posts) {
-          return;
+        // Step 1: Fetch profile data
+        const profileData = await queries.profiles.getByHandle(handle);
+        setProfile(profileData);
+
+        // Step 2: If profile has pinned posts, fetch them
+        if (profileData.pinned_posts && profileData.pinned_posts.length > 0) {
+          const pinnedPostPromises = profileData.pinned_posts.map((postId) =>
+            queries.posts.get(postId).catch((err: unknown) => {
+              console.error(`Failed to fetch pinned post ${postId}:`, err);
+              return null;
+            }),
+          );
+
+          const pinnedPostsData = await Promise.all(pinnedPostPromises);
+          // Filter out any null results (failed fetches)
+          setPinnedPosts(pinnedPostsData.filter(Boolean) as Tables<"posts">[]);
         }
 
-        for (const id of profile.pinned_posts) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          setPinnedPosts(pinnedPosts!.concat(await queries.posts.get(id)));
+        // Step 3: Fetch all author's posts only if we have a valid profile ID
+        if (profileData.id) {
+          try {
+            const authorPosts = await queries.authors.postsOf(profileData.id);
+            setAllPosts(authorPosts);
+          } catch (postsError) {
+            console.error("Failed to fetch author posts:", postsError);
+            // Continue execution even if posts fetching fails
+          }
         }
-      } catch (error) {
-        console.error("Error fetching pinned posts:", error);
+      } catch (err) {
+        console.error("Error loading profile data:", err);
+        setError(err instanceof Error ? err.message : "Failed to load profile");
+      } finally {
+        setIsLoading(false);
       }
-    };
+    }
 
-    const fetchAllPosts = async () => {
-      try {
-        const response = await queries.authors.postsOf(user_id);
-        setAllPosts(response);
-      } catch (error) {
-        console.error("Error fetching non pinned posts:", error);
-      }
-    };
+    void loadProfileData();
+  }, [handle]);
 
-    void fetchProfile();
-  }, [user_id, pinnedPosts, profile?.pinned_posts]);
+  if (isLoading) {
+    return <div>Loading profile...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   if (!profile) {
-    return <div>Loading profile...</div>;
+    return <div>Profile not found</div>;
   }
 
   return (
@@ -65,7 +97,7 @@ const ProfileViewer = () => {
       {profile.bio && <p>{profile.bio}</p>}
       <p>Joined on: {new Date(profile.created_at).toLocaleDateString()}</p>
 
-      {pinnedPosts && pinnedPosts.length > 0 && (
+      {pinnedPosts.length > 0 && (
         <div className="pinned-posts">
           <h2>Pinned Posts</h2>
           {pinnedPosts.map((post) => (
@@ -74,7 +106,7 @@ const ProfileViewer = () => {
         </div>
       )}
 
-      {allPosts && allPosts.length > 0 && (
+      {allPosts.length > 0 && (
         <div className="all-posts">
           <h2>Other posts</h2>
           {allPosts.map((post) => (

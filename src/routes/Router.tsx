@@ -12,9 +12,9 @@ export default function Router() {
         <Route index element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile/:id" element={<ProfileViewer />} />
-        <Route path="/add-post" element={<AddPost />} /> 
+        <Route path="/add-post" element={<AddPost />} />
         <Route path="/view-post/:postId" element={<ViewPost />} />
+        <Route path="/:handle" element={<ProfileViewer />} />
         <Route path="*" element={<div>404</div>} />
       </Routes>
     </>

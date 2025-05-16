@@ -158,7 +158,7 @@ const queries = {
         } while (
           // in the comedically rare case of a collision, regenerate it
           // OR, if we feel spicy, put an easter egg here!
-          (await supabase.storage.from("posts-media").list(id)).data?.length !== 0
+          (await supabase.storage.from("post-media").list(id)).data?.length !== 0
         );
         for (let i = 0; i < media.length; i++) {
           await supabase.storage.from("post-media").upload(id + "/" + i.toString(), media[i]);

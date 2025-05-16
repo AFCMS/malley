@@ -14,12 +14,12 @@ export default function ViewPost() {
   useEffect(() => {
     async function fetchPostData() {
       if (!postId) return;
-
+      
       try {
         // Chargement du post et des auteurs
         const postData = await queries.posts.get(postId);
         setPost(postData);
-
+        
         // Utilisation de la fonction spécifique pour récupérer les auteurs
         try {
           const authorProfiles = await queries.authors.ofPost(postId);
@@ -27,14 +27,14 @@ export default function ViewPost() {
         } catch {
           setAuthors([]);
         }
-      } catch {
+      } catch (err) {
         setError("Impossible de charger ce post");
       } finally {
         setLoading(false);
       }
     }
-
-    void fetchPostData();
+    
+    fetchPostData();
   }, [postId]);
 
   if (loading) return <div>Chargement...</div>;
@@ -43,8 +43,9 @@ export default function ViewPost() {
 
   return (
     <div className="view-post">
-      <h1>
-        Publication par : {authors.length > 0 ? authors.map((author) => author.handle).join(", ") : "Auteur inconnu"}
+      <h1>Publication par : {authors.length > 0 ? 
+        authors.map(author => author.handle).join(", ") : 
+        "Auteur inconnu"}
       </h1>
       <PostViewer post={post} />
     </div>

@@ -105,6 +105,9 @@ export function AuthProvider(props: { children: React.ReactNode }) {
         loginWithGoogle: async () => {
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
+            options: {
+              redirectTo: `${window.location.origin}/login`,
+            },
           });
           if (error) {
             throw error;
@@ -113,6 +116,9 @@ export function AuthProvider(props: { children: React.ReactNode }) {
         loginWithDiscord: async () => {
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "discord",
+            options: {
+              redirectTo: `${window.location.origin}/login`,
+            },
           });
           if (error) {
             throw error;

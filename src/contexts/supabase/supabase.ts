@@ -27,7 +27,7 @@ const queries = {
 
   profiles: {
     get: async function (id: string): Promise<Tables<"profiles">> {
-      const req = await supabase.from("profiles").select("*").eq("id", id).single();
+      const req = await supabase.from("profiles").select("*").eq("id", id).limit(1).single();
 
       if (req.error) {
         throw new Error(req.error.message);
@@ -36,13 +36,21 @@ const queries = {
       }
     },
 
-    isNameAvailable: async function (name: string): Promise<boolean> {
-      const req = await supabase.from("profiles").select("*").eq("handle", name).single();
-      alert("req");
+    getByHandle: async function (handle: string): Promise<Tables<"profiles">> {
+      const req = await supabase.from("profiles").select("*").eq("handle", handle).limit(1).single();
       if (req.error) {
-        return true;
+        throw new Error(req.error.message);
       } else {
+        return req.data;
+      }
+    },
+
+    isNameAvailable: async function (name: string): Promise<boolean> {
+      try {
+        await queries.profiles.getByHandle(name);
         return false;
+      } catch {
+        return true;
       }
     },
   },

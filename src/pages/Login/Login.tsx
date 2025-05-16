@@ -26,7 +26,6 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
-      void navigate("/");
     } catch {
       setError("Failed to login with Google");
     }
@@ -35,7 +34,6 @@ export default function Login() {
   const handleDiscordLogin = async () => {
     try {
       await loginWithDiscord();
-      void navigate("/");
     } catch {
       setError("Failed to login with Discord");
     }

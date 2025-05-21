@@ -37,15 +37,18 @@ export default function Register() {
           <form onSubmit={handleSubmit}>
             <fieldset className="fieldset">
               <label className="fieldset-label">Handle</label>
-              <input
-                name="handle"
-                type="text"
-                className="input validator"
-                maxLength={15}
-                minLength={3}
-                required
-                placeholder="handle"
-              />
+              <label className="input validator">
+                <span className="label">@</span>
+                <input
+                  name="handle"
+                  type="text"
+                  className=""
+                  maxLength={15}
+                  minLength={3}
+                  required
+                  placeholder="handle"
+                />
+              </label>
               <label className="fieldset-label">Email</label>
               <input
                 name="email"

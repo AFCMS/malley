@@ -36,7 +36,7 @@ export default function LeftToolbarWide() {
             </div>
           </div>
 
-          {auth.isAuthenticated && auth.profile && auth.user && (
+          {auth.isAuthenticated && auth.profile && auth.user ? (
             <div className="border-base-200 mt-auto flex items-center gap-3 border-t p-2">
               <Link to={`/@${auth.profile.handle}`} className="flex items-center gap-3">
                 <div className="avatar">
@@ -51,6 +51,15 @@ export default function LeftToolbarWide() {
                 </Link>
                 <span className="text-xs text-gray-500">{auth.user.email}</span>
               </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Link className="btn btn-primary flex-1" to="/login">
+                Login
+              </Link>
+              <Link className="btn btn-secondary flex-1" to="/register">
+                Register
+              </Link>
             </div>
           )}
         </div>

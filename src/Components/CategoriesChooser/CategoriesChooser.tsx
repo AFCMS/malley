@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { queries } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
+import { HiXMark } from "react-icons/hi2";
 
 interface CategoriesChooserProps {
   selectedCategories: Tables<"categories">[];
@@ -74,16 +75,19 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
       {/* Selected category bubbles */}
       <div className="mb-2 flex flex-wrap gap-2">
         {selectedCategories.map((category) => (
-          <div key={category.id} className="badge badge-neutral flex cursor-pointer items-center gap-1 px-2 py-1">
+          <div
+            key={category.id}
+            className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs uppercase select-none"
+          >
             {category.name}
             <button
-              className="ml-1 text-xs"
+              className="size-[0.75rem] cursor-pointer"
               onClick={() => {
                 handleRemoveCategory(category.id);
               }}
               aria-label={`Remove ${category.name}`}
             >
-              ✕
+              <HiXMark className="size-[0.75rem]" />
             </button>
           </div>
         ))}

@@ -46,8 +46,8 @@ export default function Login() {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="container mx-auto mt-24 flex flex-1 grow items-center justify-center">
-      <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
+    <div className="container mx-auto mt-24 flex justify-center">
+      <div className="card bg-base-100 w-full max-w-sm shrink-0 border border-slate-200 shadow">
         <div className="card-body">
           <form onSubmit={handleSubmit}>
             <fieldset className="fieldset">

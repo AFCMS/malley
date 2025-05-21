@@ -59,24 +59,22 @@ export default function AddPost() {
 
   // utilisation de gpt pour le return
   return (
-    <div className="flex w-full flex-col">
-      <h1 className="mb-4 text-2xl font-bold">Ajouter un Post</h1>
+    <div className="flex w-full flex-col px-4">
+      <h1 className="mb-4 text-xl font-bold">Ajouter un Post</h1>
 
       {error && <div className="mb-4 rounded-md bg-red-100 p-3 text-red-700">{error}</div>}
 
       <form onSubmit={handleSubmit} className="mb-6">
-        <div className="mb-4">
-          <textarea
-            className="textarea w-full resize-none"
-            placeholder="Écrivez votre post ici..."
-            value={body}
-            onChange={(e) => {
-              setBody(e.target.value);
-            }}
-            rows={5}
-            required
-          />
-        </div>
+        <textarea
+          className="textarea mb-4 w-full resize-none"
+          placeholder="Écrivez votre post ici..."
+          value={body}
+          onChange={(e) => {
+            setBody(e.target.value);
+          }}
+          rows={5}
+          required
+        />
 
         <fieldset className="fieldset mb-4">
           <legend className="fieldset-legend">Ajouter des images ou médias (optionnel)</legend>

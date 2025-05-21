@@ -13,7 +13,7 @@ export default function Base(props: BaseProps) {
       <TopNavbar />
       <div className="mx-auto flex max-w-3xl md:max-w-7xl lg:px-8">
         <LeftToolbarWide />
-        <div className="flex flex-1 flex-col items-center px-6 lg:pt-[30px] lg:pb-[30px]">{props.children}</div>
+        <div className="flex flex-1 flex-col items-center lg:pb-[30px]">{props.children}</div>
         <RightToolbarWide />
         <BottomDock />
       </div>

@@ -71,8 +71,8 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
   };
 
   return (
-    <div>
-      {/* Selected category bubbles */}
+    <fieldset className="fieldset">
+      <legend className="fieldset-legend">Add Categories</legend>
       <div className="mb-2 flex flex-wrap gap-2">
         {selectedCategories.map((category) => (
           <div
@@ -92,9 +92,8 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
           </div>
         ))}
       </div>
-
       {/* Dropdown with input and matches */}
-      <div className="dropdown mb-2 items-center">
+      <div className="dropdown mb-2 w-full items-center">
         <div className="relative w-full">
           {/* Input field with button inside */}
           <input
@@ -138,6 +137,6 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
           ))}
         </ul>
       )}
-    </div>
+    </fieldset>
   );
 }

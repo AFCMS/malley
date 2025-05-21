@@ -4,7 +4,7 @@ const profileImageUrl = "https://img.daisyui.com/images/stock/photo-153452874177
 
 export default function TopNavbar() {
   return (
-    <nav className="navbar bg-base-100 shadow-sm lg:hidden">
+    <nav className="navbar bg-base-100 border-b border-slate-200 shadow-sm lg:hidden">
       <div className="navbar-start">
         <div className="dropdown">
           <div tabIndex={0} role="button" className="avatar">

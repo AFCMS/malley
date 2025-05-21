@@ -23,7 +23,6 @@ export default function Router() {
         <Route path="/post/:postId" element={<ViewPost />} />
         <Route path="/:handle" element={<ProfileViewer />} />
         <Route path="/swipe" element={<SwipePage />} />
-        <Route path="/:handle/featured" element={<ProfileViewerFeatured />} />
         <Route path="*" element={<div>404</div>} />
       </Routes>
     </>

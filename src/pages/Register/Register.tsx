@@ -47,7 +47,14 @@ export default function Register() {
                 placeholder="handle"
               />
               <label className="fieldset-label">Email</label>
-              <input name="email" type="email" className="input validator" required placeholder="Email" />
+              <input
+                name="email"
+                type="email"
+                className="input validator"
+                required
+                placeholder="Email"
+                autoComplete="email"
+              />
               <label className="fieldset-label">Password</label>
               <input
                 name="password"
@@ -56,6 +63,7 @@ export default function Register() {
                 minLength={6}
                 required
                 placeholder="Password"
+                autoComplete="new-password"
               />
               {error ? <div className="mt-2 text-xs font-bold text-red-600">{error}</div> : null}
               <button className="btn btn-neutral mt-4" type="submit">

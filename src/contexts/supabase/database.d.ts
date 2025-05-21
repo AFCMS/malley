@@ -139,6 +139,36 @@ export type Database = {
           },
         ]
       }
+      likes: {
+        Row: {
+          post: string
+          profile: string
+        }
+        Insert: {
+          post: string
+          profile: string
+        }
+        Update: {
+          post?: string
+          profile?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_post_fkey"
+            columns: ["post"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_profile_fkey"
+            columns: ["profile"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pendingAuthors: {
         Row: {
           from_profile: string
@@ -185,20 +215,31 @@ export type Database = {
           created_at: string
           id: string
           media: string | null
+          parent_post: string | null
         }
         Insert: {
           body?: string | null
           created_at?: string
           id?: string
           media?: string | null
+          parent_post?: string | null
         }
         Update: {
           body?: string | null
           created_at?: string
           id?: string
           media?: string | null
+          parent_post?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "posts_parent_post_fkey"
+            columns: ["parent_post"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       postsCategories: {
         Row: {

@@ -1,0 +1,30 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Malley
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - email: afcm.contact@gmail.com
+    given-names: AFCMS
+    orcid: "https://orcid.org/0009-0005-4161-6228"
+  - given-names: AKArien0
+    email: emilien.dessarps@gmail.com
+  - given-names: Roceann
+    email: raphael.malet2005@gmail.com
+repository-code: "https://github.com/AFCMS/malley"
+url: "https://malley.afcms.dev"
+abstract: Malley is a X-like social media platform.
+keywords:
+  - Supabase
+  - React
+  - Vercel
+  - TailwindCSS
+  - Vite
+  - GitHub
+  - GitHub Actions
+  - DaisyUI
+license: GPL-3.0-or-later

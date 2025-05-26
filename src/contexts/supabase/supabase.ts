@@ -275,7 +275,7 @@ const queries = {
         throw new Error("not logged in");
       }
 
-      const req = await supabase.from("follows").select("profiles(*)").eq("follower", user.id);
+      const req = await supabase.from("follows").select("profiles!followee(*)").eq("follower", user.id);
 
       if (req.error) {
         throw new Error(req.error.message);

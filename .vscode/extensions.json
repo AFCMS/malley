@@ -9,6 +9,7 @@
     "redhat.vscode-yaml",
     "denoland.vscode-deno",
     "bierner.github-markdown-preview",
-    "yzhang.markdown-all-in-one"
+    "yzhang.markdown-all-in-one",
+    "marp-team.marp-vscode"
   ]
 }

@@ -378,6 +378,70 @@ const queries = {
       return true;
     },
   },
+
+  like: {
+    byUser: async function (id: string): Promise<Tables<"posts">[]> {
+      // posts a user liked
+      const req = await supabase.from("likes").select("posts(*)").eq("profile", id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.data.map((e) => e.posts);
+    },
+
+    byWho: async function (id: string): Promise<Tables<"profiles">[]> {
+      // profiles who liked the provided post id
+      const req = await supabase.from("likes").select("profiles!profile(*)").eq("post", id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.data.map((e) => e.profiles);
+    },
+
+    doesUserLikePost: async function (user: string, post: string): Promise<boolean> {
+      const req = await supabase.from("likes").select("1").eq("profile", user).eq("post", post);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.data.length != 0;
+    },
+
+    add: async function (id: string): Promise<boolean> {
+      // likes provided post
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+
+      const req = await supabase.from("likes").insert({
+        post: id,
+        profile: user.id,
+      });
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return true;
+    },
+
+    remove: async function (id: string): Promise<boolean> {
+      // removes like on provided post
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+
+      const req = await supabase.from("likes").delete().eq("post", id).eq("profile", user.id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return true;
+    },
+  },
 };
 
 export { supabase, queries };

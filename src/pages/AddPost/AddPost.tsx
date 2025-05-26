@@ -31,7 +31,7 @@ export default function AddPost() {
       const id: string = await queries.posts.new(body, mediaFiles);
 
       for (const category of selectedCategories) {
-        await queries.postsCategories.add(id, await queries.categories.getEnsuredId(category.name));
+        await queries.postsCategories.add(id, category.name);
       }
       console.log("Post créé avec succès");
       setError(null);

@@ -51,7 +51,6 @@ export default function FetchCard(props: { profileId: string }) {
       try {
         const allUserPosts = await queries.authors.postsOf(props.profileId);
         setAllPosts(allUserPosts);
-        console.log(allUserPosts);
       } catch (error) {
         console.error("Error fetching all posts by user:", error);
         setAllPosts([]);

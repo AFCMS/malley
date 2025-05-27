@@ -106,7 +106,7 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
             }}
             onKeyDown={handleKeyDown} // Listen for keydown events
           />
-          {/* Add butt on positioned inside the input */}
+          {/* Add button positioned inside the input */}
           <button
             className="btn btn-circle absolute top-1/2 right-2 -translate-y-1/2 transform"
             onClick={handleAddEntryAsCategory}

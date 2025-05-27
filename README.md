@@ -95,9 +95,12 @@ pnpm run supabase migration up
 The logo source file is an Inkscape SVG, which needs to be exported to a standard SVG file after modification.
 
 ```sh
-inkscape --export-type=svg --export-overwrite --export-filename=./public/logo.svg ./src/logo_src.svg
+inkscape --export-type=svg --export-overwrite --export-filename=./public/favicon.svg ./src/logo.svg
 # or
-flatpak run org.inkscape.Inkscape --export-type=svg --export-overwrite --export-filename=./public/logo.svg ./src/logo_src.svg
+flatpak run org.inkscape.Inkscape --export-type=svg --export-overwrite --export-filename=./public/favicon.svg ./src/logo.svg
+
+# then update derivated icons
+pnpm run generate-pwa-assets
 ```
 
 ---

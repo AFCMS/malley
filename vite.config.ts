@@ -13,6 +13,14 @@ const pwaOptions: Partial<VitePWAOptions> = {
   manifest: {
     name: "Malley",
     short_name: "Malley",
+    description: "Malley is a X-like social media platform.",
+    lang: "en",
+    dir: "ltr",
+    id: "/",
+    orientation: "any",
+    protocol_handlers: [],
+    categories: ["social"],
+    prefer_related_applications: false,
     theme_color: "#000000",
     icons: [
       {
@@ -37,6 +45,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
         purpose: "maskable",
       },
     ],
+    screenshots: [],
   },
 };
 

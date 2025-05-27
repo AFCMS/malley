@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="logo_src.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title1">Malley Logo</title>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="true"
+     showborder="true"
+     inkscape:lockguides="false"
+     inkscape:zoom="0.50394255"
+     inkscape:cx="-106.16289"
+     inkscape:cy="267.88768"
+     inkscape:window-width="1920"
+     inkscape:window-height="1011"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showguides="true">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="0"
+       enabled="true"
+       visible="true"
+       snapvisiblegridlinesonly="false" />
+    <sodipodi:guide
+       position="0,512"
+       orientation="0,512"
+       inkscape:locked="false"
+       id="guide9" />
+    <sodipodi:guide
+       position="512,512"
+       orientation="512,0"
+       inkscape:locked="false"
+       id="guide10" />
+    <sodipodi:guide
+       position="512,0"
+       orientation="0,-512"
+       inkscape:locked="false"
+       id="guide11" />
+    <sodipodi:guide
+       position="0,0"
+       orientation="-512,0"
+       inkscape:locked="false"
+       id="guide12" />
+    <sodipodi:guide
+       position="256,512"
+       orientation="1,0"
+       id="guide13"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="256,256"
+       orientation="0,-1"
+       id="guide14"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="mirror_symmetry"
+       start_point="174.41839,0"
+       end_point="174.41839,512"
+       center_point="174.41839,256"
+       id="path-effect12"
+       is_visible="true"
+       lpeversion="1.2"
+       lpesatellites=""
+       mode="vertical"
+       discard_orig_path="false"
+       fuse_paths="false"
+       oposite_fuse="false"
+       split_items="false"
+       split_open="false"
+       link_styles="false" />
+    <inkscape:path-effect
+       effect="mirror_symmetry"
+       start_point="196.12498,137.78454"
+       end_point="-98.142427,556.77224"
+       center_point="48.991275,347.27839"
+       id="path-effect12-7"
+       is_visible="true"
+       lpeversion="1.2"
+       lpesatellites=""
+       mode="vertical"
+       discard_orig_path="false"
+       fuse_paths="false"
+       oposite_fuse="false"
+       split_items="false"
+       split_open="false"
+       link_styles="false" />
+  </defs>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#1d1d1d;stroke-width:4.31488"
+       id="rect12"
+       width="66"
+       height="512"
+       x="0"
+       y="0"
+       inkscape:path-effect="#path-effect12"
+       sodipodi:type="rect"
+       d="M 0,0 H 66 V 512 H 0 Z m 348.83679,0 h -66 v 512 h 66 z"
+       transform="scale(1.4677351,1)" />
+    <path
+       style="fill:#1d1d1d;stroke-width:4.31488"
+       id="rect12-5"
+       width="66"
+       height="512"
+       x="0"
+       y="0"
+       inkscape:path-effect="#path-effect12-7"
+       sodipodi:type="rect"
+       d="M 0,0 H 66 V 512 H 0 Z m 392.28776,275.51525 -22.39681,-62.08368 -481.61884,173.7449 22.396804,62.08368 z"
+       inkscape:transform-center-x="-255.98711"
+       inkscape:transform-center-y="190.52426"
+       transform="rotate(-35.081498,8.104764,-25.822453)" />
+  </g>
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by/4.0/" />
+        <dc:title>Malley Logo</dc:title>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>AFCMS</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:source>https://github.com/AFCMS/malley</dc:source>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>

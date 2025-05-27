@@ -90,6 +90,16 @@ pnpm run supabase db reset
 pnpm run supabase migration up
 ```
 
+### Update Logo
+
+The logo source file is an Inkscape SVG, which needs to be exported to a standard SVG file after modification.
+
+```sh
+inkscape --export-type=svg --export-overwrite --export-filename=./public/logo.svg ./src/logo_src.svg
+# or
+flatpak run org.inkscape.Inkscape --export-type=svg --export-overwrite --export-filename=./public/logo.svg ./src/logo_src.svg
+```
+
 ---
 
 <img align="right" src=".github/Hexa_Logo_Sign_RVB_Full.svg" width="300px"/>

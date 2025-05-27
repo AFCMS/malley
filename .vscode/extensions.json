@@ -10,6 +10,7 @@
     "denoland.vscode-deno",
     "bierner.github-markdown-preview",
     "yzhang.markdown-all-in-one",
-    "marp-team.marp-vscode"
+    "marp-team.marp-vscode",
+    "vitest.dev"
   ]
 }

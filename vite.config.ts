@@ -18,11 +18,22 @@ const pwaOptions: Partial<VitePWAOptions> = {
     dir: "ltr",
     id: "/",
     orientation: "any",
+    launch_handler: {
+      client_mode: "navigate-existing",
+    },
     protocol_handlers: [],
     categories: ["social"],
+    scope_extensions: [{ origin: "https://malley.afcms.dev" }],
+    related_applications: [],
     prefer_related_applications: false,
     theme_color: "#000000",
     icons: [
+      {
+        src: "favicon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any",
+      },
       {
         src: "pwa-64x64.png",
         sizes: "64x64",

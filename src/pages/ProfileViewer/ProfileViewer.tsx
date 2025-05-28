@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router";
+import { HiCalendar } from "react-icons/hi2";
+
 import PostViewer from "../../Components/PostViewer/PostViewer";
 import { queries } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
-import { useParams } from "react-router";
+
+import { formatDate } from "../../utils/date";
+
+const profileBannerPlaceholder =
+  "https://pixabay.com/get/g5393d73223e3fcc3f0ca56021f86d63b8044cd1a7a97cc6ac89cf971aa06eaef36426adec83666062cbfb47346ef7967e76d61681cd5cf55b6bdbd0aa132682cfcf21eb25225e37c898126349c510aa3_1920.jpg";
+const profilePicturePlaceholder = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
 
 const ProfileViewer = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -85,17 +93,40 @@ const ProfileViewer = () => {
     return <div>Profile not found</div>;
   }
 
+  const profileCreationDate = new Date(profile.created_at);
+
   return (
-    <div className="profile-viewer">
-      {profile.banner && <img src={profile.banner} alt="Profile Banner" className="profile-banner" />}
+    <div className="w-full">
+      <section className="mb-16">
+        <div className="bg-base-200 relative h-32 w-full lg:h-48">
+          <img
+            src={profile.banner ?? profileBannerPlaceholder}
+            alt="Profile Banner"
+            className="h-full w-full object-cover"
+          />
 
-      {profile.profile_pic && (
-        <img src={profile.profile_pic} alt={`${profile.handle}'s Profile Picture`} className="profile-picture" />
-      )}
+          <div className="avatar absolute bottom-0 left-4 translate-y-1/2">
+            <div className="border-base-100 w-24 rounded-full border-4">
+              <img
+                src={profile.profile_pic ?? profilePicturePlaceholder}
+                alt={`${profile.handle}'s Profile Picture`}
+                className=""
+              />
+            </div>
+          </div>
+        </div>
+        <div className="mt-14 flex flex-col gap-2 px-5">
+          <h1 className="font-bold">@{profile.handle}</h1>
 
-      <h1>{profile.handle}</h1>
-      {profile.bio && <p>{profile.bio}</p>}
-      <p>Joined on: {new Date(profile.created_at).toLocaleDateString()}</p>
+          {/* TODO: replace fallback */}
+          {!profile.bio && <p className="text-base text-gray-600">{"French developper and gamer"}</p>}
+
+          <div className="flex flex-row items-center gap-1 text-sm font-semibold text-gray-600">
+            <HiCalendar className="h-4 w-4" />
+            Joined on {formatDate(profileCreationDate)}
+          </div>
+        </div>
+      </section>
 
       {pinnedPosts.length > 0 && (
         <div className="pinned-posts">

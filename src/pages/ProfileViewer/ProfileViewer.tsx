@@ -18,6 +18,7 @@ const ProfileViewer = () => {
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
   const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[]>([]);
   const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
+  const [featuredCount, setFeaturedCount] = useState<number>(0);
 
   const { handle: urlHandle } = useParams<{ handle?: string }>();
 
@@ -70,6 +71,10 @@ const ProfileViewer = () => {
             // Continue execution even if posts fetching fails
           }
         }
+
+        // Step 4: Fetch referers count
+        const featuredCount = await queries.featuredUsers.byUserCount(profileData.id);
+        setFeaturedCount(featuredCount);
       } catch (err) {
         console.error("Error loading profile data:", err);
         setError(err instanceof Error ? err.message : "Failed to load profile");
@@ -124,6 +129,12 @@ const ProfileViewer = () => {
           <div className="flex flex-row items-center gap-1 text-sm font-semibold text-gray-600">
             <HiCalendar className="h-4 w-4" />
             Joined on {formatDate(profileCreationDate)}
+          </div>
+          {/* TODO: real values */}
+          <div className="flex flex-row items-center gap-2">
+            <span className="text-sm font-semibold text-gray-600">
+              <strong>{featuredCount}</strong> Featured
+            </span>
           </div>
         </div>
       </section>

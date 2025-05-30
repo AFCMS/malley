@@ -327,6 +327,18 @@ const queries = {
       return req.data.map((e) => e.profiles);
     },
 
+    /**
+     * Get the count of users who have been featured by the specified user. Approximative value for huge numbers.
+     */
+    byUserCount: async function (id: string): Promise<number> {
+      const req = await supabase.from("features").select("*", { count: "estimated" }).eq("featurer", id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.count ?? 0;
+    },
+
     byWho: async function (id: string): Promise<Tables<"profiles">[]> {
       const req = await supabase.from("features").select("profiles!featurer(*)").eq("featuree", id);
 

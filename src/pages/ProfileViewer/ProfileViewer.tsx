@@ -8,8 +8,8 @@ import { Tables } from "../../contexts/supabase/database";
 
 import { formatDate } from "../../utils/date";
 
-const profileBannerPlaceholder =
-  "https://pixabay.com/get/g5393d73223e3fcc3f0ca56021f86d63b8044cd1a7a97cc6ac89cf971aa06eaef36426adec83666062cbfb47346ef7967e76d61681cd5cf55b6bdbd0aa132682cfcf21eb25225e37c898126349c510aa3_1920.jpg";
+import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
+
 const profilePicturePlaceholder = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
 
 const ProfileViewer = () => {

@@ -14,7 +14,7 @@ export default function TopBar(props: TopBarProps) {
 
   return (
     <div className="sticky top-0 left-0 flex h-14 w-full items-center gap-2 border-b border-slate-200 bg-white px-4">
-      <button className="btn btn-square btn-ghost" role="link" onClick={handleBackClick}>
+      <button className="btn btn-square btn-ghost" onClick={handleBackClick} aria-label="Go back to previous page">
         <HiArrowLeft className="h-5 w-5" />
       </button>
       <span className="font-bold">{props.title}</span>

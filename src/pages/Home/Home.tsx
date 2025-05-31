@@ -37,6 +37,7 @@ export default function Home() {
             </Link>
           );
         })}
+        <br />
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in posuere elit. Quisque mollis, massa id
         porttitor ullamcorper, sapien dolor sagittis nisi, vitae mattis purus ipsum vel purus. In sit amet orci vel ex
         iaculis placerat sit amet a diam. Ut nec ex imperdiet, lobortis erat luctus, pharetra nunc. Donec condimentum

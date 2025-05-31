@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { HiCalendar } from "react-icons/hi2";
 
+import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
 import { queries } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
@@ -102,6 +103,7 @@ const ProfileViewer = () => {
 
   return (
     <div className="w-full">
+      <TopBar title={profile.handle} />
       <section className="mb-16">
         <div className="bg-base-200 relative h-32 w-full lg:h-48">
           <img

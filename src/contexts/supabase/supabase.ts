@@ -170,6 +170,19 @@ const queries = {
       }
       return true;
     },
+
+    cancel: async function (id: string): Promise<boolean> {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+      const req = await supabase.from("pendingAuthors").delete().eq("post", id).eq("from", user.id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return true;
+    },
   },
 
   categories: {
@@ -245,9 +258,15 @@ const queries = {
       return req.data.map((e) => e.categories);
     },
 
-    add: async function (post_id: string, name: string): Promise<boolean> {
+    add: async function (name: string): Promise<boolean> {
+      // add to the logged in user
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+
       const req = await supabase.from("profilesCategories").insert({
-        profile: post_id,
+        profile: user.id,
         category: await queries.categories.getEnsuredId(name),
       });
 
@@ -257,8 +276,13 @@ const queries = {
       return true;
     },
 
-    remove: async function (post_id: string, name: string): Promise<boolean> {
-      const req = await supabase.from("profilesCategories").delete().eq("post", post_id).eq("category", name);
+    remove: async function (name: string): Promise<boolean> {
+      // remove to the logged in user
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+      const req = await supabase.from("profilesCategories").delete().eq("profile", user.id).eq("category", name);
 
       if (req.error) {
         throw new Error(req.error.message);

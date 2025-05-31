@@ -90,6 +90,22 @@ pnpm run supabase db reset
 pnpm run supabase migration up
 ```
 
+### Run tests
+
+Vitest is used for tests. Use environment variables to determine test targets. Available targets are :
+
+```sh
+TEST_ALL=1 // run every test
+TEST_SUPABASE=1 // run supabase tests // DESTRUCTIVE
+```
+
+Note that some tests, like those of supabase, are destructive. To run these, confirm it is what you want to do by additionally setting `DESTRUCTIVE_TARGET` :
+
+```sh
+DESTRUCTIVE_ALL=1
+DESTRUCTIVE_SUPABASE=1
+```
+
 ### Update Logo
 
 The logo source file is an Inkscape SVG, which needs to be exported to a standard SVG file after modification.

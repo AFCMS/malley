@@ -104,7 +104,7 @@ const ProfileViewer = () => {
   return (
     <div className="w-full">
       <TopBar title={profile.handle} />
-      <section className="mb-16">
+      <section className="relative mb-16">
         <div className="bg-base-200 relative h-32 w-full lg:h-48">
           <img
             src={profile.banner ?? profileBannerPlaceholder}
@@ -122,6 +122,15 @@ const ProfileViewer = () => {
             </div>
           </div>
         </div>
+
+        {/* Toolbar with action buttons */}
+        <div className="absolute top-32 right-4 mt-3 lg:top-48">
+          <div className="flex gap-2">
+            <button className="btn btn-outline btn-sm">Follow</button>
+            <button className="btn btn-primary btn-sm">Message</button>
+          </div>
+        </div>
+
         <div className="mt-14 flex flex-col gap-2 px-5">
           <h1 className="font-bold">@{profile.handle}</h1>
 

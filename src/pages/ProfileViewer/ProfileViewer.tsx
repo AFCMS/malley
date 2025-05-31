@@ -126,7 +126,10 @@ const ProfileViewer = () => {
           {/* TODO: replace fallback */}
           {!profile.bio && <p className="text-base text-gray-600">{"French developper and gamer"}</p>}
 
-          <div className="flex flex-row items-center gap-1 text-sm font-semibold text-gray-600">
+          <div
+            className="flex flex-row items-center gap-1 text-sm font-semibold text-gray-600"
+            title={profileCreationDate.toLocaleDateString()}
+          >
             <HiCalendar className="h-4 w-4" />
             Joined on {formatDate(profileCreationDate)}
           </div>

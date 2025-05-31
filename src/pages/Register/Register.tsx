@@ -45,6 +45,7 @@ export default function Register() {
                   className=""
                   maxLength={15}
                   minLength={3}
+                  pattern="^[a-zA-Z0-9_]+$"
                   required
                   placeholder="handle"
                 />

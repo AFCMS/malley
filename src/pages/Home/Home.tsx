@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 
 import { supabase } from "../../contexts/supabase/supabase";
 import { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -30,7 +31,11 @@ export default function Home() {
         <h1>Home</h1>
         <br />
         {data?.data?.map((user) => {
-          return <div key={user.id}>{user.id + "::" + user.created_at}</div>;
+          return (
+            <Link to={`/@${user.handle ?? "unknown"}`} key={user.id}>
+              {user.handle ?? "unknown" + "::" + user.created_at}
+            </Link>
+          );
         })}
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in posuere elit. Quisque mollis, massa id
         porttitor ullamcorper, sapien dolor sagittis nisi, vitae mattis purus ipsum vel purus. In sit amet orci vel ex

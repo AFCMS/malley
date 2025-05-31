@@ -88,7 +88,7 @@ const ProfileViewer = () => {
   }, [handle]);
 
   if (isLoading) {
-    return <div>Loading profile...</div>;
+    return <TopBar title="Loading profile..." />;
   }
 
   if (error) {

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { HiCalendar } from "react-icons/hi2";
 
 import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
+
+import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 
@@ -14,12 +16,17 @@ import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
 const profilePicturePlaceholder = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
 
 const ProfileViewer = () => {
+  const auth = useAuth();
+  const navigate = useNavigate();
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
   const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[]>([]);
   const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
   const [featuredCount, setFeaturedCount] = useState<number>(0);
+
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const { handle: urlHandle } = useParams<{ handle?: string }>();
 
@@ -87,6 +94,17 @@ const ProfileViewer = () => {
     void loadProfileData();
   }, [handle]);
 
+  useEffect(() => {
+    async function checkFollowingStatus() {
+      if (!profile || !auth.user) return;
+
+      const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profile.id);
+      setIsFollowing(isFollowing);
+    }
+
+    void checkFollowingStatus();
+  }, [profile, auth.user]);
+
   if (isLoading) {
     return <TopBar title="Loading profile..." />;
   }
@@ -123,11 +141,27 @@ const ProfileViewer = () => {
           </div>
         </div>
 
-        {/* Toolbar with action buttons */}
         <div className="absolute top-32 right-4 mt-3 lg:top-48">
           <div className="flex gap-2">
-            <button className="btn btn-outline btn-sm">Follow</button>
-            <button className="btn btn-primary btn-sm">Message</button>
+            <button
+              className={"btn btn-sm " + (isFollowing ? "btn-secondary" : "btn-primary")}
+              hidden={auth.user?.id === profile.id}
+              onClick={() => {
+                if (auth.isAuthenticated) {
+                  if (isFollowing) {
+                    void queries.follows.remove(profile.id);
+                    setIsFollowing(false);
+                  } else {
+                    void queries.follows.add(profile.id);
+                    setIsFollowing(true);
+                  }
+                } else {
+                  void navigate("/login");
+                }
+              }}
+            >
+              {isFollowing ? "Unfollow" : "Follow"}
+            </button>
           </div>
         </div>
 

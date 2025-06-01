@@ -315,6 +315,15 @@ const queries = {
       }
       return true;
     },
+
+    doesXFollowY: async function (X: string, Y: string): Promise<boolean> {
+      const req = await supabase.from("follows").select("*").eq("follower", X).eq("followee", Y);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.data.length != 0;
+    },
   },
 
   featuredUsers: {

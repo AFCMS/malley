@@ -6,6 +6,7 @@
 
 html {
   overflow-y: scroll;
+  caret-color: transparent;
 }
 
 .sidebarlink {

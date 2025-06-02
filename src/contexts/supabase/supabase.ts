@@ -358,7 +358,7 @@ const queries = {
     },
 
     doesXfeatureY: async function (X: string, Y: string): Promise<boolean> {
-      const req = await supabase.from("features").select("1").eq("featurer", X).eq("featuree", Y);
+      const req = await supabase.from("features").select("*").eq("featurer", X).eq("featuree", Y);
 
       if (req.error) {
         throw new Error(req.error.message);

@@ -1,12 +1,11 @@
 import { describe, expect, test, beforeAll, afterAll } from "vitest";
-import type { Session } from "@supabase/supabase-js";
 import { Tables } from "./database";
 import { queries, supabase } from "./supabase";
-import { flushAllTables, registerAndLoginNewUser } from "./supabase.test-utils";
+import { flushAllTables, randomName, registerAndLoginNewUser } from "./supabase.test-utils";
 
 let ifTest;
 if (process.env.TEST_SUPABASE || process.env.TEST_ALL) {
-  ifTest = test;
+  ifTest = test; // this is much more convenient than test.runIf. i mean, cmon
   if (!process.env.DESTRUCTIVE_SUPABASE && !process.env.DESTRUCTIVE_ALL) {
     throw new Error("Testing the supabase necessitates wiping it. Set DESTRUCTIVE_SUPABASE environment to allow it.");
   }
@@ -14,21 +13,9 @@ if (process.env.TEST_SUPABASE || process.env.TEST_ALL) {
   ifTest = test.skip;
 }
 
-let userA: Tables<"profiles">, sessionA: Session, credsA: { handle: string; email: string; password: string };
-let userB: Tables<"profiles">, sessionB: Session, credsB: { handle: string; email: string; password: string };
-let userC: Tables<"profiles">, sessionC: Session, credsC: { handle: string; email: string; password: string };
-
 beforeAll(async () => {
   // clean the db
   await flushAllTables();
-
-  // get users for the tests
-  ({ user: userA, session: sessionA, creds: credsA } = await registerAndLoginNewUser());
-  await supabase.auth.signOut();
-  ({ user: userB, session: sessionB, creds: credsB } = await registerAndLoginNewUser());
-  await supabase.auth.signOut();
-  ({ user: userC, session: sessionC, creds: credsC } = await registerAndLoginNewUser());
-  await supabase.auth.signOut();
 });
 
 afterAll(async () => {
@@ -36,171 +23,236 @@ afterAll(async () => {
   await flushAllTables();
 });
 
-// just handy shit
-async function switchToUserA() {
-  await supabase.auth.setSession(sessionA);
-}
-async function switchToUserB() {
-  await supabase.auth.setSession(sessionB);
-}
-async function switchToUserC() {
-  await supabase.auth.setSession(sessionC);
-}
-async function switchToAnon() {
-  await supabase.auth.signOut();
+async function createRandomPost() {
+  const dummyFile = new File(["filedata"], "myfile.txt", { type: "text/plain" });
+  const body = randomName(64);
+  const id = await queries.posts.new(body, [dummyFile]);
+  return { id, body };
 }
 
-// a few things we get in some tests that we will reuse
-let post: Tables<"posts">;
-let category: Tables<"categories">;
-
-describe("posts", () => {
-  ifTest("logged in creation", async () => {
-    await switchToUserA();
-    const dummyFile = new File(["filedata"], "myfile.txt", { type: "text/plain" });
-    const id = await queries.posts.new("post body", [dummyFile]);
-    post = await queries.posts.get(id);
-    expect(post.body).toBe("post body");
-    expect((await supabase.storage.from("posts-media").list(id)).data?.length !== 1);
-  });
-});
-
-describe("authors", () => {
-  ifTest("get", async () => {
-    await switchToAnon();
-    let array: Tables<"profiles">[] | Tables<"posts">[];
-    array = await queries.authors.ofPost(post.id);
-    expect(array.length).toBe(1);
-    expect(array[1]).toBe(userA);
-    array = await queries.authors.postsOf(userA.id);
-    expect(array.length).toBe(1);
-    expect(array[1]).toBe(post);
-  });
-});
-
-describe("pending authors", () => {
-  ifTest("invite/cancel invite to user to author", async () => {
-    await switchToUserA();
-    await queries.pendingAuthors.invite(userB.id, post.id);
-    await queries.pendingAuthors.cancel(post.id); // test cancelling
-    await queries.pendingAuthors.invite(userB.id, post.id); // resend for next test
+describe.sequential("supabase", () => {
+  describe("posts", () => {
+    ifTest("logged in creation", async () => {
+      await registerAndLoginNewUser();
+      const { id, body } = await createRandomPost();
+      const post = await queries.posts.get(id);
+      expect(post.body).toBe(body);
+      expect((await supabase.storage.from("posts-media").list(id)).data?.length !== 1);
+    });
   });
 
-  ifTest("get and accept author invites", async () => {
-    // we reuse the invite sent earlier
-    await switchToUserB();
-    const invites = await queries.pendingAuthors.get();
-    expect(invites.length).toBe(1);
-    expect(invites[1].from).toBe(userA);
-    expect(invites[1].post.body).toBe("post body");
-    expect(queries.pendingAuthors.accept(post.id));
-  });
-});
-
-describe("categories", () => {
-  ifTest("ensure category exists", async () => {
-    await switchToUserA();
-    await queries.categories.getEnsuredId("category1");
-    category = await queries.categories.get(await queries.categories.getEnsuredId("category1"));
-    expect(category.name).toBe("category1");
+  describe("authors", () => {
+    ifTest("get", async () => {
+      const { user } = await registerAndLoginNewUser();
+      const { id, body } = await createRandomPost();
+      await supabase.auth.signOut();
+      const posters = await queries.authors.ofPost(id);
+      expect(posters.length).toBe(1);
+      expect(posters[0]).toStrictEqual(user);
+      const posts = await queries.authors.postsOf(user.id);
+      expect(posts.length).toBe(1);
+      expect(posts[0].body).toStrictEqual(body);
+    });
   });
 
-  ifTest("pattern matching", async () => {
-    await switchToAnon();
-    expect((await queries.categories.match("cat")).length).toBe(1);
-    expect((await queries.categories.match("y1")).length).toBe(1);
-    expect((await queries.categories.match("g")).length).toBe(1);
-  });
-});
+  describe("pending authors", () => {
+    ifTest("invite/cancel invite to user to author", async () => {
+      const { user } = await registerAndLoginNewUser();
+      await supabase.auth.signOut();
+      await registerAndLoginNewUser();
+      const { id } = await createRandomPost();
+      await queries.pendingAuthors.invite(user.id, id);
+      expect((await queries.pendingAuthors.sent()).length).toBe(1);
+      await queries.pendingAuthors.cancel(id); // test cancelling
+      expect((await queries.pendingAuthors.sent()).length).toBe(0);
+      await queries.pendingAuthors.invite(user.id, id); // resend
+      expect((await queries.pendingAuthors.sent()).length).toBe(1);
+    });
 
-describe("posts categories", () => {
-  ifTest("add existing category to post", async () => {
-    await switchToUserA();
-    await queries.postsCategories.add(post.id, "category1");
-    const categories = await queries.postsCategories.get(post.id);
-    expect(categories.length).toBe(1);
-    expect(categories[1].name === "category1").toBe(true);
-  });
-
-  ifTest("add new category to post", async () => {
-    await switchToUserA();
-    await queries.postsCategories.add(post.id, "category2");
-    const categories = await queries.postsCategories.get(post.id);
-    expect(categories.length).toBe(2);
-    expect(categories[1].name === "category1" || categories[2].name === "category2").toBe(true);
-  });
-
-  ifTest("remove post category", async () => {
-    await switchToUserA();
-    await queries.postsCategories.remove(post.id, "category1");
-    const categories = await queries.postsCategories.get(post.id);
-    expect(categories.length).toBe(1);
-    expect(categories[1].name === "category2").toBe(true);
-  });
-});
-
-describe("profile categories", () => {
-  ifTest("add for self", async () => {
-    await switchToUserA();
-    await queries.profilesCategories.add("category1");
-    await queries.profilesCategories.add("category2");
-    expect((await queries.profilesCategories.get(userA.id)).length).toBe(2);
+    ifTest("get and accept author invites", async () => {
+      const { user, creds } = await registerAndLoginNewUser();
+      const { email, password } = creds;
+      await supabase.auth.signOut();
+      const user2 = (await registerAndLoginNewUser()).user;
+      const { id } = await createRandomPost();
+      await queries.pendingAuthors.invite(user.id, id);
+      await supabase.auth.signOut();
+      await supabase.auth.signInWithPassword({ email, password });
+      const invites = await queries.pendingAuthors.get();
+      expect(invites.length).toBe(1);
+      expect(invites[0].from_profile).toBe(user2.id);
+      expect(invites[0].post).toBe(id);
+      await queries.pendingAuthors.accept(id);
+      expect((await queries.authors.postsOf(user.id)).length).toBe(1);
+    });
   });
 
-  ifTest("remove for self", async () => {
-    await switchToUserA();
-    await queries.profilesCategories.remove("category1");
-    const categories = await queries.profilesCategories.get(userA.id);
-    expect(categories.length).toBe(1);
-    expect(categories[1].name).toBe("category2");
-  });
-});
+  describe("categories", () => {
+    ifTest("ensure category exists", async () => {
+      await registerAndLoginNewUser();
+      const name = randomName(8);
+      const category = await queries.categories.get(await queries.categories.getEnsuredId(name));
+      expect(category.name).toBe(name);
+    });
 
-describe("follows", () => {
-  ifTest("add for self", async () => {
-    await switchToUserA();
-    await queries.follows.add(userB.id);
-    await queries.follows.add(userC.id);
-    expect((await queries.follows.get()).length).toBe(2);
-  });
-
-  ifTest("remove for self", async () => {
-    await switchToUserA();
-    await queries.follows.remove(userC.id);
-    const follows = await queries.follows.get();
-    expect(follows.length).toBe(1);
-    expect(follows[1]).toBe(userB);
-  });
-});
-
-describe("features", () => {
-  ifTest("add", async () => {
-    await switchToUserA();
-    await queries.featuredUsers.add(userB.id);
-    expect(await queries.featuredUsers.doesXfeatureY(userA.id, userB.id)).toBe(true);
+    ifTest("pattern matching", async () => {
+      await registerAndLoginNewUser();
+      const name = "very_precise_pattern_to_match";
+      await queries.categories.getEnsuredId(name);
+      expect((await queries.categories.match("_precise_pattern_to_match")).length).toBe(1);
+      expect((await queries.categories.match("_precise_pattern_to_")).length).toBe(1);
+      expect((await queries.categories.match("very_precise_pattern_to_")).length).toBe(1);
+    });
   });
 
-  ifTest("queries", async () => {
-    await switchToUserA();
-    await queries.featuredUsers.add(userC.id);
-    await switchToUserC();
-    await queries.featuredUsers.add(userA.id);
-    await switchToAnon();
-    expect((await queries.featuredUsers.byUser(userA.id)).length).toBe(2);
-    expect((await queries.featuredUsers.byUser(userB.id)).length).toBe(0);
-    expect((await queries.featuredUsers.byUser(userC.id)).length).toBe(1);
-    expect((await queries.featuredUsers.byWho(userA.id)).length).toBe(1);
-    expect((await queries.featuredUsers.byWho(userB.id)).length).toBe(0);
-    expect(await queries.featuredUsers.doesXfeatureY(userA.id, userC.id)).toBe(true);
-    expect(await queries.featuredUsers.doesXfeatureY(userB.id, userC.id)).toBe(false);
-    expect(await queries.featuredUsers.doesXfeatureY(userC.id, userA.id)).toBe(true);
+  describe("posts categories", () => {
+    ifTest("add category to post", async () => {
+      await registerAndLoginNewUser();
+      const { id } = await createRandomPost();
+      const name = randomName(8);
+      await queries.postsCategories.add(id, name);
+      const categories = await queries.postsCategories.get(id);
+      expect(categories.length).toBe(1);
+      expect(categories[0].name).toBe(name);
+    });
+
+    ifTest("remove post category", async () => {
+      await registerAndLoginNewUser();
+      const { id } = await createRandomPost();
+      const name = randomName(8);
+      await queries.postsCategories.add(id, name);
+      await queries.postsCategories.remove(id, name);
+      const categories = await queries.postsCategories.get(id);
+      expect(categories.length).toBe(0);
+    });
   });
 
-  ifTest("remove", async () => {
-    await switchToUserA();
-    await queries.featuredUsers.remove(userC.id);
-    const featured = await queries.featuredUsers.byUser(userA.id);
-    expect(featured.length).toBe(1);
-    expect(featured[1]).toBe(userB);
+  describe("profile categories", () => {
+    ifTest("add for self", async () => {
+      const { user } = await registerAndLoginNewUser();
+      const name1 = randomName(8);
+      const name2 = randomName(8);
+      await queries.profilesCategories.add(name1);
+      await queries.profilesCategories.add(name2);
+      const categories = await queries.profilesCategories.get(user.id);
+      expect(categories.length).toBe(2);
+      expect(categories.some((cat) => cat.name === name1)).toBe(true);
+      expect(categories.some((cat) => cat.name === name2)).toBe(true);
+    });
+
+    ifTest("remove for self", async () => {
+      const { user } = await registerAndLoginNewUser();
+      const name1 = randomName(8);
+      const name2 = randomName(8);
+      await queries.profilesCategories.add(name1);
+      await queries.profilesCategories.add(name2);
+      await queries.profilesCategories.remove(name1);
+      await queries.profilesCategories.remove(name2);
+      expect((await queries.profilesCategories.get(user.id)).length).toBe(0);
+    });
+  });
+
+  describe("follows", () => {
+    ifTest("add for self", async () => {
+      // Setup: create 3 users
+      const { user: user1 } = await registerAndLoginNewUser();
+      const { user: user2 } = await registerAndLoginNewUser();
+      await supabase.auth.signOut();
+      await registerAndLoginNewUser();
+
+      // Act: userA follows userB and userC
+      await queries.follows.add(user1.id);
+      await queries.follows.add(user2.id);
+
+      // Assert
+      const follows = await queries.follows.get();
+      expect(follows.length).toBe(2);
+      const followedIds = follows.map((u) => u.id);
+      expect(followedIds).toContain(user1.id);
+      expect(followedIds).toContain(user2.id);
+    });
+
+    ifTest("remove for self", async () => {
+      // Setup: create 3 users and set up follows
+      const { user: user1 } = await registerAndLoginNewUser();
+      const { user: user2 } = await registerAndLoginNewUser();
+      await supabase.auth.signOut();
+      await registerAndLoginNewUser();
+      await queries.follows.add(user1.id);
+      await queries.follows.add(user2.id);
+
+      // Act: remove userC from follows
+      await queries.follows.remove(user2.id);
+
+      // Assert
+      const follows = await queries.follows.get();
+      expect(follows.length).toBe(1);
+      const followedIds = follows.map((u) => u.id);
+      expect(followedIds).toContain(user1.id);
+      expect(followedIds).not.toContain(user2.id);
+    });
+  });
+
+  describe("features", () => {
+    ifTest("add for self", async () => {
+      // Setup: create 3 users
+      const { user: user1 } = await registerAndLoginNewUser();
+      const { user: user2 } = await registerAndLoginNewUser();
+      await supabase.auth.signOut();
+      const { user: user3 } = await registerAndLoginNewUser();
+
+      // Act: userA follows userB and userC
+      await queries.features.add(user1.id);
+      await queries.features.add(user2.id);
+
+      // Assert
+      const features = await queries.features.byUser(user3.id);
+      expect(features.length).toBe(2);
+      const featuredIds = features.map((u) => u.id);
+      expect(featuredIds).toContain(user1.id);
+      expect(featuredIds).toContain(user2.id);
+    });
+
+    ifTest("queries", async () => {
+      // 3 users with some follows
+      const { user: user1 } = await registerAndLoginNewUser();
+      const { user: user2, session: session2 } = await registerAndLoginNewUser();
+      const { user: user3 } = await registerAndLoginNewUser();
+      await queries.features.add(user1.id);
+      await queries.features.add(user2.id);
+      await supabase.auth.setSession(session2);
+      await queries.features.add(user1.id);
+      await supabase.auth.signOut();
+
+      // check it works :')
+      expect((await queries.features.byUser(user3.id)).length).toBe(2);
+      expect((await queries.features.byWho(user3.id)).length).toBe(0);
+      expect((await queries.features.byUser(user2.id)).length).toBe(1);
+      expect((await queries.features.byWho(user2.id)).length).toBe(1);
+      expect((await queries.features.byUser(user1.id)).length).toBe(0);
+      expect((await queries.features.byWho(user1.id)).length).toBe(2);
+      expect(await queries.features.doesXfeatureY(user2.id, user1.id)).toBe(true);
+      expect(await queries.features.doesXfeatureY(user2.id, user3.id)).toBe(false);
+    });
+
+    ifTest("remove for self", async () => {
+      // Setup: create 3 users and set up features
+      const { user: user1 } = await registerAndLoginNewUser();
+      const { user: user2 } = await registerAndLoginNewUser();
+      await supabase.auth.signOut();
+      const { user: user3 } = await registerAndLoginNewUser();
+      await queries.features.add(user1.id);
+      await queries.features.add(user2.id);
+
+      // Act: remove user2 from follows
+      await queries.features.remove(user2.id);
+
+      // Assert
+      const features = await queries.features.byUser(user3.id);
+      expect(features.length).toBe(1);
+      const featuredIds = features.map((u) => u.id);
+      expect(featuredIds).toContain(user1.id);
+      expect(featuredIds).not.toContain(user2.id);
+    });
   });
 });

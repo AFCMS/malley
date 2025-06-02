@@ -133,21 +133,27 @@ const queries = {
   },
 
   pendingAuthors: {
-    get: async function (): Promise<{ from: Tables<"profiles">; post: Tables<"posts"> }[]> {
+    get: async function (): Promise<Tables<"pendingAuthors">[]> {
       const user = await getUser();
       if (!user) {
         throw new Error("not logged in");
       }
 
-      const { data, error } = await supabase
-        .from("pendingAuthors")
-        .select(
-          `
-          from:profiles!from_profile(*),
-          post:posts!post(*)
-        `,
-        )
-        .eq("to_profile", user.id);
+      const { data, error } = await supabase.from("pendingAuthors").select("*").eq("to_profile", user.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data;
+    },
+
+    sent: async function (): Promise<Tables<"pendingAuthors">[]> {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+      const { data, error } = await supabase.from("pendingAuthors").select("*").eq("from_profile", user.id);
 
       if (error) {
         throw new Error(error.message);
@@ -188,7 +194,7 @@ const queries = {
       if (!user) {
         throw new Error("not logged in");
       }
-      const req = await supabase.from("pendingAuthors").delete().eq("post", id).eq("from", user.id);
+      const req = await supabase.from("pendingAuthors").delete().eq("post", id).eq("from_profile", user.id);
 
       if (req.error) {
         throw new Error(req.error.message);
@@ -251,7 +257,11 @@ const queries = {
     },
 
     remove: async function (post_id: string, name: string): Promise<boolean> {
-      const req = await supabase.from("postsCategories").delete().eq("post", post_id).eq("category", name);
+      const req = await supabase
+        .from("postsCategories")
+        .delete()
+        .eq("post", post_id)
+        .eq("category", await queries.categories.getEnsuredId(name));
 
       if (req.error) {
         throw new Error(req.error.message);
@@ -294,7 +304,11 @@ const queries = {
       if (!user) {
         throw new Error("not logged in");
       }
-      const req = await supabase.from("profilesCategories").delete().eq("profile", user.id).eq("category", name);
+      const req = await supabase
+        .from("profilesCategories")
+        .delete()
+        .eq("profile", user.id)
+        .eq("category", await queries.categories.getEnsuredId(name));
 
       if (req.error) {
         throw new Error(req.error.message);
@@ -362,7 +376,7 @@ const queries = {
     },
   },
 
-  featuredUsers: {
+  features: {
     byUser: async function (id: string): Promise<Tables<"profiles">[]> {
       const req = await supabase.from("features").select("profiles!featuree(*)").eq("featurer", id);
 

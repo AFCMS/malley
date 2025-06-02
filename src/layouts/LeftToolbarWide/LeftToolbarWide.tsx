@@ -82,6 +82,9 @@ export default function LeftToolbarWide() {
                     Logout
                   </button>
                 </li>
+                <li>
+                  <Link to="/settings">Settings</Link>
+                </li>
               </ul>
             </div>
           ) : (

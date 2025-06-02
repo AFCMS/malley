@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import { HiCalendar } from "react-icons/hi2";
+import { Link, useNavigate, useParams } from "react-router";
+import { HiCalendar, HiMegaphone, HiOutlineEllipsisHorizontal } from "react-icons/hi2";
 
 import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
@@ -27,6 +27,7 @@ const ProfileViewer = () => {
   const [featuredCount, setFeaturedCount] = useState<number>(0);
 
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isFeaturing, setIsFeaturing] = useState(false);
 
   const { handle: urlHandle } = useParams<{ handle?: string }>();
 
@@ -105,6 +106,17 @@ const ProfileViewer = () => {
     void checkFollowingStatus();
   }, [profile, auth.user]);
 
+  useEffect(() => {
+    async function checkFeaturingStatus() {
+      if (!profile || !auth.user) return;
+
+      const isFeaturing = await queries.featuredUsers.doesXfeatureY(auth.user.id, profile.id);
+      setIsFeaturing(isFeaturing);
+    }
+
+    void checkFeaturingStatus();
+  }, [profile, auth.user]);
+
   if (isLoading) {
     return <TopBar title="Loading profile..." />;
   }
@@ -144,6 +156,42 @@ const ProfileViewer = () => {
         <div className="absolute top-32 right-4 mt-3 lg:top-48">
           <div className="flex gap-2">
             <button
+              className="btn btn-ghost btn-sm btn-circle"
+              popoverTarget="popover-profile"
+              style={{ anchorName: "--popover-profile" } as React.CSSProperties}
+            >
+              <HiOutlineEllipsisHorizontal className="h-5 w-5" />
+            </button>
+            <ul
+              className="dropdown dropdown-top dropdown-end menu rounded-box bg-base-100 mb-2 w-52 shadow-sm"
+              popover="auto"
+              id="popover-profile"
+              style={{ positionAnchor: "--popover-profile" } as React.CSSProperties}
+            >
+              <li>
+                <button
+                  className=""
+                  disabled={!auth.isAuthenticated || auth.user?.id === profile.id}
+                  onClick={() => {
+                    if (auth.isAuthenticated) {
+                      if (isFeaturing) {
+                        void queries.featuredUsers.remove(profile.id);
+                        setIsFeaturing(false);
+                      } else {
+                        void queries.featuredUsers.add(profile.id);
+                        setIsFeaturing(true);
+                      }
+                    } else {
+                      void navigate("/login");
+                    }
+                  }}
+                >
+                  <HiMegaphone />
+                  {isFeaturing ? "Unfeature" : "Feature"}
+                </button>
+              </li>
+            </ul>
+            <button
               className={"btn btn-sm " + (isFollowing ? "btn-secondary" : "btn-primary")}
               hidden={auth.user?.id === profile.id}
               onClick={() => {
@@ -180,9 +228,9 @@ const ProfileViewer = () => {
           </div>
           {/* TODO: real values */}
           <div className="flex flex-row items-center gap-2">
-            <span className="text-sm font-semibold text-gray-600">
+            <Link className="text-sm font-semibold text-gray-600" to={`/@${profile.handle}/featured`}>
               <strong>{featuredCount}</strong> Featured
-            </span>
+            </Link>
           </div>
         </div>
       </section>

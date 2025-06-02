@@ -6,6 +6,7 @@ import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import Settings from "../pages/Settings/Settings";
 import ProfileViewer from "../pages/ProfileViewer/ProfileViewer";
+import ProfileViewerFeatured from "../pages/ProfileViewerFeatured/ProfileViewerFeatured";
 import AddPost from "../pages/AddPost/AddPost";
 import ViewPost from "../pages/ViewPost/ViewPost";
 
@@ -20,6 +21,7 @@ export default function Router() {
         <Route path="/post" element={<AddPost />} />
         <Route path="/post/:postId" element={<ViewPost />} />
         <Route path="/:handle" element={<ProfileViewer />} />
+        <Route path="/:handle/featured" element={<ProfileViewerFeatured />} />
         <Route path="*" element={<div>404</div>} />
       </Routes>
     </>

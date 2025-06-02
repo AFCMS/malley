@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { HiCalendar, HiMegaphone, HiOutlineEllipsisHorizontal } from "react-icons/hi2";
 
 import TopBar from "../../layouts/TopBar/TopBar";
@@ -10,6 +10,7 @@ import { queries } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 
 import { formatDate } from "../../utils/date";
+import { useHandle } from "../../utils/routing";
 
 import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
 
@@ -29,12 +30,7 @@ const ProfileViewer = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFeaturing, setIsFeaturing] = useState(false);
 
-  const { handle: urlHandle } = useParams<{ handle?: string }>();
-
-  // Remove @ symbol if present and ensure we have a string
-  // React Router v7 can't do this for us
-  // https://github.com/remix-run/react-router/discussions/9844
-  const handle = urlHandle ? urlHandle.replace(/^@/, "") : "";
+  const handle = useHandle();
 
   useEffect(() => {
     // Reset state when handle changes

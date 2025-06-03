@@ -6,7 +6,7 @@ console.log('Supabase URL: "', supabaseUrl, '"');
 console.log('Supabase Anon Key: "', anonKey, '"');
 console.log('Supabase Service Key: "', serviceKey, '"');
 
-import { supabase } from "./supabase";
+import { supabase, queries } from "../supabase";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -45,6 +45,13 @@ export function randomName(length: number) {
     .toString(36)
     .replace(/[^a-z0-9]+/gi, "")
     .slice(0, length);
+}
+
+export async function createRandomPost() {
+  const dummyFile = new File(["filedata"], "myfile.txt", { type: "text/plain" });
+  const body = randomName(64);
+  const id = await queries.posts.new(body, [dummyFile]);
+  return { id, body };
 }
 
 // Register and login a new user, returns { user, session, creds }

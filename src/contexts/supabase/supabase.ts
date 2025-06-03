@@ -182,11 +182,13 @@ const queries = {
 
     accept: async function (id: string): Promise<boolean> {
       const req = await supabase.rpc("accept_co_authoring", { post_id: id });
-
       if (req.error) {
         throw new Error(req.error.message);
       }
-      return true;
+      if (req.data) {
+        return true;
+      }
+      return false;
     },
 
     cancel: async function (id: string): Promise<boolean> {

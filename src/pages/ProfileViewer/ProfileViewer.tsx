@@ -10,6 +10,7 @@ import { queries } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 
 import { formatDate } from "../../utils/date";
+import { closePopover } from "../../utils/popover";
 import { useHandle } from "../../utils/routing";
 
 import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
@@ -177,6 +178,7 @@ const ProfileViewer = () => {
                         void queries.featuredUsers.add(profile.id);
                         setIsFeaturing(true);
                       }
+                      closePopover("popover-profile")();
                     } else {
                       void navigate("/login");
                     }

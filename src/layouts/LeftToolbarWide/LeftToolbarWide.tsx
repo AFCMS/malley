@@ -9,6 +9,8 @@ import {
 
 import { useAuth } from "../../contexts/auth/AuthContext";
 
+import { closePopover } from "../../utils/popover";
+
 const profileImageUrl = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
 
 export default function LeftToolbarWide() {
@@ -83,7 +85,9 @@ export default function LeftToolbarWide() {
                   </button>
                 </li>
                 <li>
-                  <Link to="/settings">Settings</Link>
+                  <Link to="/settings" onClick={closePopover("popover-left-toolbar-profile")}>
+                    Settings
+                  </Link>
                 </li>
               </ul>
             </div>

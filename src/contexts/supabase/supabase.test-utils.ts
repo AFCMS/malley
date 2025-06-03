@@ -2,6 +2,10 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const serviceKey = import.meta.env.DANGER_SUPABASE_SERVICE_KEY;
 
+console.log('Supabase URL: "', supabaseUrl, '"');
+console.log('Supabase Anon Key: "', anonKey, '"');
+console.log('Supabase Service Key: "', serviceKey, '"');
+
 import { supabase } from "./supabase";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";

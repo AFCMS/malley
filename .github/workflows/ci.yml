@@ -100,10 +100,39 @@ jobs:
       - name: Lint project
         run: pnpm run lint
 
+  supabase_tests:
+    name: Unit Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Use Node.js LTS/Jod
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Start Supabase
+        run: pnpm run supabase start
+
+      - name: Run unit tests
+        run: TEST_SUPABASE=1 DESTRUCTIVE_SUPABASE=1 pnpm run test
+
+      - name: Stop Supabase
+        run: pnpm run supabase stop --no-backup
+        if: always()
+
   supabase_deploy:
     name: Supabase Deploy
     runs-on: ubuntu-24.04
-    needs: [supabase_database_checks, frontend_checks]
+    needs: [supabase_database_checks, frontend_checks, supabase_tests]
     if: github.event_name == 'push'
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -133,7 +162,7 @@ jobs:
   frontend_deploy:
     name: Frontend Deploy
     runs-on: ubuntu-24.04
-    needs: [supabase_database_checks, frontend_checks]
+    needs: [supabase_database_checks, frontend_checks, supabase_tests]
     if: github.event_name == 'push'
 
     steps:

@@ -122,8 +122,9 @@ jobs:
       - name: Start Supabase
         run: |
           pnpm run supabase start > supabase_output.txt 2>&1
-          # Don't show the full output to avoid GitHub secret masking
           echo "Supabase started successfully"
+          pnpm run supabase migration up
+          echo "Supabase migrations applied successfully"
 
       - name: Create Environment File
         run: |

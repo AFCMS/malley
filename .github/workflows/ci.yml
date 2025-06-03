@@ -101,7 +101,7 @@ jobs:
         run: pnpm run lint
 
   supabase_tests:
-    name: Unit Tests
+    name: Supabase Tests
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repository

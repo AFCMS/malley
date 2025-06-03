@@ -79,7 +79,7 @@ const ProfileViewer = () => {
         }
 
         // Step 4: Fetch referers count
-        const featuredCount = await queries.featuredUsers.byUserCount(profileData.id);
+        const featuredCount = await queries.features.byUserCount(profileData.id);
         setFeaturedCount(featuredCount);
       } catch (err) {
         console.error("Error loading profile data:", err);
@@ -107,7 +107,7 @@ const ProfileViewer = () => {
     async function checkFeaturingStatus() {
       if (!profile || !auth.user) return;
 
-      const isFeaturing = await queries.featuredUsers.doesXfeatureY(auth.user.id, profile.id);
+      const isFeaturing = await queries.features.doesXfeatureY(auth.user.id, profile.id);
       setIsFeaturing(isFeaturing);
     }
 
@@ -172,10 +172,10 @@ const ProfileViewer = () => {
                   onClick={() => {
                     if (auth.isAuthenticated) {
                       if (isFeaturing) {
-                        void queries.featuredUsers.remove(profile.id);
+                        void queries.features.remove(profile.id);
                         setIsFeaturing(false);
                       } else {
-                        void queries.featuredUsers.add(profile.id);
+                        void queries.features.add(profile.id);
                         setIsFeaturing(true);
                       }
                       closePopover("popover-profile")();

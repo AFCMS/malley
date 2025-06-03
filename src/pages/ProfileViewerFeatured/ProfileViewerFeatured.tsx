@@ -26,7 +26,7 @@ export default function ProfileViewerFeatured() {
         const user = await queries.profiles.getByHandle(handle);
 
         // Get featured users for this user
-        const featured = await queries.featuredUsers.byUser(user.id);
+        const featured = await queries.features.byUser(user.id);
 
         setFeaturedUsers(featured);
       } catch (err) {

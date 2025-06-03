@@ -1,6 +1,40 @@
-import { supabase } from "./supabase";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const serviceKey = import.meta.env.DANGER_SUPABASE_SERVICE_KEY;
 
-export function flushAllTables() {}
+import { supabase } from "./supabase";
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+export async function flushAllTables(): Promise<number> {
+  // try calling it as anon and a regular user. refer to warning in supabase.tests.ts for details.
+  const anonClient: SupabaseClient = createClient(supabaseUrl, anonKey);
+
+  const { error: errorAnon } = await anonClient.rpc("extreme_danger_truncate_all_tables_yes_i_am_sure");
+  console.log(errorAnon);
+  if (!errorAnon) {
+    return 2;
+  }
+
+  await registerAndLoginNewUser();
+  const { error: errorUser } = await supabase.rpc("extreme_danger_truncate_all_tables_yes_i_am_sure");
+  console.log(errorUser);
+  if (!errorUser) {
+    return 1;
+  }
+  await supabase.auth.signOut();
+
+  // good, this is not horribly messed up. Now, destroy everything
+  const serviceClient = createClient(supabaseUrl, serviceKey);
+  const { error } = await serviceClient.rpc("extreme_danger_truncate_all_tables_yes_i_am_sure");
+
+  if (error) {
+    console.error("Error during wiping:", error);
+  } else {
+    console.log("Done wiping. Begin testing.");
+  }
+  return 0;
+}
 
 export function randomName(length: number) {
   return Math.random()

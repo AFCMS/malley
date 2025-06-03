@@ -340,6 +340,10 @@ export type Database = {
         Args: { post_id: string }
         Returns: boolean
       }
+      extreme_danger_truncate_all_tables_yes_i_am_sure: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       id_of_ensured_category: {
         Args: { request: string }
         Returns: string

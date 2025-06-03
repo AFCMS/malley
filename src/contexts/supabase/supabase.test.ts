@@ -1,5 +1,4 @@
 import { describe, expect, test, beforeAll, afterAll } from "vitest";
-import { Tables } from "./database";
 import { queries, supabase } from "./supabase";
 import { flushAllTables, randomName, registerAndLoginNewUser } from "./supabase.test-utils";
 
@@ -15,7 +14,27 @@ if (process.env.TEST_SUPABASE || process.env.TEST_ALL) {
 
 beforeAll(async () => {
   // clean the db
-  await flushAllTables();
+  const code = await flushAllTables();
+  if (code === 0) {
+    return;
+  }
+  let faultyRole = "";
+  if (code === 1) {
+    faultyRole = "*ALL*";
+  } else if (code === 2) {
+    faultyRole = "ANON";
+  }
+  process.exit(`
+  ███████████████████ EXTREME DANGER ███████████████████
+  
+  The TRUNCATE-all function is accessible to ${faultyRole} USERS.
+  
+  You should not need an explanation of the surity risk.
+  
+  If you do not understand, involve a responsible adult.
+  
+  ██████████████████████ ABORTING ██████████████████████
+  `);
 });
 
 afterAll(async () => {

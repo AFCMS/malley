@@ -120,7 +120,23 @@ jobs:
         run: pnpm install
 
       - name: Start Supabase
-        run: pnpm run supabase start
+        run: |
+          pnpm run supabase start > supabase_output.txt 2>&1
+          cat supabase_output.txt
+
+      - name: Create Environment File
+        run: |
+          # Extract anon key and service key from Supabase output
+          ANON_KEY=$(grep -o 'anon key: [^[:space:]]*' supabase_output.txt | cut -d' ' -f3)
+          SERVICE_KEY=$(grep -o 'service_role key: [^[:space:]]*' supabase_output.txt | cut -d' ' -f3)
+
+          echo "VITE_SUPABASE_URL=http://localhost:54321" > .env.local
+          echo "VITE_SUPABASE_ANON_KEY=$ANON_KEY" >> .env.local
+          echo "DANGER_SUPABASE_SERVICE_KEY=$SERVICE_KEY" >> .env.local
+
+          # Verify the keys were extracted
+          echo "Extracted anon key: $ANON_KEY"
+          echo "Extracted service key: $SERVICE_KEY"
 
       - name: Run unit tests
         run: TEST_SUPABASE=1 DESTRUCTIVE_SUPABASE=1 pnpm run test

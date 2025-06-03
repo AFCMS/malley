@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { queries } from "../../contexts/supabase/supabase";
 import FetchCard from "../../Components/FetchCard/FetchCard";
+import TopBar from "../../layouts/TopBar/TopBar";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 // IMPORTANT : pour l'instant les uuids de profils sont codés en dur ici.
 // plus tard on pourrait les récupérer dynamiquement depuis la base de données
@@ -14,6 +16,7 @@ const ALL_KNOWN_PROFILE_IDS: string[] = [
 const BATCH_SIZE = 3;
 
 export default function SwipePage() {
+  const auth = useAuth();
   const [profileIdQueue, setProfileIdQueue] = useState<string[]>([]);
   const [currentIndexInBatch, setCurrentIndexInBatch] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -26,9 +29,56 @@ export default function SwipePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const fetchNewBatch = useCallback(() => {
+  // Utiliser useRef pour éviter la boucle infinie
+  const seenProfileIdsRef = useRef<Set<string>>(new Set());
+  const followedProfileIdsRef = useRef<Set<string>>(new Set());
+
+  // Fonction pour vérifier et filtrer les profils déjà suivis
+  const filterUnfollowedProfiles = useCallback(
+    async (profileIds: string[]): Promise<string[]> => {
+      if (!auth.user) return profileIds;
+
+      const unfollowedProfiles: string[] = [];
+
+      for (const profileId of profileIds) {
+        // Ne pas afficher son propre profil
+        if (profileId === auth.user.id) {
+          continue;
+        }
+
+        // Vérifier si déjà en cache
+        if (followedProfileIdsRef.current.has(profileId)) {
+          continue;
+        }
+
+        try {
+          const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profileId);
+          if (isFollowing) {
+            followedProfileIdsRef.current.add(profileId);
+          } else {
+            unfollowedProfiles.push(profileId);
+          }
+        } catch {
+          // En cas d'erreur, inclure le profil pour ne pas bloquer l'affichage
+          unfollowedProfiles.push(profileId);
+        }
+      }
+
+      return unfollowedProfiles;
+    },
+    [auth.user],
+  );
+
+  const fetchNewBatch = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
+    if (!auth.user) {
+      setError("Vous devez être connecté pour découvrir des profils.");
+      setIsLoading(false);
+      setProfileIdQueue([]);
+      return;
+    }
 
     if (ALL_KNOWN_PROFILE_IDS.length === 0) {
       setError("Aucun ID de profil connu disponible.");
@@ -37,30 +87,73 @@ export default function SwipePage() {
       return;
     }
 
-    const availableIds = ALL_KNOWN_PROFILE_IDS.filter((id) => !seenProfileIds.has(id));
+    // Filtrer les profils déjà vus
+    const unseenIds = ALL_KNOWN_PROFILE_IDS.filter((id) => !seenProfileIdsRef.current.has(id));
 
-    if (availableIds.length === 0) {
-      setError("Aucun nouveau profil unique disponible dans la liste prédéfinie à afficher.");
-      setProfileIdQueue([]);
+    if (unseenIds.length === 0) {
+      // Reset si tous les profils ont été vus
+      seenProfileIdsRef.current = new Set();
+      followedProfileIdsRef.current = new Set(); // Reset aussi le cache des follows
+
+      const unfollowedIds = await filterUnfollowedProfiles(ALL_KNOWN_PROFILE_IDS);
+      if (unfollowedIds.length === 0) {
+        setError("Vous suivez déjà tous les profils disponibles !");
+        setProfileIdQueue([]);
+        setCurrentIndexInBatch(0);
+        setIsLoading(false);
+        return;
+      }
+
+      const newBatch = unfollowedIds.slice(0, BATCH_SIZE);
+      setProfileIdQueue(newBatch);
       setCurrentIndexInBatch(0);
       setIsLoading(false);
+
+      // Marquer comme vus
+      newBatch.forEach((id) => seenProfileIdsRef.current.add(id));
       return;
     }
 
-    const newBatch = availableIds.slice(0, BATCH_SIZE);
+    // Filtrer les profils non suivis parmi ceux non vus
+    const unfollowedIds = await filterUnfollowedProfiles(unseenIds);
 
+    if (unfollowedIds.length === 0) {
+      // Si aucun profil non suivi parmi les non vus, essayer avec tous les profils
+      const allUnfollowedIds = await filterUnfollowedProfiles(ALL_KNOWN_PROFILE_IDS);
+      if (allUnfollowedIds.length === 0) {
+        setError("Vous suivez déjà tous les profils disponibles !");
+        setProfileIdQueue([]);
+        setCurrentIndexInBatch(0);
+        setIsLoading(false);
+        return;
+      }
+
+      // Reset et prendre les premiers profils non suivis
+      seenProfileIdsRef.current = new Set();
+      const newBatch = allUnfollowedIds.slice(0, BATCH_SIZE);
+      setProfileIdQueue(newBatch);
+      setCurrentIndexInBatch(0);
+      setIsLoading(false);
+
+      // Marquer comme vus
+      newBatch.forEach((id) => seenProfileIdsRef.current.add(id));
+      return;
+    }
+
+    const newBatch = unfollowedIds.slice(0, BATCH_SIZE);
     setProfileIdQueue(newBatch);
     setCurrentIndexInBatch(0);
     setIsLoading(false);
 
-    const updatedSeenIds = new Set(seenProfileIds);
-    newBatch.forEach((id) => updatedSeenIds.add(id));
-    setSeenProfileIds(updatedSeenIds);
-  }, [seenProfileIds]);
+    // Mettre à jour la référence
+    newBatch.forEach((id) => seenProfileIdsRef.current.add(id));
+  }, [auth.user, filterUnfollowedProfiles]);
 
   useEffect(() => {
-    fetchNewBatch();
-  }, []);
+    if (auth.user) {
+      void fetchNewBatch();
+    }
+  }, [auth.user, fetchNewBatch]);
 
   useEffect(() => {
     if (profileIdQueue.length > 0 && currentIndexInBatch + 1 < profileIdQueue.length) {
@@ -76,7 +169,7 @@ export default function SwipePage() {
       setCurrentIndexInBatch((prevIndex) => prevIndex + 1);
       setIsLoading(false);
     } else {
-      fetchNewBatch();
+      void fetchNewBatch();
     }
   };
 
@@ -108,6 +201,8 @@ export default function SwipePage() {
     setError(null);
     try {
       await queries.follows.add(profileToFollowId);
+      // Ajouter au cache des profils suivis
+      followedProfileIdsRef.current.add(profileToFollowId);
       advanceToNextProfile();
     } catch (err) {
       setError(`Échec du suivi du profil : ${err instanceof Error ? err.message : String(err)}`);
@@ -166,6 +261,20 @@ export default function SwipePage() {
       setDragOffset({ x: 0, y: 0 });
     }
   };
+
+  // Vérifier si l'utilisateur est connecté
+  if (!auth.user) {
+    return (
+      <div className="w-full">
+        <TopBar title="Découvrir des profils" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="alert alert-warning max-w-md">
+            <span>Vous devez être connecté pour découvrir des profils.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading && profileIdQueue.length === 0 && currentIndexInBatch === 0) {
     return <div style={{ textAlign: "center", padding: "20px" }}>Chargement des profils...</div>;

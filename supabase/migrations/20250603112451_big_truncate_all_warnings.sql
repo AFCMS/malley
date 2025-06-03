@@ -12,5 +12,6 @@ begin
 end;$function$
 ;
 
-revoke EXECUTE ON FUNCTION extreme_danger_truncate_all_tables_yes_i_am_sure() from anon;
-revoke EXECUTE ON FUNCTION extreme_danger_truncate_all_tables_yes_i_am_sure() from authenticated;
+REVOKE EXECUTE ON FUNCTION extreme_danger_truncate_all_tables_yes_i_am_sure() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION extreme_danger_truncate_all_tables_yes_i_am_sure() from anon;
+REVOKE EXECUTE ON FUNCTION extreme_danger_truncate_all_tables_yes_i_am_sure() from authenticated;

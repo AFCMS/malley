@@ -27,6 +27,15 @@ interface ImportMetaEnv {
    * @see https://search.google.com/search-console
    */
   readonly VITE_GOOGLE_SITE_VERIFICATION: string;
+
+  /**
+   * The anonymous key of the Supabase API.
+   *
+   * This key is used to authenticate with the Supabase API.
+   *
+   * @see https://supabase.com/docs/guides/getting-started/quickstarts/reactjs
+   */
+  readonly DANGER_SUPABASE_SERVICE_KEY: string;
 }
 
 interface ImportMeta {

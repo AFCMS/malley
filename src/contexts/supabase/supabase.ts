@@ -36,6 +36,18 @@ const queries = {
       }
     },
 
+    updateBio: async function (bio: string) {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+
+      const req = await supabase.from("profiles").update({ bio: bio }).eq("id", user.id);
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+    },
+
     getByHandle: async function (handle: string): Promise<Tables<"profiles">> {
       const req = await supabase.from("profiles").select("*").eq("handle", handle).limit(1).single();
       if (req.error) {

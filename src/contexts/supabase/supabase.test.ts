@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { test, beforeAll, afterAll } from "vitest";
 import { flushAllTables } from "./tests.d/supabase.test-utils";
 import { minimal_function } from "./tests.d/minimal-function";

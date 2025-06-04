@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { queries, supabase } from "../supabase";
 import { randomName, registerAndLoginNewUser, createRandomPost } from "./supabase.test-utils";
 
-export const rls_blocks = describe("rls blocks inapropriate requests", () => {
+export const rls_blocks = describe("rls blocks inappropriate requests", () => {
   describe("misuse of supabase.ts", () => {
     describe("posts", () => {
       test("cannot post when not logged in", async () => {

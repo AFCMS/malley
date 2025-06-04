@@ -10,7 +10,7 @@ export const minimal_function = describe("minimal function goes through", () => 
       const { id, body } = await createRandomPost();
       const post = await queries.posts.get(id);
       expect(post.body).toBe(body);
-      expect((await supabase.storage.from("posts-media").list(id)).data?.length !== 1);
+      expect((await supabase.storage.from("posts-media").list(id)).data?.length !== 1).toBe(true);
     });
   });
 

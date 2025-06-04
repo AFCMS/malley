@@ -89,7 +89,6 @@ const queries = {
           (await supabase.storage.from("posts-media").list(id)).data?.length !== 0
         );
         for (let i = 0; i < media.length; i++) {
-          console.log("uploading");
           await supabase.storage.from("post-media").upload(id + "/" + i.toString(), media[i]);
         }
       }

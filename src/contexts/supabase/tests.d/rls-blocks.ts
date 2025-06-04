@@ -80,7 +80,7 @@ export const rls_blocks = describe("rls blocks inapropriate requests", () => {
   });
 
   describe("direct sql queries", () => {
-    describe("cannot update profile of other user", async () => {
+    test("cannot update profile of other user", async () => {
       const { user } = await registerAndLoginNewUser();
       await supabase.auth.signOut();
       await registerAndLoginNewUser();
@@ -88,31 +88,31 @@ export const rls_blocks = describe("rls blocks inapropriate requests", () => {
         .from("profiles")
         .update({ bio: randomName(64) })
         .eq("id", user.id);
-      await expect(req).rejects.toThrow();
+      expect(req.data).toBe(null);
     });
 
-    describe("cannot get pendingAuthors information of other user", async () => {
+    test("cannot get pendingAuthors information of other user", async () => {
       const { user } = await registerAndLoginNewUser();
       await supabase.auth.signOut();
       await registerAndLoginNewUser();
       const req1 = await supabase.from("pendingAuthors").select("*").eq("to_profile", user.id);
-      await expect(req1).rejects.toThrow();
       const req2 = await supabase.from("pendingAuthors").select("*").eq("from_profile", user.id);
-      await expect(req2).rejects.toThrow();
+      expect(req1.data).toStrictEqual([]);
+      expect(req2.data).toStrictEqual([]);
     });
 
-    describe("cannot change features of other user", async () => {
+    test("cannot change features of other user", async () => {
       const { user: user1 } = await registerAndLoginNewUser();
       await supabase.auth.signOut();
       const { user: user2 } = await registerAndLoginNewUser();
 
-      const req1 = await supabase.from("features").insert({
+      await supabase.from("features").insert({
         featuree: user2.id,
         featurer: user1.id,
       });
+      expect(await queries.features.doesXfeatureY(user1.id, user2.id)).toBe(false);
       const req2 = await supabase.from("features").delete().eq("featuree", user2.id).eq("featurer", user1.id);
-      await expect(req1).rejects.toThrow();
-      await expect(req2).rejects.toThrow();
+      expect(req2.error == null).toBe(true);
     });
   });
 });

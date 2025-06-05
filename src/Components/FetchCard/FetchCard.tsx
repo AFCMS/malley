@@ -33,7 +33,7 @@ export default function FetchCard(props: { profileId: string }) {
 
     async function fetchFeaturedUsers() {
       try {
-        const featuredProfiles = await queries.featuredUsers.byUser(props.profileId);
+        const featuredProfiles = await queries.features.byUser(props.profileId);
         if (featuredProfiles.length > 0) {
           const handles = featuredProfiles.map((p) => p.handle);
           setFeaturedByHandles(handles);

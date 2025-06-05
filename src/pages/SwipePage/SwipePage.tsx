@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+
 import { queries } from "../../contexts/supabase/supabase";
+import { useAuth } from "../../contexts/auth/AuthContext";
+
 import FetchCard from "../../Components/FetchCard/FetchCard";
 import TopBar from "../../layouts/TopBar/TopBar";
-import { useAuth } from "../../contexts/auth/AuthContext";
 
 // IMPORTANT : pour l'instant les uuids de profils sont codés en dur ici.
 // plus tard on pourrait les récupérer dynamiquement depuis la base de données
@@ -21,7 +23,6 @@ export default function SwipePage() {
   const [currentIndexInBatch, setCurrentIndexInBatch] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [seenProfileIds, setSeenProfileIds] = useState<Set<string>>(new Set());
 
   // États pour l'animation de swipe
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -159,7 +160,9 @@ export default function SwipePage() {
     if (profileIdQueue.length > 0 && currentIndexInBatch + 1 < profileIdQueue.length) {
       const nextProfileId = profileIdQueue[currentIndexInBatch + 1];
       if (nextProfileId) {
-        queries.profiles.get(nextProfileId).catch(() => {});
+        queries.profiles.get(nextProfileId).catch((e: unknown) => {
+          console.error(e);
+        });
       }
     }
   }, [currentIndexInBatch, profileIdQueue]);
@@ -177,7 +180,7 @@ export default function SwipePage() {
     setIsAnimating(true);
 
     if (direction === "right") {
-      handleFollow();
+      void handleFollow();
     } else {
       handlePass();
     }
@@ -358,7 +361,7 @@ export default function SwipePage() {
                   textShadow: "3px 3px 6px rgba(0,0,0,0.5)",
                   fontFamily: "Impact, Arial Black, sans-serif",
                   letterSpacing: "0.1em",
-                  transform: `scale(${Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300)})`,
+                  transform: `scale(${Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300).toString()})`,
                   transition: "transform 0.1s ease-out",
                 }}
               >
@@ -371,7 +374,7 @@ export default function SwipePage() {
           <div
             key={currentProfileId}
             style={{
-              transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y * 0.1}px) rotate(${rotation}deg)`,
+              transform: `translateX(${dragOffset.x.toString()}px) translateY(${(dragOffset.y * 0.1).toString()}px) rotate(${rotation.toString()}deg)`,
               opacity: opacity,
               transition: isDragging ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
               cursor: isDragging ? "grabbing" : "grab",

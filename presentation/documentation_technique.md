@@ -1,220 +1,125 @@
 # Documentation Technique - Malley
 
-## Table des matières
-- [Documentation Technique - Malley](#documentation-technique---malley)
-  - [Table des matières](#table-des-matières)
-  - [Vue d'ensemble du projet](#vue-densemble-du-projet)
-  - [Architecture générale](#architecture-générale)
-  - [Technologies utilisées](#technologies-utilisées)
-    - [Frontend](#frontend)
-    - [Backend](#backend)
-    - [Déploiement](#déploiement)
-  - [Structure de la base de données](#structure-de-la-base-de-données)
-    - [Tables principales](#tables-principales)
-      - [Table `profiles`](#table-profiles)
-      - [Table `posts`](#table-posts)
-      - [Table `follows`](#table-follows)
-      - [Table `likes`](#table-likes)
-      - [Table `authored`](#table-authored)
-      - [Table `pendingAuthors`](#table-pendingauthors)
-      - [Table `category`](#table-category)
-      - [Tables de liaison](#tables-de-liaison)
-  - [Architecture Backend](#architecture-backend)
-    - [Supabase](#supabase)
-  - [Architecture Frontend](#architecture-frontend)
-    - [Structure](#structure)
-    - [Design responsive](#design-responsive)
-  - [Sécurité](#sécurité)
-  - [Installation et configuration](#installation-et-configuration)
-    - [Prérequis](#prérequis)
-    - [Installation](#installation)
-  - [Déploiement](#déploiement-1)
-  - [Justification des choix techniques](#justification-des-choix-techniques)
-    - [Choix de Supabase comme Backend](#choix-de-supabase-comme-backend)
-    - [Choix de React avec TypeScript](#choix-de-react-avec-typescript)
-    - [Choix de TailwindCSS + DaisyUI](#choix-de-tailwindcss--daisyui)
-    - [Choix de Vercel pour le déploiement](#choix-de-vercel-pour-le-déploiement)
-
 ## Vue d'ensemble du projet
 
 Malley est une plateforme de médias sociaux inspirée de Twitter, développée dans le cadre du projet de groupe 2GPJT à l'École Hexagone. L'application permet aux utilisateurs de publier des messages, suivre d'autres utilisateurs et interagir avec les publications.
 
 ## Architecture générale
 
-L'application suit une architecture séparant le frontend du backend :
+L'application suit une architecture conçue pour minimiser le nombre de couches requises et le coût d'hébergement (pas besoin d'un VPS, d'un serveur dédié ou de conteneurs):
 
 ```
-Frontend (React + TypeScript) ↔ Backend (Supabase) ↔ Base de données (PostgreSQL)
+Frontend (Vercel + React) ↔ Backend (Supabase Cloud)
 ```
 
 ## Technologies utilisées
 
 ### Frontend
-- **React 18** : Interface utilisateur
-- **TypeScript** : Langage de programmation
-- **Vite** : Outil de build
-- **React Router** : Routage
-- **TailwindCSS** : Styles CSS
-- **DaisyUI** : Composants UI
+
+| Technologie          | Utilisation                   |
+| -------------------- | ----------------------------- |
+| **TypeScript**       | Langage de programmation      |
+| **Vite**             | Outil de build                |
+| **React 19**         | Interface utilisateur         |
+| **React Router**     | Routage                       |
+| **TailwindCSS**      | Styles CSS                    |
+| **DaisyUI**          | Composants UI                 |
+| **Supabase Client**  | Communication avec le Backend |
+| **Vercel Analytics** | Statistiques utilisateurs     |
+| **Vercel**           | Hébergement Frontend          |
 
 ### Backend
-- **Supabase** : Backend-as-a-Service
-- **PostgreSQL** : Base de données
-- **Node.js** : Environnement d'exécution
 
-### Déploiement
-- **Vercel** : Hébergement frontend
-- **Supabase Cloud** : Hébergement backend
-- **GitHub Actions** : CI/CD
+| Technologie                 | Utilisation                   |
+| --------------------------- | ----------------------------- |
+| **Supabase**                | (BaaS) Backend-as-a-Service   |
+| **⤷ Auth**                  | Authentification utilisateurs |
+| **⤷ Database (PostgreSQL)** | Base de données               |
+| **⤷ Storage**               | Hébergement de fichiers       |
+
+### Développement
+
+| Outil                      | Utilisation                                |
+| -------------------------- | ------------------------------------------ |
+| **PNPM**                   | Gestionnaire de paquets                    |
+| **GitHub**                 | Hébergement du dépôt Git                   |
+| **GitHub Actions**         | Intégration continue / Déploiement continu |
+| **GitHub Issues/Projects** | Gestion de projet                          |
+| **Grafana**                | Monitoring de l'instance Supabase          |
 
 ## Structure de la base de données
 
-### Tables principales
+Voir [README Supabase](../supabase/README.md) pour la structure de la base de données.
 
-#### Table `profiles`
-- `id` : Identifiant unique (UUID)
-- `handle` : Nom d'utilisateur unique
-- `created_at` : Date de création
-- `bio` : Biographie
-- `profile_pic` : Photo de profil
-- `banner` : Bannière
-- `pinned_posts` : Post épinglé
+## Structure du code
 
-#### Table `posts`
-- `id` : Identifiant unique (UUID)
-- `created_at` : Date de création
-- `body` : Contenu du post
-- `media` : Médias associés
-- `parent_post` : Référence au post parent (pour les réponses)
-
-#### Table `follows`
-- `follower` : Utilisateur qui suit
-- `followee` : Utilisateur suivi
-
-#### Table `likes`
-- `profile` : Profil qui aime
-- `post` : Post aimé
-
-#### Table `authored`
-- `profile` : Profil auteur
-- `post` : Post créé
-
-#### Table `pendingAuthors`
-- `from_profile` : Demandeur
-- `to_profile` : Destinataire
-- `post` : Post concerné
-
-#### Table `category`
-- `id` : Identifiant unique
-- `name` : Nom de la catégorie
-
-#### Tables de liaison
-- `profilesCategory` : Lie profils et catégories
-- `postsCategory` : Lie posts et catégories
-- `featured-users` : Utilisateurs mis en avant
-
-## Architecture Backend
-
-### Supabase
-- API REST automatique
-- Authentification JWT
-- Row Level Security (RLS)
-- Fonctionnalités temps réel
-
-## Architecture Frontend
-
-### Structure
 ```
+.github/           # Configuration GitHub (CI/CD, etc.)
+public/            # Fichiers statiques (favicon, images, etc.)
 src/
 ├── components/    # Composants réutilisables
-├── pages/        # Pages de l'application
-├── contexts/     # Contextes React
-└── utils/        # Fonctions utilitaires
+├── layouts/       # Méga-composants pour les pages
+├── pages/         # Pages de l'application
+├── contexts/      # Contextes React (Supabase, Authentification, etc.)
+└── utils/         # Fonctions utilitaires
+supabase/
+└── migrations/    # Migrations de base de données
 ```
-
-### Design responsive
-- Mobile-first avec TailwindCSS
-- Adaptation automatique aux différents écrans
-
-## Sécurité
-
-- **Authentification** : JWT via Supabase Auth
-- **Protection des données** : Row Level Security (RLS)
-- **Chiffrement** : HTTPS pour toutes les communications
-- **Validation** : Entrées utilisateur sécurisées
 
 ## Installation et configuration
 
-### Prérequis
-- Node.js (version 18+)
-- PNPM
-- Docker ou Podman
-
-### Installation
-```bash
-# Cloner le projet
-git clone https://github.com/your-org/malley.git
-cd malley
-
-# Installer les dépendances
-pnpm install
-
-# Démarrer Supabase local
-pnpm run supabase start
-
-# Configurer les variables d'environnement (.env.local)
-VITE_SUPABASE_URL="http://127.0.0.1:54321"
-VITE_SUPABASE_ANON_KEY="votre-clé"
-
-# Lancer l'application
-pnpm run dev
-```
-
-## Déploiement
-
-- **Développement** : Supabase CLI + Vite dev server
-- **Production** : Vercel (frontend) + Supabase Cloud (backend)
+Voir [README](../README.md) pour les instructions d'installation et de configuration.
 
 ## Justification des choix techniques
 
 ### Choix de Supabase comme Backend
+
 **Avantages :**
-- **Développement rapide** : API REST générée automatiquement à partir du schéma de base de données, réduisant considérablement le temps de développement backend
-- **Sécurité intégrée** : Authentification robuste avec JWT et Row Level Security (RLS) au niveau de la base de données
-- **Fonctionnalités temps réel** : WebSockets intégrés permettant les mises à jour en direct sans développement complexe
-- **Scalabilité** : Infrastructure cloud native qui s'adapte automatiquement à la charge
-- **Écosystème complet** : Base de données PostgreSQL, stockage de fichiers, et edge functions dans une seule solution
+
+- **Système d'authentification complet**, intégré directement à la base de données
+- Définition du backend en entier sans avoir à écrire de code serveur, en SQL directement. Les RLS (Row Level Security) permettent de sécuriser les données grâce au système d'authentification.
+- Une API REST est générée automatiquement à partir du schéma de base de données, ainsi que des types TypeScript pour l'utilisation avec le client Supabase. On a donc une sûreté de type pour les données échangées entre le frontend et le backend si on considère l'intégration complète de ces mécanismes dans le pipeline CI/CD.
+- Le stockage de fichiers est intégré, avec la même gestion via PostgreSQL et les mêmes règles de sécurité.
+- Supabase est open source et basé sur PostgreSQL, ce qui permet une grande flexibilité et un auto-hébergement si nécessaire.
+- On peut également facilement créer des notifications temps réel ainsi que des fonctions serverless (Edge Functions) pour des tâches spécifiques (non exploitées dans ce projet).
 
 **Inconvénients considérés :**
-- Dépendance à un service tiers
-- Coûts potentiels à grande échelle
+
+- Dépendance à un service tiers pour l'hébergement.
+- Coûts potentiels à grande échelle vis à vis d'une solution spécifiquement conçue et auto-hébergée.
 
 ### Choix de React avec TypeScript
+
 **Avantages :**
+
+- **Modernité** : Outils rapides, modernes et avec une bonne DX (Vite, Vitest, TypeScript, etc.)
 - **Écosystème mature** : Large communauté, documentation extensive, et nombreuses librairies disponibles
 - **Productivité** : Développement rapide grâce aux composants réutilisables et aux hooks
-- **Maintenabilité** : TypeScript apporte le typage statique, réduisant les erreurs et améliorant la qualité du code
-- **Performance** : Virtual DOM et optimisations automatiques de React
-- **Compatibilité** : Excellent support des outils modernes (Vite, testing libraries)
 
 ### Choix de TailwindCSS + DaisyUI
-**Avantages :**
-- **Rapidité de développement** : Classes utilitaires permettant un prototypage rapide
-- **Consistance** : Design system cohérent à travers toute l'application
-- **Responsive design** : Adaptation native aux différentes tailles d'écran
-- **Maintenance** : Réduction du CSS custom, moins de code à maintenir
-- **DaisyUI** : Composants préconçus accélérant le développement UI
 
-### Choix de Vercel pour le déploiement
 **Avantages :**
-- **Intégration Git** : Déploiement automatique à chaque push
-- **Performance** : CDN global et optimisations automatiques
-- **Simplicité** : Configuration zero-config pour les projets React
-- **Preview deployments** : Environnements de test automatiques pour chaque PR
+
+- **Design System** : Le design system de TailwindCSS est très cohérent et permet de ne toucher que rarement au CSS custom.
+- **Maintenance** : Réduction du CSS custom, moins de code à maintenir.
+- **DaisyUI** : Composants préconçus basés sur TailwindCSS accélérant le développement UI pour aller plus vite dans la création de l'interface utilisateur par rapport à l'utilisation directe des classes utilitaires du framework de base.
+
+### Choix de Vercel pour l'hébergement Frontend
+
+**Avantages :**
+
+- **Simplicité** : Déploiement très facile avec GitHub Actions, pas de configuration complexe.
+- **Performance** : CDN intégré, optimisations automatiques pour les performances.
+- **Analytics** : Outils d'analyse intégrés pour suivre l'utilisation de l'application.
 
 ---
 
-**Équipe de développement :**
-- AFCMS, Roceann, AKArien0
+<img align="right" src="../.github/Hexa_Logo_Sign_RVB_Full.svg" width="300px"/>
 
-**École Hexagone** - Promotion 2024-2025
+**Fait par :**
+
+- [AFCMS](https://github.com/AFCMS)
+- [Roceann](https://github.com/Roceann)
+- [AKArien0](https://github.com/AKArien0)
+
+[**École Hexagone**](https://www.ecole-hexagone.com) 🇫🇷 - Promotion 2024/2025

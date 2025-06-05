@@ -10,8 +10,7 @@ import {
 import { useAuth } from "../../contexts/auth/AuthContext";
 
 import { closePopover } from "../../utils/popover";
-
-const profileImageUrl = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
+import { utils } from "../../contexts/supabase/supabase";
 
 export default function LeftToolbarWide() {
   const auth = useAuth();
@@ -37,7 +36,10 @@ export default function LeftToolbarWide() {
                 <HiOutlineBell className="h-5 opacity-50" />
                 Notifications
               </Link>
-              <Link className="sidebarlink" to="/profile">
+              <Link
+                className="sidebarlink"
+                to={auth.isAuthenticated && auth.profile ? `/@${auth.profile.handle}` : "/login"}
+              >
                 <HiOutlineUser className="h-5 opacity-50" />
                 Profile
               </Link>
@@ -50,7 +52,7 @@ export default function LeftToolbarWide() {
                 <Link to={`/@${auth.profile.handle}`} className="flex items-center gap-3">
                   <div className="avatar">
                     <div className="w-10 rounded-full">
-                      <img src={profileImageUrl} />
+                      <img src={utils.getAvatarUrl(auth.profile)} />
                     </div>
                   </div>
                 </Link>

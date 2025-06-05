@@ -6,16 +6,12 @@ import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
-import { queries } from "../../contexts/supabase/supabase";
+import { queries, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 
 import { formatDate } from "../../utils/date";
 import { closePopover } from "../../utils/popover";
 import { useHandle } from "../../utils/routing";
-
-import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
-
-const profilePicturePlaceholder = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
 
 const ProfileViewer = () => {
   const auth = useAuth();
@@ -133,19 +129,11 @@ const ProfileViewer = () => {
       <TopBar title={profile.handle} />
       <section className="relative mb-16">
         <div className="bg-base-200 relative h-32 w-full lg:h-48">
-          <img
-            src={profile.banner ?? profileBannerPlaceholder}
-            alt="Profile Banner"
-            className="h-full w-full object-cover"
-          />
+          <img src={utils.getBannerUrl(profile)} alt="Profile Banner" className="h-full w-full object-cover" />
 
           <div className="avatar absolute bottom-0 left-4 translate-y-1/2">
             <div className="border-base-100 w-24 rounded-full border-4">
-              <img
-                src={profile.profile_pic ?? profilePicturePlaceholder}
-                alt={`${profile.handle}'s Profile Picture`}
-                className=""
-              />
+              <img src={utils.getAvatarUrl(profile)} alt={`${profile.handle}'s Profile Picture`} className="" />
             </div>
           </div>
         </div>
@@ -213,10 +201,7 @@ const ProfileViewer = () => {
 
         <div className="mt-14 flex flex-col gap-2 px-5">
           <h1 className="font-bold">@{profile.handle}</h1>
-
-          {/* TODO: replace fallback */}
-          {!profile.bio && <p className="text-base text-gray-600">{"French developper and gamer"}</p>}
-
+          {profile.bio && <p className="text-base text-gray-600">{profile.bio}</p>}
           <div
             className="flex flex-row items-center gap-1 text-sm font-semibold text-gray-600"
             title={profileCreationDate.toLocaleDateString()}
@@ -224,7 +209,6 @@ const ProfileViewer = () => {
             <HiCalendar className="h-4 w-4" />
             Joined on {formatDate(profileCreationDate)}
           </div>
-          {/* TODO: real values */}
           <div className="flex flex-row items-center gap-2">
             <Link className="text-sm font-semibold text-gray-600" to={`/@${profile.handle}/featured`}>
               <strong>{featuredCount}</strong> Featured

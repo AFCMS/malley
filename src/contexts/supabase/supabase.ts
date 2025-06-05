@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { Database, Tables } from "./database";
 import { v4 } from "uuid";
 
+import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
@@ -48,6 +50,76 @@ const queries = {
       }
     },
 
+    updateAvatar: async function (media: File | null): Promise<void> {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+      const id = user.id;
+      const profile = await queries.profiles.get(id);
+
+      if (media) {
+        if (profile.profile_pic) {
+          await supabase.storage.from("profile-pics").remove([profile.profile_pic]);
+        }
+        // File names are in the format: <id>_<timestamp>.<extension>
+        // This ensures that the file name is unique and avoids collisions and browser cache problems.
+        const extension = media.type.split("/")[1] || "png";
+        const fileName = id + "_" + Math.floor(Date.now() / 1000).toString() + "." + extension;
+        const req = await supabase.storage.from("profile-pics").upload(fileName, media, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+        if (req.error) {
+          throw new Error(req.error.message);
+        }
+
+        const updateReq = await supabase.from("profiles").update({ profile_pic: fileName }).eq("id", id);
+
+        if (updateReq.error) {
+          throw new Error(updateReq.error.message);
+        }
+      } else if (profile.profile_pic) {
+        await supabase.storage.from("profile-pics").remove([profile.profile_pic]);
+      }
+    },
+
+    updateBanner: async function (media: File | null): Promise<void> {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+      const id = user.id;
+      const profile = await queries.profiles.get(id);
+
+      if (media) {
+        if (profile.banner) {
+          await supabase.storage.from("banners").remove([profile.banner]);
+        }
+        // File names are in the format: <id>_<timestamp>.<extension>
+        // This ensures that the file name is unique and avoids collisions and browser cache problems.
+        const extension = media.type.split("/")[1] || "png";
+        const fileName = id + "_" + Math.floor(Date.now() / 1000).toString() + "." + extension;
+        const req = await supabase.storage.from("banners").upload(fileName, media, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+        if (req.error) {
+          throw new Error(req.error.message);
+        }
+
+        const updateReq = await supabase.from("profiles").update({ banner: fileName }).eq("id", id);
+
+        if (updateReq.error) {
+          throw new Error(updateReq.error.message);
+        }
+      } else if (profile.banner) {
+        await supabase.storage.from("banners").remove([profile.banner]);
+      }
+    },
+
     getByHandle: async function (handle: string): Promise<Tables<"profiles">> {
       const req = await supabase.from("profiles").select("*").eq("handle", handle).limit(1).single();
       if (req.error) {
@@ -86,7 +158,7 @@ const queries = {
         } while (
           // in the comedically rare case of a collision, regenerate it
           // OR, if we feel spicy, put an easter egg here!
-          (await supabase.storage.from("posts-media").list(id)).data?.length !== 0
+          (await supabase.storage.from("post-media").list(id)).data?.length !== 0
         );
         for (let i = 0; i < media.length; i++) {
           await supabase.storage.from("post-media").upload(id + "/" + i.toString(), media[i]);
@@ -516,4 +588,19 @@ const queries = {
   },
 };
 
-export { supabase, queries };
+const utils = {
+  getAvatarUrl: (profile: Tables<"profiles">): string => {
+    if (profile.profile_pic) {
+      return supabase.storage.from("profile-pics").getPublicUrl(profile.profile_pic).data.publicUrl;
+    }
+    return "https://img.daisyui.com/images/profile/demo/yellingcat@192.webp";
+  },
+  getBannerUrl: (profile: Tables<"profiles">): string => {
+    if (profile.banner) {
+      return supabase.storage.from("banners").getPublicUrl(profile.banner).data.publicUrl;
+    }
+    return profileBannerPlaceholder;
+  },
+};
+
+export { supabase, queries, utils };

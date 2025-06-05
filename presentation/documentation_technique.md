@@ -86,7 +86,6 @@ Voir [README](../README.md) pour les instructions d'installation et de configura
 
 **Inconvénients considérés :**
 
-- Dépendance à un service tiers pour l'hébergement.
 - Coûts potentiels à grande échelle vis à vis d'une solution spécifiquement conçue et auto-hébergée.
 
 ### Choix de React avec TypeScript

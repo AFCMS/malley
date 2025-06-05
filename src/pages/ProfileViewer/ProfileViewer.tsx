@@ -213,10 +213,7 @@ const ProfileViewer = () => {
 
         <div className="mt-14 flex flex-col gap-2 px-5">
           <h1 className="font-bold">@{profile.handle}</h1>
-
-          {/* TODO: replace fallback */}
-          {!profile.bio && <p className="text-base text-gray-600">{"French developper and gamer"}</p>}
-
+          {profile.bio && <p className="text-base text-gray-600">{profile.bio}</p>}
           <div
             className="flex flex-row items-center gap-1 text-sm font-semibold text-gray-600"
             title={profileCreationDate.toLocaleDateString()}
@@ -224,7 +221,6 @@ const ProfileViewer = () => {
             <HiCalendar className="h-4 w-4" />
             Joined on {formatDate(profileCreationDate)}
           </div>
-          {/* TODO: real values */}
           <div className="flex flex-row items-center gap-2">
             <Link className="text-sm font-semibold text-gray-600" to={`/@${profile.handle}/featured`}>
               <strong>{featuredCount}</strong> Featured

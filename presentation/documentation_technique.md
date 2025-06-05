@@ -16,17 +16,18 @@ Frontend (Vercel + React) ↔ Backend (Supabase Cloud)
 
 ### Frontend
 
-| Technologie          | Utilisation                   |
-| -------------------- | ----------------------------- |
-| **TypeScript**       | Langage de programmation      |
-| **Vite**             | Outil de build                |
-| **React 19**         | Interface utilisateur         |
-| **React Router**     | Routage                       |
-| **TailwindCSS**      | Styles CSS                    |
-| **DaisyUI**          | Composants UI                 |
-| **Supabase Client**  | Communication avec le Backend |
-| **Vercel Analytics** | Statistiques utilisateurs     |
-| **Vercel**           | Hébergement Frontend          |
+| Technologie          | Utilisation                            |
+| -------------------- | -------------------------------------- |
+| **TypeScript**       | Langage de programmation               |
+| **Vite**             | Outil de build                         |
+| **React 19**         | Interface utilisateur                  |
+| **React Router**     | Routage                                |
+| **TailwindCSS**      | Styles CSS                             |
+| **DaisyUI**          | Composants UI                          |
+| **PWA**              | Application web installable sur mobile |
+| **Supabase Client**  | Communication avec le Backend          |
+| **Vercel Analytics** | Statistiques utilisateurs              |
+| **Vercel**           | Hébergement Frontend                   |
 
 ### Backend
 

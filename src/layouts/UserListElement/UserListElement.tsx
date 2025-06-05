@@ -1,13 +1,14 @@
 import { Link } from "react-router";
 
 import { Tables } from "../../contexts/supabase/database";
+import { utils } from "../../contexts/supabase/supabase";
 
 interface UserListElementProps {
   profile: Tables<"profiles">;
 }
 
 export default function UserListElement({ profile }: UserListElementProps) {
-  const profilePicUrl = profile.profile_pic ?? "https://img.daisyui.com/images/profile/demo/yellingcat@192.webp";
+  const profilePicUrl = utils.getAvatarUrl(profile);
 
   return (
     <Link

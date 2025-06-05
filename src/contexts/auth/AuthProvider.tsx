@@ -1,18 +1,15 @@
 import { useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { queries, supabase } from "../supabase/supabase";
-import { AuthContext } from "./AuthContext";
 
-interface Profile {
-  created_at: string;
-  handle: string;
-  id: string;
-}
+import { queries, supabase } from "../supabase/supabase";
+import { Tables } from "../supabase/database";
+
+import { AuthContext } from "./AuthContext";
 
 export interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: Profile | null;
+  profile: Tables<"profiles"> | null;
   isAuthenticated: boolean;
   register: (handle: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
@@ -26,7 +23,7 @@ export interface AuthContextType {
 export function AuthProvider(props: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 

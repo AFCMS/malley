@@ -167,39 +167,6 @@ export default function PostViewer(props: { post: Tables<"posts"> }) {
     void fetchMediaUrls();
   }, [props.post.media]);
 
-  // Rendu d'un média
-  function renderMedia(url: string, index: number) {
-    if (!url) return null;
-
-    const ext = url.split(".").pop()?.toLowerCase() ?? "";
-
-    if (ext === "pdf") {
-      return (
-        <a
-          key={index}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "block", margin: "8px 0" }}
-        >
-          📄 Voir le PDF {index + 1}
-        </a>
-      );
-    }
-
-    return (
-      <img
-        key={index}
-        src={`${url}?t=${Date.now().toString()}`} // Éviter le cache
-        alt={`Pièce jointe ${(index + 1).toString()}`}
-        style={{ maxWidth: 200, margin: 8 }}
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-      />
-    );
-  }
-
   return (
     <div className="post-viewer">
       {props.post.body && <p>Contenu: {props.post.body}</p>}

@@ -1,7 +1,7 @@
 import { beforeAll, afterAll, describe } from "vitest";
-import { flushAllTables } from "./tests.d/supabase.test-utils";
-import { minimal_function } from "./tests.d/minimal-function";
-import { rls_blocks } from "./tests.d/rls-blocks";
+import { flushAllTables } from "./tests/supabase.test-utils";
+import { minimal_function } from "./tests/minimal-function";
+import { rls_blocks } from "./tests/rls-blocks";
 
 if (process.env.TEST_SUPABASE || process.env.TEST_ALL) {
   if (!process.env.DESTRUCTIVE_SUPABASE && !process.env.DESTRUCTIVE_ALL) {

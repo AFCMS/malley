@@ -7,7 +7,7 @@ export default function FetchCard(props: { profileId: string }) {
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
   const [featuredByHandles, setFeaturedByHandles] = useState<string[]>([]);
   const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[]>([]);
-  const [AllPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
+  const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
 
   useEffect(() => {
     async function fetchProfileData() {
@@ -102,16 +102,16 @@ export default function FetchCard(props: { profileId: string }) {
         </div>
       )}
 
-      {AllPosts.length > 0 && (
+      {allPosts.length > 0 && (
         <div>
           <h3>Toutes les publications :</h3>
-          {AllPosts.map((post) => (
+          {allPosts.map((post) => (
             <PostViewer key={post.id} post={post} />
           ))}
         </div>
       )}
 
-      {AllPosts.length === 0 && pinnedPosts.length === 0 && <p>Aucune publication à afficher pour ce profil.</p>}
+      {allPosts.length === 0 && pinnedPosts.length === 0 && <p>Aucune publication à afficher pour ce profil.</p>}
     </div>
   );
 }

@@ -1,17 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-import { test, beforeAll, afterAll } from "vitest";
+import { beforeAll, afterAll, describe } from "vitest";
 import { flushAllTables } from "./tests.d/supabase.test-utils";
 import { minimal_function } from "./tests.d/minimal-function";
 import { rls_blocks } from "./tests.d/rls-blocks";
 
-let run_tests: boolean;
 if (process.env.TEST_SUPABASE || process.env.TEST_ALL) {
-  run_tests = true;
   if (!process.env.DESTRUCTIVE_SUPABASE && !process.env.DESTRUCTIVE_ALL) {
     throw new Error("Testing the supabase necessitates wiping it. Set DESTRUCTIVE_SUPABASE environment to allow it.");
   }
-} else {
-  run_tests = false;
+  describe("supabase", () => {
+    minimal_function();
+    rls_blocks();
+  });
 }
 
 beforeAll(async () => {
@@ -42,9 +41,4 @@ beforeAll(async () => {
 afterAll(async () => {
   // clean the db again
   await flushAllTables();
-});
-
-test.runIf(run_tests)("supabase", () => {
-  minimal_function;
-  rls_blocks;
 });

@@ -150,6 +150,23 @@ const queries = {
       }
     },
 
+    getParentChain: async function (id: string, limit = 0): Promise<Tables<"posts">[]> {
+      // limit = 0 means it will go back as far as possible
+      const chain: Tables<"posts">[] = [];
+      let currentId: string | null = id;
+      let count = 0;
+
+      while (currentId) {
+        const post = await queries.posts.get(currentId);
+        chain.push(post);
+        count++;
+        if (limit > 0 && count >= limit) break;
+        currentId = post.parent_post ?? null;
+      }
+
+      return chain;
+    },
+
     new: async function (body: string, media: File[]): Promise<string> {
       let id: string | undefined = undefined;
       if (media.length != 0) {
@@ -180,6 +197,19 @@ const queries = {
         throw new Error("id wasn’t returned");
       }
       return data.id;
+    },
+
+    edit: async function (id: string, newBody: string): Promise<boolean> {
+      const req = await supabase.from("posts").update({ body: newBody }).eq("id", id).select();
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+
+      if (req.data.length === 0) {
+        return false;
+      }
+      return true;
     },
   },
 

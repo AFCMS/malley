@@ -13,6 +13,14 @@ export function rls_blocks() {
             await createRandomPost();
           }).rejects.toThrow();
         });
+
+        test("cannot edit another user's post", async () => {
+          await registerAndLoginNewUser();
+          const { id } = await createRandomPost();
+          await supabase.auth.signOut();
+          await registerAndLoginNewUser();
+          expect(await queries.posts.edit(id, "hacked!")).toBe(false);
+        });
       });
 
       describe("pendingAuthors", () => {

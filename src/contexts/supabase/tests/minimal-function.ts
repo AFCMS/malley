@@ -13,6 +13,91 @@ export function minimal_function() {
         expect(post.body).toBe(body);
         expect((await supabase.storage.from("posts-media").list(id)).data?.length !== 1).toBe(true);
       });
+
+      test("edit post body", async () => {
+        await registerAndLoginNewUser();
+        const { id } = await createRandomPost();
+        const newBody = "This is the new content";
+        const result = await queries.posts.edit(id, newBody);
+        expect(result).toBe(true);
+        const post = await queries.posts.get(id);
+        expect(post.body).toBe(newBody);
+      });
+
+      test("edit non-existent post returns false or throws", async () => {
+        await registerAndLoginNewUser();
+        // statistacally, not in db
+        const fakeId = "00000000-0000-4000-8000-000000000000";
+        expect(await queries.posts.edit(fakeId, "irrelevant")).toBe(false);
+      });
+
+      describe("getParentChain", () => {
+        test("returns the correct parent chain, no limit", async () => {
+          await registerAndLoginNewUser();
+          const { id: rootId } = await createRandomPost();
+          const { data: data1, error: error1 } = await supabase
+            .from("posts")
+            .insert({ body: "reply1", parent_post: rootId })
+            .select("id")
+            .single();
+          const { data: data2, error: error2 } = await supabase
+            .from("posts")
+            .insert({ body: "reply2", parent_post: data1?.id })
+            .select("id")
+            .single();
+
+          if (error1 || error2) {
+            console.error(error1);
+            console.error(error2);
+            throw new Error();
+          }
+
+          const chain = await queries.posts.getParentChain(data2.id);
+          expect(chain.length).toBe(3);
+          expect(chain[0].id).toBe(data2.id);
+          expect(chain[1].id).toBe(data1.id);
+          expect(chain[2].id).toBe(rootId);
+          expect(chain[2].parent_post).toBeNull();
+        });
+
+        test("respects limit", async () => {
+          await registerAndLoginNewUser();
+          const { id: rootId } = await createRandomPost();
+
+          const { data: data1, error: error1 } = await supabase
+            .from("posts")
+            .insert({ body: "reply1", parent_post: rootId })
+            .select("id")
+            .single();
+          // Create a reply to reply1
+          const { data: data2, error: error2 } = await supabase
+            .from("posts")
+            .insert({ body: "reply2", parent_post: data1?.id })
+            .select("id")
+            .single();
+
+          if (error1 || error2) {
+            console.error(error1);
+            console.error(error2);
+            throw new Error();
+          }
+
+          // Limit to 2
+          const chain = await queries.posts.getParentChain(data2.id, 2);
+          expect(chain.length).toBe(2);
+          expect(chain[0].id).toBe(data2.id);
+          expect(chain[1].id).toBe(data1.id);
+        });
+
+        test("returns only self for root post", async () => {
+          await registerAndLoginNewUser();
+          const { id: rootId } = await createRandomPost();
+          const chain = await queries.posts.getParentChain(rootId);
+          expect(chain.length).toBe(1);
+          expect(chain[0].id).toBe(rootId);
+          expect(chain[0].parent_post).toBeNull();
+        });
+      });
     });
 
     describe("authors", () => {

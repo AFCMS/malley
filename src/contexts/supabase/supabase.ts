@@ -178,7 +178,8 @@ const queries = {
           (await supabase.storage.from("post-media").list(id)).data?.length !== 0
         );
         for (let i = 0; i < media.length; i++) {
-          await supabase.storage.from("post-media").upload(id + "/" + i.toString(), media[i]);
+          const extension = media[i].type.split("/")[1] || "png";
+          await supabase.storage.from("post-media").upload(id + "/" + i.toString() + "." + extension, media[i]);
         }
       }
       const { data, error } = await supabase

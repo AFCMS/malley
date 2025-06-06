@@ -227,8 +227,7 @@ const ProfileViewer = () => {
       )}
 
       {allPosts.length > 0 && (
-        <div className="all-posts">
-          <h2>Other posts</h2>
+        <div className="">
           {allPosts.map((post) => (
             <PostViewer key={post.id} post={post} />
           ))}

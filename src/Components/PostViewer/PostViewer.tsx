@@ -1,14 +1,36 @@
 import { useEffect, useState } from "react";
-import { Tables } from "../../contexts/supabase/database";
-import { queries, supabase } from "../../contexts/supabase/supabase";
+import { HiOutlineChatBubbleOvalLeft, HiOutlineArrowPath, HiOutlineBookmark, HiOutlineHeart } from "react-icons/hi2";
 
-export default function PostViewer(props: { post: Tables<"posts"> }) {
+import { Tables } from "../../contexts/supabase/database";
+import { queries, supabase, utils } from "../../contexts/supabase/supabase";
+import MediaCarousel from "../MediaCarousel/MediaCarousel";
+import { formatDatePost } from "../../utils/date";
+
+interface PostViewerProps {
+  post: Tables<"posts">;
+}
+
+export default function PostViewer(props: PostViewerProps) {
   const [categories, setCategories] = useState<Tables<"categories">[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState<boolean>(true);
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [loadingMedia, setLoadingMedia] = useState<boolean>(false);
+  const [authors, setAuthors] = useState<Tables<"profiles">[]>([]);
 
-  const dateCreation = new Date(props.post.created_at).toLocaleDateString("fr-FR");
+  const dateCreation = new Date(props.post.created_at);
+
+  // Fetch post authors
+  useEffect(() => {
+    async function fetchAuthors() {
+      try {
+        const postAuthors = await queries.authors.ofPost(props.post.id);
+        setAuthors(postAuthors);
+      } catch {
+        setAuthors([]);
+      }
+    }
+
+    void fetchAuthors();
+  }, [props.post.id]);
 
   // Récupération des catégories
   useEffect(() => {
@@ -18,8 +40,6 @@ export default function PostViewer(props: { post: Tables<"posts"> }) {
         setCategories(postCategories);
       } catch {
         setCategories([]);
-      } finally {
-        setLoadingCategories(false);
       }
     }
 
@@ -36,9 +56,12 @@ export default function PostViewer(props: { post: Tables<"posts"> }) {
 
       try {
         setLoadingMedia(true);
-
-        // Tentative 1: liste des fichiers
-        const { data, error } = await supabase.storage.from("post-media").list(props.post.media);
+        const { data, error } = await supabase.storage.from("post-media").list(props.post.media, {
+          limit: 10,
+          offset: 0,
+          sortBy: { column: "name", order: "asc" },
+        });
+        console.log(data);
 
         if (!error && data.length > 0) {
           const urls = data.map(
@@ -48,20 +71,6 @@ export default function PostViewer(props: { post: Tables<"posts"> }) {
           setMediaUrls(urls);
           return;
         }
-
-        // Tentative 2: récupérer par indices numériques (0, 1, 2...)
-        const numericUrls = [];
-        for (let i = 0; i < 10; i++) {
-          const { data: fileData } = supabase.storage
-            .from("post-media")
-            .getPublicUrl(`${props.post.media || ""}/${i.toString()}`);
-
-          if (fileData.publicUrl) {
-            numericUrls.push(fileData.publicUrl);
-          }
-        }
-
-        setMediaUrls(numericUrls);
       } catch {
         setMediaUrls([]);
       } finally {
@@ -72,134 +81,97 @@ export default function PostViewer(props: { post: Tables<"posts"> }) {
     void fetchMediaUrls();
   }, [props.post.media]);
 
-  // Rendu d'un média
-  function renderMedia(url: string, index: number) {
-    if (!url) return null;
-
-    const ext = url.split(".").pop()?.toLowerCase() ?? "";
-
-    if (ext === "pdf") {
-      return (
-        <a
-          key={index}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: "block", margin: "8px 0" }}
-        >
-          📄 Voir le PDF {index + 1}
-        </a>
-      );
-    }
-
-    return (
-      <img
-        key={index}
-        src={`${url}?t=${Date.now().toString()}`} // Éviter le cache
-        alt={`Pièce jointe ${(index + 1).toString()}`}
-        style={{ maxWidth: 200, margin: 8 }}
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-      />
-    );
-  }
-
-  // Récupération des catégories
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const postCategories = await queries.postsCategories.get(props.post.id);
-        setCategories(postCategories);
-      } catch {
-        setCategories([]);
-      } finally {
-        setLoadingCategories(false);
-      }
-    }
-
-    void fetchCategories();
-  }, [props.post.id]);
-
-  // Récupération des médias
-  useEffect(() => {
-    async function fetchMediaUrls() {
-      if (!props.post.media) {
-        setMediaUrls([]);
-        return;
-      }
-
-      try {
-        setLoadingMedia(true);
-
-        // Tentative 1: liste des fichiers
-        const { data, error } = await supabase.storage.from("post-media").list(props.post.media);
-
-        if (!error && data.length > 0) {
-          const urls = data.map(
-            (file) =>
-              supabase.storage.from("post-media").getPublicUrl(`${props.post.media ?? ""}/${file.name}`).data.publicUrl,
-          );
-          setMediaUrls(urls);
-          return;
-        }
-
-        // Tentative 2: récupérer par indices numériques (0, 1, 2...)
-        const numericUrls = [];
-        for (let i = 0; i < 10; i++) {
-          const { data: fileData } = supabase.storage
-            .from("post-media")
-            .getPublicUrl(`${props.post.media || ""}/${i.toString()}`);
-
-          if (fileData.publicUrl) {
-            numericUrls.push(fileData.publicUrl);
-          }
-        }
-
-        setMediaUrls(numericUrls);
-      } catch {
-        setMediaUrls([]);
-      } finally {
-        setLoadingMedia(false);
-      }
-    }
-
-    void fetchMediaUrls();
-  }, [props.post.media]);
+  // Get the first author for display (main poster)
+  const mainAuthor = authors.length > 0 ? authors[0] : null;
 
   return (
-    <div className="post-viewer">
-      {props.post.body && <p>Contenu: {props.post.body}</p>}
-      <p>Date de création: {dateCreation}</p>
+    <div className="border-b border-gray-200 px-4 py-3 transition-colors hover:bg-gray-50/50">
+      {/* Header: Profile pic, handle, and date */}
+      <div className="flex items-start gap-3">
+        {/* Profile picture */}
+        <div className="flex-shrink-0">
+          <div className="h-12 w-12 overflow-hidden rounded-full">
+            <img
+              src={mainAuthor ? utils.getAvatarUrl(mainAuthor) : ""}
+              alt={`${mainAuthor?.handle ?? "Unknown"}'s profile`}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
 
-      {props.post.media && (
-        <div className="post-media">
-          <p>Pièces jointes :</p>
-          {loadingMedia ? (
-            <p>Chargement des pièces jointes...</p>
-          ) : mediaUrls.length === 0 ? (
-            <p>Aucune pièce jointe trouvée</p>
-          ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {mediaUrls.map((url, i) => renderMedia(url, i))}
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          {/* Author info and date */}
+          <div className="flex items-center gap-1 text-sm">
+            <span className="cursor-pointer font-bold text-gray-900 hover:underline">
+              @{mainAuthor?.handle ?? "Unknown Author"}
+            </span>
+            <span className="text-gray-500">·</span>
+            <span className="text-gray-500" title={dateCreation.toLocaleDateString()}>
+              {formatDatePost(dateCreation)}
+            </span>
+          </div>
+
+          {/* Post content */}
+          {props.post.body && (
+            <div className="mt-2 break-words whitespace-pre-wrap text-gray-900">{props.post.body}</div>
+          )}
+
+          {/* Media carousel */}
+          {props.post.media && !loadingMedia && mediaUrls.length > 0 && (
+            <div className="mt-3">
+              <MediaCarousel mediaUrls={mediaUrls} />
             </div>
           )}
-        </div>
-      )}
 
-      <div className="post-categories">
-        <p>Catégories:</p>
-        {loadingCategories ? (
-          <p>Chargement des catégories...</p>
-        ) : categories.length > 0 ? (
-          <ul>
-            {categories.map((category) => (
-              <li key={category.id}>{category.name}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>Aucune catégorie associée à ce post</p>
-        )}
+          {/* Categories */}
+          {categories.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {categories.map((category) => (
+                <span
+                  key={category.id}
+                  className="inline-flex cursor-pointer items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200"
+                >
+                  #{category.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="mt-3 flex max-w-md items-center justify-between">
+            {/* Reply button */}
+            <button className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-blue-500">
+              <div className="rounded-full p-2 transition-colors group-hover:bg-blue-50">
+                <HiOutlineChatBubbleOvalLeft className="h-5 w-5" />
+              </div>
+              <span className="text-sm">24</span>
+            </button>
+
+            {/* Retweet button */}
+            <button className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-green-500">
+              <div className="rounded-full p-2 transition-colors group-hover:bg-green-50">
+                <HiOutlineArrowPath className="h-5 w-5" />
+              </div>
+              <span className="text-sm">12</span>
+            </button>
+
+            {/* Like button */}
+            <button className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-red-500">
+              <div className="rounded-full p-2 transition-colors group-hover:bg-red-50">
+                <HiOutlineHeart className="h-5 w-5" />
+              </div>
+              <span className="text-sm">156</span>
+            </button>
+
+            {/* Bookmark button */}
+            <button className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-blue-500">
+              <div className="rounded-full p-2 transition-colors group-hover:bg-blue-50">
+                <HiOutlineBookmark className="h-5 w-5" />
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { Database, Tables } from "./database";
-import { v4 } from "uuid";
 
 import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
 
@@ -133,37 +132,41 @@ const queries = {
       return chain;
     },
 
-    new: async function (body: string, media: File[]): Promise<string> {
-      let id: string | undefined = undefined;
-      if (media.length != 0) {
-        do {
-          id = v4();
-        } while (
-          // in the comedically rare case of a collision, regenerate it
-          // OR, if we feel spicy, put an easter egg here!
-          (await supabase.storage.from("post-media").list(id)).data?.length !== 0
-        );
-        for (let i = 0; i < media.length; i++) {
-          const extension = media[i].type.split("/")[1] || "png";
-          await supabase.storage.from("post-media").upload(id + "/" + i.toString() + "." + extension, media[i]);
-        }
-      }
-      const { data, error } = await supabase
-        .from("posts")
-        .insert({
-          body: body,
-          media: media.length == 0 ? null : id,
-        })
-        .select("id")
-        .single();
+    getChildren: async function (id: string): Promise<Tables<"posts">[]> {
+      const req = await supabase.from("posts").select("*").eq("parent_post", id);
 
-      if (error) {
-        throw new Error(error.message);
+      if (req.error) {
+        throw new Error(req.error.message);
       }
-      if (!data.id) {
-        throw new Error("id wasn’t returned");
+      return req.data;
+    },
+
+    new: async function (body: string, media: File[], parent: string | null = null): Promise<string> {
+      const formData = new FormData();
+      formData.append("body", body);
+      if (parent != null) formData.append("parent", parent);
+      media.forEach((file) => {
+        formData.append(`media`, file);
+      });
+
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) {
+        throw new Error("Invalid session while trying to upload");
       }
-      return data.id;
+      const accessToken = session.data.session.access_token;
+
+      const res = await fetch(supabaseUrl + "/functions/v1/createPost", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
+      if (!res.ok) {
+        throw new Error("Something went wrong");
+      }
+      const result = await res.json();
+      return result.id; // should return { id: string }
     },
 
     edit: async function (id: string, newBody: string): Promise<boolean> {

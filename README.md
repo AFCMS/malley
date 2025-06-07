@@ -57,6 +57,12 @@ pnpm run dev
 pnpm run supabase stop
 ```
 
+Finally, start the edge functions
+
+```sh
+pnpm run supabase functions serve
+```
+
 <!--[![Made with Supabase](https://supabase.com/badge-made-with-supabase-dark.svg)](https://supabase.com)-->
 <!--[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/project?template=https://github.com/AFCMS/malley)-->
 

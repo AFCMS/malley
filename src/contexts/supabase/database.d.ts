@@ -214,21 +214,18 @@ export type Database = {
           body: string | null
           created_at: string
           id: string
-          media: string | null
           parent_post: string | null
         }
         Insert: {
           body?: string | null
           created_at?: string
           id?: string
-          media?: string | null
           parent_post?: string | null
         }
         Update: {
           body?: string | null
           created_at?: string
           id?: string
-          media?: string | null
           parent_post?: string | null
         }
         Relationships: [

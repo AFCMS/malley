@@ -15,6 +15,38 @@ const getUser = async () => {
   return user;
 };
 
+async function updatePersonalFile(
+  media: File | null,
+  mediaField: "profile_pic" | "banner",
+  bucket: "profile-pics" | "banners",
+): Promise<void> {
+  const user = await getUser();
+  if (!user) throw new Error("not logged in");
+  const id = user.id;
+  const profile = await queries.profiles.get(id);
+
+  if (media) {
+    if (profile[mediaField]) {
+      await supabase.storage.from(bucket).remove([profile[mediaField]]);
+    }
+    const extension = media.type.split("/")[1] || "png";
+    const fileName = id + "_" + Math.floor(Date.now() / 1000).toString() + "." + extension;
+    const req = await supabase.storage.from(bucket).upload(fileName, media, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (req.error) throw new Error(req.error.message);
+
+    const updateReq = await supabase
+      .from("profiles")
+      .update({ [mediaField]: fileName })
+      .eq("id", id);
+    if (updateReq.error) throw new Error(updateReq.error.message);
+  } else if (profile[mediaField]) {
+    await supabase.storage.from(bucket).remove([profile[mediaField]]);
+  }
+}
+
 /*
   syntax:
     queries.profile.get(id)
@@ -50,75 +82,9 @@ const queries = {
       }
     },
 
-    updateAvatar: async function (media: File | null): Promise<void> {
-      const user = await getUser();
-      if (!user) {
-        throw new Error("not logged in");
-      }
-      const id = user.id;
-      const profile = await queries.profiles.get(id);
+    updateAvatar: (media: File | null) => updatePersonalFile(media, "profile_pic", "profile-pics"),
 
-      if (media) {
-        if (profile.profile_pic) {
-          await supabase.storage.from("profile-pics").remove([profile.profile_pic]);
-        }
-        // File names are in the format: <id>_<timestamp>.<extension>
-        // This ensures that the file name is unique and avoids collisions and browser cache problems.
-        const extension = media.type.split("/")[1] || "png";
-        const fileName = id + "_" + Math.floor(Date.now() / 1000).toString() + "." + extension;
-        const req = await supabase.storage.from("profile-pics").upload(fileName, media, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-        if (req.error) {
-          throw new Error(req.error.message);
-        }
-
-        const updateReq = await supabase.from("profiles").update({ profile_pic: fileName }).eq("id", id);
-
-        if (updateReq.error) {
-          throw new Error(updateReq.error.message);
-        }
-      } else if (profile.profile_pic) {
-        await supabase.storage.from("profile-pics").remove([profile.profile_pic]);
-      }
-    },
-
-    updateBanner: async function (media: File | null): Promise<void> {
-      const user = await getUser();
-      if (!user) {
-        throw new Error("not logged in");
-      }
-      const id = user.id;
-      const profile = await queries.profiles.get(id);
-
-      if (media) {
-        if (profile.banner) {
-          await supabase.storage.from("banners").remove([profile.banner]);
-        }
-        // File names are in the format: <id>_<timestamp>.<extension>
-        // This ensures that the file name is unique and avoids collisions and browser cache problems.
-        const extension = media.type.split("/")[1] || "png";
-        const fileName = id + "_" + Math.floor(Date.now() / 1000).toString() + "." + extension;
-        const req = await supabase.storage.from("banners").upload(fileName, media, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-        if (req.error) {
-          throw new Error(req.error.message);
-        }
-
-        const updateReq = await supabase.from("profiles").update({ banner: fileName }).eq("id", id);
-
-        if (updateReq.error) {
-          throw new Error(updateReq.error.message);
-        }
-      } else if (profile.banner) {
-        await supabase.storage.from("banners").remove([profile.banner]);
-      }
-    },
+    updateBanner: (media: File | null) => updatePersonalFile(media, "banner", "banners"),
 
     getByHandle: async function (handle: string): Promise<Tables<"profiles">> {
       const req = await supabase.from("profiles").select("*").eq("handle", handle).limit(1).single();

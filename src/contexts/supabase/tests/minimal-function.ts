@@ -314,5 +314,41 @@ export function minimal_function() {
         expect(featuredIds).not.toContain(user2.id);
       });
     });
+
+    describe("storage", () => {
+      const registerPersonalFilesTests = (
+        updateFn: (file: File | null) => Promise<void>,
+        bucketName: string,
+        testName: string,
+      ) => {
+        describe(`storage (${bucketName}) - ${testName}`, () => {
+          test(`can upload own ${testName}`, async () => {
+            await registerAndLoginNewUser();
+            const dummyFile = new File(["dummy"], "file.png", { type: "image/png" });
+            await expect(updateFn(dummyFile)).resolves.not.toThrow();
+          });
+
+          test(`delete/reupload ${testName}`, async () => {
+            await registerAndLoginNewUser();
+            const dummyFile = new File(["dummy"], "file.png", { type: "image/png" });
+            await expect(updateFn(dummyFile)).resolves.not.toThrow();
+            await expect(updateFn(null)).resolves.not.toThrow();
+            const dummyFile2 = new File(["dummy2"], "file2.png", { type: "image/png" });
+            await expect(updateFn(dummyFile2)).resolves.not.toThrow();
+          });
+
+          test(`can remove own ${testName}`, async () => {
+            await registerAndLoginNewUser();
+            const dummyFile = new File(["dummy"], "file.png", { type: "image/png" });
+            await updateFn(dummyFile);
+            await expect(updateFn(null)).resolves.not.toThrow();
+          });
+        });
+      };
+
+      registerPersonalFilesTests(queries.profiles.updateAvatar, "profile-pics", "profile picture");
+
+      registerPersonalFilesTests(queries.profiles.updateBanner, "banners", "banner");
+    });
   });
 }

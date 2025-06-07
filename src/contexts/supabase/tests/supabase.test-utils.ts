@@ -2,10 +2,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const serviceKey = import.meta.env.DANGER_SUPABASE_SERVICE_KEY;
 
-console.log('Supabase URL: "', supabaseUrl, '"');
-console.log('Supabase Anon Key: "', anonKey, '"');
-console.log('Supabase Service Key: "', serviceKey, '"');
-
 import { supabase, queries } from "../supabase";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -15,14 +11,12 @@ export async function flushAllTables(): Promise<number> {
   const anonClient: SupabaseClient = createClient(supabaseUrl, anonKey);
 
   const { error: errorAnon } = await anonClient.rpc("extreme_danger_truncate_all_tables_yes_i_am_sure");
-  console.log(errorAnon);
   if (!errorAnon) {
     return 2;
   }
 
   await registerAndLoginNewUser();
   const { error: errorUser } = await supabase.rpc("extreme_danger_truncate_all_tables_yes_i_am_sure");
-  console.log(errorUser);
   if (!errorUser) {
     return 1;
   }

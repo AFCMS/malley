@@ -17,7 +17,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
     lang: "en",
     dir: "ltr",
     id: "/",
-    orientation: "any",
+    orientation: "natural",
     launch_handler: {
       client_mode: "navigate-existing",
     },

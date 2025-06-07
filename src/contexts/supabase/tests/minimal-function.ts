@@ -35,27 +35,13 @@ export function minimal_function() {
         test("returns the correct parent chain, no limit", async () => {
           await registerAndLoginNewUser();
           const { id: rootId } = await createRandomPost();
-          const { data: data1, error: error1 } = await supabase
-            .from("posts")
-            .insert({ body: "reply1", parent_post: rootId })
-            .select("id")
-            .single();
-          const { data: data2, error: error2 } = await supabase
-            .from("posts")
-            .insert({ body: "reply2", parent_post: data1?.id })
-            .select("id")
-            .single();
+          const post1 = await queries.posts.new(randomName(64), [], rootId);
+          const post2 = await queries.posts.new(randomName(64), [], post1);
 
-          if (error1 || error2) {
-            console.error(error1);
-            console.error(error2);
-            throw new Error();
-          }
-
-          const chain = await queries.posts.getParentChain(data2.id);
+          const chain = await queries.posts.getParentChain(post2);
           expect(chain.length).toBe(3);
-          expect(chain[0].id).toBe(data2.id);
-          expect(chain[1].id).toBe(data1.id);
+          expect(chain[0].id).toBe(post2);
+          expect(chain[1].id).toBe(post1);
           expect(chain[2].id).toBe(rootId);
           expect(chain[2].parent_post).toBeNull();
         });
@@ -63,30 +49,13 @@ export function minimal_function() {
         test("respects limit", async () => {
           await registerAndLoginNewUser();
           const { id: rootId } = await createRandomPost();
+          const post1 = await queries.posts.new(randomName(64), [], rootId);
+          const post2 = await queries.posts.new(randomName(64), [], post1);
 
-          const { data: data1, error: error1 } = await supabase
-            .from("posts")
-            .insert({ body: "reply1", parent_post: rootId })
-            .select("id")
-            .single();
-          // Create a reply to reply1
-          const { data: data2, error: error2 } = await supabase
-            .from("posts")
-            .insert({ body: "reply2", parent_post: data1?.id })
-            .select("id")
-            .single();
-
-          if (error1 || error2) {
-            console.error(error1);
-            console.error(error2);
-            throw new Error();
-          }
-
-          // Limit to 2
-          const chain = await queries.posts.getParentChain(data2.id, 2);
+          const chain = await queries.posts.getParentChain(post2, 2);
           expect(chain.length).toBe(2);
-          expect(chain[0].id).toBe(data2.id);
-          expect(chain[1].id).toBe(data1.id);
+          expect(chain[0].id).toBe(post2);
+          expect(chain[1].id).toBe(post1);
         });
 
         test("returns only self for root post", async () => {

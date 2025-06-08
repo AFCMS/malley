@@ -12,21 +12,21 @@ The database looks a bit weird at first. This is because it was built with rathe
 
 Row Level Security Policies :
 - profiles
-  - as expected, users control their own profiles, and the user alone holds power to edit it
+  - the user alone controls their profile and can edit it
   - there are a few contraints. Notably, a trigger runs to limit the pinned posts array size to 10
 - posts
   - posts are controlled by users who have authorship, signified by the presence of an entry in the « authors » table referencing the user’s and the post’s uuid.
-  - files can be attached by inserting into the post-media bucket. The files are in a directory named after the uuid of the post. For restrictions and security, refer to the [storage]{#Storage} section.
-  - the `parent_post` is a post this refers to. One might call this a reply, and this is the intended use.
   - to make a new post, the client calls the createPost edge function. It handles all insersions and logic as service.
+  - files are attached with the post-media bucket. The files are in a directory named after the uuid of the post as part of the upload procedure and cannot be changed. For restrictions and security, refer to the [storage]{#Storage} section.
+  - the `parent_post` is a post this refers to. One might call this a reply, and this is the intended use.
 - authors
   - no user can directly make an insertion
   - upon posting, the user gets attributed authorship of the post by the createPost edge function.
   - afterwards, the author can send co-authoring requests by inserting into the pendingAuthors table, and those can be accepted by calling the `accept_co_authoring` database function.
   - a post is deleted when every author gives up authorship of the it, with the `enforce_remove_authorless_posts` trigger
 - pendingAuthors
-  - previously mentionned the table that holds the authoring requests. Users send requests by inserting a row with their own uuid as the « from_profile ». Any requests that do not comply are blocked.
-  - To refuse (reciever) or cancel (sender), both parties have deletion access. In case the request is accepted, deletion of the record is handled by the `accept_co_authoring` function.
+  - the previously mentionned table that holds the authoring requests. Existing authors send requests by inserting a row with their own uuid as the « from_profile ». Any requests that do not comply are blocked.
+  - to refuse (reciever) or cancel (sender), both parties have deletion access. In case the request is accepted, deletion of the record is handled by the `accept_co_authoring` function.
 - categories
   - fundamentally, posts and users get the same tags/categories applied to them. All categorising is readable by anon
   - the clients « request » a category to exist for a name with the `id_of_ensured_category` function. If there is no category with this name, it is created, and a valid id is always returned to the client. Note that in the client library `supabase.ts`, the category adding functions take as argument the *name* of the category and call `queries.categories.idOfEnsuredCategory` internally.

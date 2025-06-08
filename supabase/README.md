@@ -1,6 +1,8 @@
 # Glossary
 - anon
-  - a supabase role. Anon applies to everyone which means users that are not logged in.
+  - a supabase role. Anon applies to everyone which means users that are not logged in and is unpriviledged
+- service
+  - the other default supabase role. It is infinitely priviledged, thus, BE FRICKKING CAREFUL
 
 # Structure
 
@@ -14,11 +16,12 @@ Row Level Security Policies :
   - there are a few contraints. Notably, a trigger runs to limit the pinned posts array size to 10
 - posts
   - posts are controlled by users who have authorship, signified by the presence of an entry in the « authors » table referencing the user’s and the post’s uuid.
-  - files can be attached by inserting into the post-media bucket. A client gets a unique file path in the bucket to upload to and numerically inserts the files. For restrictions and security, refer to the [storage]{#Storage} section.
+  - files can be attached by inserting into the post-media bucket. The files are in a directory named after the uuid of the post. For restrictions and security, refer to the [storage]{#Storage} section.
   - the `parent_post` is a post this refers to. One might call this a reply, and this is the intended use.
+  - to make a new post, the client calls the createPost edge function. It handles all insersions and logic as service.
 - authors
   - no user can directly make an insertion
-  - upon posting, the user gets attributed authorship of the post through the `enforce_make_poster_first_author` trigger.
+  - upon posting, the user gets attributed authorship of the post by the createPost edge function.
   - afterwards, the author can send co-authoring requests by inserting into the pendingAuthors table, and those can be accepted by calling the `accept_co_authoring` database function.
   - a post is deleted when every author gives up authorship of the it, with the `enforce_remove_authorless_posts` trigger
 - pendingAuthors
@@ -121,4 +124,12 @@ erDiagram
 
 # Storage
 
-TODO
+### post-media
+
+Any user can read this bucket. No user can write into this bucket. Writes are done by service, in the createPost edge function.
+The bucket contains directories that are named the uuid of the post of which they contain the media of. Items are named numerically.
+
+### profile-pics / banners
+
+Both buckets are readable by any user and authenticated users can upload a file that starts with their uuid (for caching reasons).
+Users can only have one associated file at a time.

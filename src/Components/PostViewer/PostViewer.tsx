@@ -49,14 +49,14 @@ export default function PostViewer(props: PostViewerProps) {
   // Récupération des médias
   useEffect(() => {
     async function fetchMediaUrls() {
-      if (!props.post.media) {
+      if (!props.post.id) {
         setMediaUrls([]);
         return;
       }
 
       try {
         setLoadingMedia(true);
-        const { data, error } = await supabase.storage.from("post-media").list(props.post.media, {
+        const { data, error } = await supabase.storage.from("post-media").list(props.post.id, {
           limit: 10,
           offset: 0,
           sortBy: { column: "name", order: "asc" },
@@ -65,8 +65,7 @@ export default function PostViewer(props: PostViewerProps) {
 
         if (!error && data.length > 0) {
           const urls = data.map(
-            (file) =>
-              supabase.storage.from("post-media").getPublicUrl(`${props.post.media ?? ""}/${file.name}`).data.publicUrl,
+            (file) => supabase.storage.from("post-media").getPublicUrl(`${props.post.id}/${file.name}`).data.publicUrl,
           );
           setMediaUrls(urls);
           return;
@@ -79,7 +78,7 @@ export default function PostViewer(props: PostViewerProps) {
     }
 
     void fetchMediaUrls();
-  }, [props.post.media]);
+  }, [props.post.id]);
 
   // Get the first author for display (main poster)
   const mainAuthor = authors.length > 0 ? authors[0] : null;
@@ -118,7 +117,7 @@ export default function PostViewer(props: PostViewerProps) {
           )}
 
           {/* Media carousel */}
-          {props.post.media && !loadingMedia && mediaUrls.length > 0 && (
+          {props.post.id && !loadingMedia && mediaUrls.length > 0 && (
             <div className="mt-3">
               <MediaCarousel mediaUrls={mediaUrls} />
             </div>

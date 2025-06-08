@@ -165,8 +165,8 @@ const queries = {
       if (!res.ok) {
         throw new Error("Something went wrong");
       }
-      const result = await res.json();
-      return result.id; // should return { id: string }
+      const result = (await res.json()) as { id: string };
+      return result.id;
     },
 
     edit: async function (id: string, newBody: string): Promise<boolean> {

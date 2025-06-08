@@ -15,11 +15,9 @@ for update
 to public
 using ((( SELECT auth.uid() AS uid) IN ( SELECT authors.profile
    FROM authors
-  WHERE (authors.post = posts.id))))
-with check (
-  created_at = posts.created_at AND
-  parent_post = posts.parent_post
-);;
+  WHERE (authors.post = posts.id))));;
+
+REVOKE UPDATE (parent_post) ON TABLE public.posts FROM authenticated;
 
 
 

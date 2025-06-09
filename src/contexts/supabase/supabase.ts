@@ -43,6 +43,11 @@ async function updatePersonalFile(
     if (updateReq.error) throw new Error(updateReq.error.message);
   } else if (profile[mediaField]) {
     await supabase.storage.from(bucket).remove([profile[mediaField]]);
+    const updateReq = await supabase
+      .from("profiles")
+      .update({ [mediaField]: null })
+      .eq("id", id);
+    if (updateReq.error) throw new Error(updateReq.error.message);
   }
 }
 

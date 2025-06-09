@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "check-functions": "deno check */*.ts --reload",
+    "check-format-functions": "deno fmt --check */*.ts",
+    "lint-functions": "deno lint */*.ts",
+    "test-functions": "deno test */*.test.ts"
+  },
+  "imports": {},
+  "unstable": ["net", "http"],
+  "nodeModulesDir": "auto"
+}

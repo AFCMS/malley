@@ -15,7 +15,7 @@ for update
 to public
 using ((( SELECT auth.uid() AS uid) IN ( SELECT authors.profile
    FROM authors
-  WHERE (authors.post = posts.id))));;
+  WHERE (authors.post = posts.id))));
 
 REVOKE UPDATE (parent_post) ON TABLE public.posts FROM authenticated;
 

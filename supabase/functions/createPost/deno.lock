@@ -293,11 +293,5 @@
     "ws@8.18.2": {
       "integrity": "sha512-DMricUmwGZUVr++AEAe2uiVM7UoO9MAVZMDu05UQOaUII0lp+zOzLLU4Xqh/JvTqklB1T4uELaaPBKyjE1r4fQ=="
     }
-  },
-  "workspace": {
-    "dependencies": [
-      "jsr:@supabase/functions-js@*",
-      "jsr:@supabase/supabase-js@2"
-    ]
   }
 }

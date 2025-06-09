@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       let ext = "";
       const match = file.name?.match(/\.([a-zA-Z0-9]+)$/);
       if (match) ext = match[1];
-      const path = `${postId}/${i}.${ext}`;
+      const path = `${postId}/${i}${ext ? `.${ext}` : ""}`;
       const { error: upErr } = await supabase.storage.from("post-media").upload(
         path,
         file,

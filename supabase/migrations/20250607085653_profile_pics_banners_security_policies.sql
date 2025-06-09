@@ -8,10 +8,6 @@ drop policy "any_read 1tghu4n_0" on "storage"."objects";
 
 drop policy "any_read jh40r1_0" on "storage"."objects";
 
-CREATE UNIQUE INDEX one_banner_per_user ON storage.objects USING btree (bucket_id, "left"(name, 36));
-
-CREATE UNIQUE INDEX one_profile_pic_per_user ON storage.objects USING btree (bucket_id, "left"(name, 36));
-
 create policy "insert own banner 1tghu4n_0"
 on "storage"."objects"
 as permissive

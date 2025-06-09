@@ -7,15 +7,24 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseUser = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
-  });
+  const supabaseUser = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    {
+      global: {
+        headers: { Authorization: req.headers.get("Authorization") ?? "" },
+      },
+    },
+  );
   const {
     data: { user },
   } = await supabaseUser.auth.getUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
 
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   // Parse form data
   const form = await req.formData();
@@ -40,13 +49,19 @@ Deno.serve(async (req) => {
       const match = file.name?.match(/\.([a-zA-Z0-9]+)$/);
       if (match) ext = match[1];
       const path = `${postId}/${i}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("post-media").upload(path, file);
+      const { error: upErr } = await supabase.storage.from("post-media").upload(
+        path,
+        file,
+      );
       if (upErr) return new Response(upErr.message, { status: 500 });
     }
   }
 
   // Attribute authorship
-  const { error } = await supabase.from("authors").insert({ profile: user.id, post: post.id });
+  const { error } = await supabase.from("authors").insert({
+    profile: user.id,
+    post: post.id,
+  });
   if (error) return new Response(error.message, { status: 500 });
 
   return new Response(JSON.stringify({ id: post.id }), {

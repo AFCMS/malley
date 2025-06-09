@@ -59,6 +59,18 @@ jobs:
       - name: Print Deno Version
         run: deno --version
 
+      - name: Cache Deno dependencies
+        run: |
+          # Cache dependencies for all functions
+          for func_dir in supabase/functions/*/; do
+            if [ -f "$func_dir/deno.json" ]; then
+              echo "Caching dependencies for $func_dir"
+              cd "$func_dir"
+              deno cache index.ts
+              cd - > /dev/null
+            fi
+          done
+
       - name: Format Check
         run: deno task check-format-functions
 

@@ -153,19 +153,12 @@ const queries = {
       if (!session.data.session) {
         throw new Error("Invalid session while trying to upload");
       }
-      const accessToken = session.data.session.access_token;
 
-      const res = await fetch(supabaseUrl + "/functions/v1/createPost", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: formData,
-      });
-      if (!res.ok) {
+      const req = await supabase.functions.invoke("createPost", { body: formData });
+      if (req.error) {
         throw new Error("Something went wrong");
       }
-      const result = (await res.json()) as { id: string };
+      const result = req.data as { id: string };
       return result.id;
     },
 

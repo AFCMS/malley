@@ -6,5 +6,6 @@
     "test-functions": "deno test supabase/functions/*/*.test.ts"
   },
   "imports": {},
-  "unstable": ["net", "http"]
+  "unstable": ["net", "http"],
+  "nodeModulesDir": "auto"
 }

@@ -1,7 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { corsHeaders } from "../../../_shared/cors.ts";
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   const supabaseUser = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
     global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
   });
@@ -44,5 +49,7 @@ Deno.serve(async (req) => {
   const { error } = await supabase.from("authors").insert({ profile: user.id, post: post.id });
   if (error) return new Response(error.message, { status: 500 });
 
-  return new Response(JSON.stringify({ id: post.id }), { headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({ id: post.id }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 });

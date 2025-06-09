@@ -25,7 +25,7 @@ for insert
 to public
 with check (((bucket_id = 'profile-pics'::text) AND ("left"(name, 36) = (auth.uid())::text) AND ( SELECT (count(*) = 0)
    FROM storage.objects o
-  WHERE ((o.bucket_id = 'profile_pics'::text) AND ("left"(o.name, length((auth.uid())::text)) = (auth.uid())::text)))));
+  WHERE ((o.bucket_id = 'profile-pics'::text) AND ("left"(o.name, length((auth.uid())::text)) = (auth.uid())::text)))));
 
 
 create policy "remove own banner 1tghu4n_0"

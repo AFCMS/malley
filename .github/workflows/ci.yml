@@ -128,13 +128,6 @@ jobs:
           pnpm run supabase migration up
           echo "Supabase migrations applied successfully"
 
-      - name: Start Supabase Functions
-        run: |
-          pnpm run supabase functions serve &
-          echo "Supabase functions serve started in background"
-          # Wait a moment for functions to start
-          sleep 5
-
       - name: Create Environment File
         run: |
           # Extract anon key and service key from Supabase output

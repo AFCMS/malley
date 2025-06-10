@@ -7,6 +7,17 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
+interface postWithCategories {
+  post: Tables<"posts">;
+  categories: Tables<"categories">[];
+}
+
+interface stdPostInfo {
+  post: Tables<"posts">;
+  categories: Tables<"categories">[];
+  profiles: Tables<"profiles">[];
+}
+
 const getUser = async () => {
   const {
     data: { user },
@@ -596,6 +607,64 @@ const queries = {
         throw new Error(req.error.message);
       }
       return true;
+    },
+  },
+
+  views: {
+    getPostWithCategories: async function (id: string): Promise<postWithCategories> {
+      // mostly intended for the profile viewer
+      const req = await supabase
+        .from("posts")
+        .select(
+          `
+          *,
+          postsCategories:postsCategories(
+            categories:categories(*)
+          )
+        `,
+        )
+        .eq("id", id)
+        .single();
+
+      if (req.error) throw new Error(req.error.message);
+
+      const categories = req.data.postsCategories.map((pc) => pc.categories as Tables<"categories">);
+
+      return {
+        post: req.data as Tables<"posts">,
+        categories,
+      };
+    },
+
+    standardPostInfo: async function (id: string): Promise<stdPostInfo> {
+      // mostly intended for the classic feed
+      const req = await supabase
+        .from("posts")
+        .select(
+          `
+          *,
+          postsCategories:postsCategories(
+            categories:categories(*)
+          ),
+          authors:authors(
+            profiles:profiles(*)
+          )
+        `,
+        )
+        .eq("id", id)
+        .single();
+
+      if (req.error) throw new Error(req.error.message);
+
+      const categories = req.data.postsCategories.map((pc) => pc.categories as Tables<"categories">);
+
+      const profiles = req.data.authors.map((pc) => pc.profiles as Tables<"profiles">);
+
+      return {
+        post: req.data as Tables<"posts">,
+        categories,
+        profiles,
+      };
     },
   },
 };

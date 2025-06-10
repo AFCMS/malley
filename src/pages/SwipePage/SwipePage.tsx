@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import { RejectedProfilesManager } from "../../utils/rejectedProfiles";
 
 import FetchCard from "../../Components/FetchCard/FetchCard";
 import TopBar from "../../layouts/TopBar/TopBar";
@@ -15,14 +16,17 @@ const ALL_KNOWN_PROFILE_IDS: string[] = [
   "acb406fd-8fe8-4923-bfc7-2d16afba243a",
 ];
 
-const BATCH_SIZE = 3;
+const BUFFER_SIZE = 3; // 1 affiché + 2 en réserve
+const PRELOAD_THRESHOLD = 1; // Recharger quand il reste 1 profil
 
 export default function SwipePage() {
   const auth = useAuth();
   const [profileIdQueue, setProfileIdQueue] = useState<string[]>([]);
-  const [currentIndexInBatch, setCurrentIndexInBatch] = useState<number>(0);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSwipeFinished, setIsSwipeFinished] = useState<boolean>(false);
+  const [isRefilling, setIsRefilling] = useState<boolean>(false);
 
   // États pour l'animation de swipe
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -30,16 +34,18 @@ export default function SwipePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Utiliser useRef pour éviter la boucle infinie
-  const seenProfileIdsRef = useRef<Set<string>>(new Set());
+  // Cache pour éviter les requêtes répétées
+  const processedProfileIdsRef = useRef<Set<string>>(new Set());
   const followedProfileIdsRef = useRef<Set<string>>(new Set());
+  const allAvailableProfilesRef = useRef<string[]>([]);
+  const nextIndexToLoadRef = useRef<number>(0);
 
-  // Fonction pour vérifier et filtrer les profils déjà suivis
-  const filterUnfollowedProfiles = useCallback(
+  // Fonction pour filtrer les profils disponibles (pas suivis + pas rejetés récemment)
+  const filterAvailableProfiles = useCallback(
     async (profileIds: string[]): Promise<string[]> => {
-      if (!auth.user) return profileIds;
+      if (!auth.user) return [];
 
-      const unfollowedProfiles: string[] = [];
+      const availableProfiles: string[] = [];
 
       for (const profileId of profileIds) {
         // Ne pas afficher son propre profil
@@ -47,8 +53,18 @@ export default function SwipePage() {
           continue;
         }
 
-        // Vérifier si déjà en cache
+        // Ne pas retraiter les profils déjà traités dans cette session
+        if (processedProfileIdsRef.current.has(profileId)) {
+          continue;
+        }
+
+        // Vérifier si déjà suivi (cache)
         if (followedProfileIdsRef.current.has(profileId)) {
+          continue;
+        }
+
+        // Vérifier si récemment refusé (72h)
+        if (RejectedProfilesManager.isProfileRejected(profileId)) {
           continue;
         }
 
@@ -57,122 +73,133 @@ export default function SwipePage() {
           if (isFollowing) {
             followedProfileIdsRef.current.add(profileId);
           } else {
-            unfollowedProfiles.push(profileId);
+            availableProfiles.push(profileId);
           }
         } catch {
           // En cas d'erreur, inclure le profil pour ne pas bloquer l'affichage
-          unfollowedProfiles.push(profileId);
+          availableProfiles.push(profileId);
         }
       }
 
-      return unfollowedProfiles;
+      return availableProfiles;
     },
     [auth.user],
   );
 
-  const fetchNewBatch = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  // Fonction pour remplir la liste des profils disponibles
+  const initializeAvailableProfiles = useCallback(async () => {
+    if (!auth.user) return;
 
-    if (!auth.user) {
-      setError("Vous devez être connecté pour découvrir des profils.");
-      setIsLoading(false);
+    // Nettoyer les profils expirés (après 72h)
+    RejectedProfilesManager.clearExpiredProfiles();
+
+    // Filtrer les profils disponibles
+    const availableIds = await filterAvailableProfiles(ALL_KNOWN_PROFILE_IDS);
+
+    allAvailableProfilesRef.current = availableIds;
+    nextIndexToLoadRef.current = 0;
+
+    if (availableIds.length === 0) {
+      setIsSwipeFinished(true);
       setProfileIdQueue([]);
+      setCurrentIndex(0);
+      return;
+    }
+  }, [auth.user, filterAvailableProfiles]);
+
+  // Fonction pour remplir le buffer avec les prochains profils
+  const refillBuffer = useCallback(async () => {
+    if (isRefilling || isSwipeFinished) return;
+
+    setIsRefilling(true);
+
+    const availableProfiles = allAvailableProfilesRef.current;
+    const startIndex = nextIndexToLoadRef.current;
+
+    // Calculer combien de profils nous devons ajouter pour atteindre BUFFER_SIZE
+    const currentBufferSize = profileIdQueue.length - currentIndex;
+    const profilesNeeded = BUFFER_SIZE - currentBufferSize;
+
+    if (profilesNeeded <= 0) {
+      setIsRefilling(false);
       return;
     }
 
-    if (ALL_KNOWN_PROFILE_IDS.length === 0) {
-      setError("Aucun ID de profil connu disponible.");
-      setIsLoading(false);
-      setProfileIdQueue([]);
-      return;
-    }
+    // Vérifier s'il y a assez de profils disponibles
+    const remainingProfiles = availableProfiles.length - startIndex;
 
-    // Filtrer les profils déjà vus
-    const unseenIds = ALL_KNOWN_PROFILE_IDS.filter((id) => !seenProfileIdsRef.current.has(id));
-
-    if (unseenIds.length === 0) {
-      // Reset si tous les profils ont été vus
-      seenProfileIdsRef.current = new Set();
-      followedProfileIdsRef.current = new Set(); // Reset aussi le cache des follows
-
-      const unfollowedIds = await filterUnfollowedProfiles(ALL_KNOWN_PROFILE_IDS);
-      if (unfollowedIds.length === 0) {
-        setError("Vous suivez déjà tous les profils disponibles !");
-        setProfileIdQueue([]);
-        setCurrentIndexInBatch(0);
-        setIsLoading(false);
-        return;
+    if (remainingProfiles <= 0) {
+      // Plus de profils disponibles
+      if (currentBufferSize === 0) {
+        setIsSwipeFinished(true);
       }
-
-      const newBatch = unfollowedIds.slice(0, BATCH_SIZE);
-      setProfileIdQueue(newBatch);
-      setCurrentIndexInBatch(0);
-      setIsLoading(false);
-
-      // Marquer comme vus
-      newBatch.forEach((id) => seenProfileIdsRef.current.add(id));
+      setIsRefilling(false);
       return;
     }
 
-    // Filtrer les profils non suivis parmi ceux non vus
-    const unfollowedIds = await filterUnfollowedProfiles(unseenIds);
+    // Prendre les prochains profils disponibles
+    const profilesToAdd = Math.min(profilesNeeded, remainingProfiles);
+    const newProfiles = availableProfiles.slice(startIndex, startIndex + profilesToAdd);
 
-    if (unfollowedIds.length === 0) {
-      // Si aucun profil non suivi parmi les non vus, essayer avec tous les profils
-      const allUnfollowedIds = await filterUnfollowedProfiles(ALL_KNOWN_PROFILE_IDS);
-      if (allUnfollowedIds.length === 0) {
-        setError("Vous suivez déjà tous les profils disponibles !");
-        setProfileIdQueue([]);
-        setCurrentIndexInBatch(0);
-        setIsLoading(false);
-        return;
-      }
+    // Ajouter les nouveaux profils à la queue
+    setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
 
-      // Reset et prendre les premiers profils non suivis
-      seenProfileIdsRef.current = new Set();
-      const newBatch = allUnfollowedIds.slice(0, BATCH_SIZE);
-      setProfileIdQueue(newBatch);
-      setCurrentIndexInBatch(0);
-      setIsLoading(false);
+    // Mettre à jour l'index de chargement
+    nextIndexToLoadRef.current = startIndex + profilesToAdd;
 
-      // Marquer comme vus
-      newBatch.forEach((id) => seenProfileIdsRef.current.add(id));
-      return;
+    // Précharger les données des nouveaux profils
+    for (const profileId of newProfiles) {
+      // Correction ESLint: await ajouté même si non nécessaire pour éviter l'erreur require-await
+      await queries.profiles.get(profileId).catch((e: unknown) => {
+        console.error("Erreur precharge:", e);
+      });
     }
 
-    const newBatch = unfollowedIds.slice(0, BATCH_SIZE);
-    setProfileIdQueue(newBatch);
-    setCurrentIndexInBatch(0);
-    setIsLoading(false);
+    setIsRefilling(false);
+  }, [profileIdQueue.length, currentIndex, isRefilling, isSwipeFinished]);
 
-    // Mettre à jour la référence
-    newBatch.forEach((id) => seenProfileIdsRef.current.add(id));
-  }, [auth.user, filterUnfollowedProfiles]);
-
+  // Initialisation - charger les profils disponibles et remplir le buffer initial
   useEffect(() => {
     if (auth.user) {
-      void fetchNewBatch();
-    }
-  }, [auth.user, fetchNewBatch]);
+      const initialize = async () => {
+        setIsLoading(true);
+        setError(null);
 
-  useEffect(() => {
-    if (profileIdQueue.length > 0 && currentIndexInBatch + 1 < profileIdQueue.length) {
-      const nextProfileId = profileIdQueue[currentIndexInBatch + 1];
-      if (nextProfileId) {
-        queries.profiles.get(nextProfileId).catch((e: unknown) => {
-          console.error(e);
-        });
-      }
+        await initializeAvailableProfiles();
+
+        if (!isSwipeFinished) {
+          await refillBuffer();
+        }
+
+        setIsLoading(false);
+      };
+
+      void initialize();
     }
-  }, [currentIndexInBatch, profileIdQueue]);
+  }, [auth.user, initializeAvailableProfiles, refillBuffer, isSwipeFinished]);
+
+  // Surveiller le buffer et le remplir si nécessaire
+  useEffect(() => {
+    const currentBufferSize = profileIdQueue.length - currentIndex;
+
+    if (currentBufferSize <= PRELOAD_THRESHOLD && !isRefilling && !isSwipeFinished) {
+      void refillBuffer();
+    }
+  }, [currentIndex, profileIdQueue.length, refillBuffer, isRefilling, isSwipeFinished]);
 
   const advanceToNextProfile = () => {
-    if (currentIndexInBatch < profileIdQueue.length - 1) {
-      setCurrentIndexInBatch((prevIndex) => prevIndex + 1);
-      setIsLoading(false);
-    } else {
-      void fetchNewBatch();
+    const currentProfileId = profileIdQueue[currentIndex];
+    if (currentProfileId) {
+      processedProfileIdsRef.current.add(currentProfileId);
+    }
+
+    // Avancer à l'index suivant
+    setCurrentIndex((prevIndex) => prevIndex + 1);
+
+    // Nettoyer la queue si elle devient trop longue (garder seulement les profils non traités)
+    if (currentIndex >= 10) {
+      setProfileIdQueue((prevQueue) => prevQueue.slice(currentIndex + 1));
+      setCurrentIndex(0);
     }
   };
 
@@ -192,16 +219,23 @@ export default function SwipePage() {
   };
 
   const handlePass = () => {
-    if (isLoading || !profileIdQueue[currentIndexInBatch] || isAnimating) return;
+    if (isLoading || !profileIdQueue[currentIndex] || isAnimating) return;
+
+    const profileId = profileIdQueue[currentIndex];
+
+    // Ajouter le profil aux refusés avec un cooldown de 72h
+    RejectedProfilesManager.addRejectedProfile(profileId);
+
     advanceToNextProfile();
   };
 
   const handleFollow = async () => {
-    if (isLoading || !profileIdQueue[currentIndexInBatch] || isAnimating) return;
+    if (isLoading || !profileIdQueue[currentIndex] || isAnimating) return;
 
-    const profileToFollowId = profileIdQueue[currentIndexInBatch];
+    const profileToFollowId = profileIdQueue[currentIndex];
     setIsLoading(true);
     setError(null);
+
     try {
       await queries.follows.add(profileToFollowId);
       // Ajouter au cache des profils suivis
@@ -209,6 +243,7 @@ export default function SwipePage() {
       advanceToNextProfile();
     } catch (err) {
       setError(`Échec du suivi du profil : ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -265,6 +300,26 @@ export default function SwipePage() {
     }
   };
 
+  const resetSwipeSession = () => {
+    processedProfileIdsRef.current = new Set();
+    followedProfileIdsRef.current = new Set();
+    allAvailableProfilesRef.current = [];
+    nextIndexToLoadRef.current = 0;
+    setProfileIdQueue([]);
+    setCurrentIndex(0);
+    setIsSwipeFinished(false);
+    setIsLoading(true);
+
+    // Redémarrer l'initialisation
+    setTimeout(() => {
+      void initializeAvailableProfiles().then(() => {
+        void refillBuffer().then(() => {
+          setIsLoading(false);
+        });
+      });
+    }, 100);
+  };
+
   // Vérifier si l'utilisateur est connecté
   if (!auth.user) {
     return (
@@ -279,28 +334,66 @@ export default function SwipePage() {
     );
   }
 
-  if (isLoading && profileIdQueue.length === 0 && currentIndexInBatch === 0) {
-    return <div style={{ textAlign: "center", padding: "20px" }}>Chargement des profils...</div>;
-  }
-
-  if (error && profileIdQueue.length === 0 && !isLoading) {
-    return <div style={{ textAlign: "center", padding: "20px", color: "red" }}>{error}</div>;
-  }
-
-  if (profileIdQueue.length === 0 && !isLoading) {
+  // Affichage quand le swipe est terminé
+  if (isSwipeFinished) {
     return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        {error ?? "Aucun profil disponible à swiper pour le moment."}
+      <div className="w-full">
+        <TopBar title="Découvrir des profils" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="max-w-md p-6 text-center">
+            <div className="mb-4 text-6xl">🎉</div>
+            <h2 className="mb-4 text-2xl font-bold">Swipe terminé pour aujourd&apos;hui !</h2>
+            <p className="mb-6 text-gray-600">
+              Vous avez passé en revue tous les profils disponibles. Certains profils seront à nouveau disponibles dans
+              72h.
+            </p>
+            <button onClick={resetSwipeSession} className="btn btn-primary">
+              Recommencer la session
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const currentProfileId = profileIdQueue[currentIndexInBatch];
-
-  if (!currentProfileId && !isLoading) {
+  // Chargement initial
+  if (isLoading && profileIdQueue.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        {error ?? "Aucun profil à afficher actuellement. Essayez de rafraîchir."}
+      <div className="w-full">
+        <TopBar title="Découvrir des profils" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="loading loading-spinner loading-lg"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Erreur
+  if (error && profileIdQueue.length === 0 && !isLoading) {
+    return (
+      <div className="w-full">
+        <TopBar title="Découvrir des profils" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="alert alert-error max-w-md">
+            <span>{error}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentProfileId = profileIdQueue[currentIndex];
+
+  if (!currentProfileId) {
+    return (
+      <div className="w-full">
+        <TopBar title="Découvrir des profils" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="loading loading-spinner loading-lg mb-4"></div>
+            <p>Préparation des profils...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -317,14 +410,27 @@ export default function SwipePage() {
     backgroundColor = dragOffset.x > 0 ? "#55efc4" : "#ff7675";
   }
 
+  // Afficher des informations de debug sur le buffer (optionnel)
+  const currentBufferSize = profileIdQueue.length - currentIndex;
+  const debugInfo = `Buffer: ${currentBufferSize.toString()}/3 | Queue: ${profileIdQueue.length.toString()} | Index: ${currentIndex.toString()}`;
+
   return (
-    <div style={{ textAlign: "center", padding: "20px", maxWidth: "500px", margin: "0 auto" }}>
-      <h1>Swiper les Profils</h1>
-      {error && currentProfileId && <p style={{ color: "red", fontWeight: "bold" }}>Avis : {error}</p>}
+    <div className="w-full">
+      <TopBar title="Découvrir des profils" />
+      <div style={{ textAlign: "center", padding: "20px", maxWidth: "500px", margin: "0 auto" }}>
+        {error && <p style={{ color: "red", fontWeight: "bold", marginBottom: "10px" }}>⚠️ {error}</p>}
 
-      {isLoading && currentProfileId && <p>Chargement du prochain ensemble de profils...</p>}
+        {isRefilling && (
+          <p style={{ marginBottom: "10px", color: "#666", fontSize: "0.9rem" }}>
+            🔄 Chargement de nouveaux profils...
+          </p>
+        )}
 
-      {currentProfileId ? (
+        {/* Debug info - à supprimer en production */}
+        {process.env.NODE_ENV === "development" && (
+          <p style={{ fontSize: "0.8rem", color: "#999", marginBottom: "10px" }}>{debugInfo}</p>
+        )}
+
         <div
           style={{
             position: "relative",
@@ -462,9 +568,7 @@ export default function SwipePage() {
             </button>
           </div>
         </div>
-      ) : (
-        !isLoading && <div>Préparation du prochain profil...</div>
-      )}
+      </div>
     </div>
   );
 }

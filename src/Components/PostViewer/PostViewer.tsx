@@ -159,7 +159,7 @@ export default function PostViewer(props: PostViewerProps) {
       {props.showParents && parents.length > 0 && (
         <div className="border-l-2 border-gray-200 pl-4">
           {parents.reverse().map((parent) => (
-            <PostViewer key={parent.id} post={parent} disableRedirect={false} />
+            <PostViewer key={parent.id} post={parent} disableRedirect={props.disableRedirect} />
           ))}
         </div>
       )}
@@ -167,7 +167,7 @@ export default function PostViewer(props: PostViewerProps) {
       {/* Post principal */}
       <div
         className={`border-b border-gray-200 px-4 py-3 transition-colors ${
-          props.disableRedirect ? "" : "cursor-pointer hover:bg-gray-50/50"
+          props.disableRedirect ? "cursor-default" : "cursor-pointer hover:bg-gray-50/50"
         }`}
         onClick={handlePostClick}
       >
@@ -285,7 +285,7 @@ export default function PostViewer(props: PostViewerProps) {
         </div>
 
         {/* Reply form */}
-        {showReplyForm && auth.isAuthenticated && (
+        {showReplyForm && auth.isAuthenticated && !props.disableRedirect && (
           <div
             onClick={(e) => {
               e.stopPropagation();
@@ -306,7 +306,7 @@ export default function PostViewer(props: PostViewerProps) {
       {props.showChildren && children.length > 0 && (
         <div className="border-l-2 border-gray-200 pl-4">
           {children.map((child) => (
-            <PostViewer key={child.id} post={child} showChildren={true} disableRedirect={false} />
+            <PostViewer key={child.id} post={child} showChildren={true} disableRedirect={props.disableRedirect} />
           ))}
         </div>
       )}

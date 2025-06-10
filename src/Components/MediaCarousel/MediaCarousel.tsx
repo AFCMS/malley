@@ -59,47 +59,41 @@ export default function MediaCarousel({ mediaUrls }: MediaCarouselProps) {
         )}
 
         {/* Media content */}
-        <div className="aspect-video w-full">
-          {isImage(mediaUrls[currentIndex]) ? (
-            <img
-              src={`${mediaUrls[currentIndex]}?t=${Date.now().toString()}`}
-              alt={`Media ${(currentIndex + 1).toString()}`}
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          ) : isPdf(mediaUrls[currentIndex]) ? (
-            <div className="flex h-full w-full items-center justify-center bg-gray-200">
-              <div className="flex flex-col items-center gap-3 text-gray-600">
-                <HiDocumentArrowDown className="h-12 w-12" />
-                <span className="text-sm font-medium">PDF Document</span>
-                <a
-                  href={mediaUrls[currentIndex]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-sm btn-primary"
-                >
-                  Download PDF
-                </a>
-              </div>
+        <div className="relative aspect-video w-full">
+          {mediaUrls.map((url, index) => (
+            <div key={index} className={`absolute inset-0 ${index === currentIndex ? "opacity-100" : "opacity-0"}`}>
+              {isImage(url) ? (
+                <img
+                  src={url}
+                  alt={`Media ${(index + 1).toString()}`}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : isPdf(url) ? (
+                <div className="flex h-full w-full items-center justify-center bg-gray-200">
+                  <div className="flex flex-col items-center gap-3 text-gray-600">
+                    <HiDocumentArrowDown className="h-12 w-12" />
+                    <span className="text-sm font-medium">PDF Document</span>
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                      Download PDF
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gray-200">
+                  <div className="flex flex-col items-center gap-3 text-gray-600">
+                    <HiDocumentArrowDown className="h-12 w-12" />
+                    <span className="text-sm font-medium">File</span>
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                      Download
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gray-200">
-              <div className="flex flex-col items-center gap-3 text-gray-600">
-                <HiDocumentArrowDown className="h-12 w-12" />
-                <span className="text-sm font-medium">File</span>
-                <a
-                  href={mediaUrls[currentIndex]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-sm btn-primary"
-                >
-                  Download
-                </a>
-              </div>
-            </div>
-          )}
+          ))}
         </div>
       </div>
 

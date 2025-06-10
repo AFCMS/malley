@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { queries } from "../../contexts/supabase/supabase";
+import { queries, supabase } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import CategoriesChooser from "../CategoriesChooser/CategoriesChooser";
 import { Tables } from "../../contexts/supabase/database";
+import MediaCarousel from "../MediaCarousel/MediaCarousel";
 
 interface PostAddProps {
   /** Post ID if editing an existing post */
@@ -37,6 +38,8 @@ export default function PostAdd({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<Tables<"categories">[]>([]);
   const [isLoadingPost, setIsLoadingPost] = useState(false);
+  const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
+  const [loadingExistingMedia, setLoadingExistingMedia] = useState(false);
 
   const auth = useAuth();
   const navigate = useNavigate();
@@ -79,6 +82,9 @@ export default function PostAdd({
             console.error("Erreur lors du chargement des catégories:", err);
           }
         }
+
+        // Charger les médias existants en mode édition
+        await loadExistingMedia(editPostId);
       } catch (err: unknown) {
         console.error("Erreur lors du chargement du post:", err);
         setError("Impossible de charger le post à modifier");
@@ -89,6 +95,28 @@ export default function PostAdd({
 
     void loadPostForEdit();
   }, [isEditMode, editPostId, auth.user, showCategories]);
+
+  const loadExistingMedia = async (postId: string) => {
+    try {
+      setLoadingExistingMedia(true);
+      const { data, error } = await supabase.storage.from("post-media").list(postId, {
+        limit: 10,
+        offset: 0,
+        sortBy: { column: "name", order: "asc" },
+      });
+
+      if (!error && data.length > 0) {
+        const urls = data.map(
+          (file) => supabase.storage.from("post-media").getPublicUrl(`${postId}/${file.name}`).data.publicUrl,
+        );
+        setExistingMediaUrls(urls);
+      }
+    } catch {
+      setExistingMediaUrls([]);
+    } finally {
+      setLoadingExistingMedia(false);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -208,6 +236,22 @@ export default function PostAdd({
               rows={isReply ? 3 : 5}
               required
             />
+
+            {/* Affichage des médias existants en mode édition */}
+            {isEditMode && (
+              <div className="mt-2">
+                {loadingExistingMedia ? (
+                  <div className="text-sm text-gray-500">Chargement des médias...</div>
+                ) : existingMediaUrls.length > 0 ? (
+                  <div>
+                    <div className="mb-2 text-sm text-gray-600">Médias associés au post (non modifiables) :</div>
+                    <MediaCarousel mediaUrls={existingMediaUrls} />
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Aucun média associé à ce post</div>
+                )}
+              </div>
+            )}
 
             {/* Upload de fichiers seulement en mode création et si activé */}
             {!isEditMode && showFileUpload && (

@@ -11,6 +11,7 @@ import AddPost from "../pages/AddPost/AddPost";
 import ViewPost from "../pages/ViewPost/ViewPost";
 import SwipePage from "../pages/SwipePage/SwipePage";
 import Search from "../pages/Search/Search";
+import ProfileCategories from "../pages/ProfileCategories/ProfileCategories";
 
 export default function Router() {
   return (
@@ -23,8 +24,10 @@ export default function Router() {
         <Route path="/search" element={<Search />} />
         <Route path="/post" element={<AddPost />} />
         <Route path="/post/:postId" element={<ViewPost />} />
+        <Route path="/post/:postId/edit" element={<AddPost />} />
         <Route path="/:handle" element={<ProfileViewer />} />
         <Route path="/:handle/featured" element={<ProfileViewerFeatured />} />
+        <Route path="/profile/categories" element={<ProfileCategories />} />
         <Route path="/swipe" element={<SwipePage />} />
         <Route path="*" element={<div>404</div>} />
       </Routes>

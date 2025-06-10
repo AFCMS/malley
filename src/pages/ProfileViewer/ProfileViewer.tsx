@@ -23,6 +23,7 @@ const ProfileViewer = () => {
   const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[]>([]);
   const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
   const [featuredCount, setFeaturedCount] = useState<number>(0);
+  const [profileCategories, setProfileCategories] = useState<Tables<"categories">[]>([]);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFeaturing, setIsFeaturing] = useState(false);
@@ -36,6 +37,7 @@ const ProfileViewer = () => {
     setProfile(null);
     setPinnedPosts([]);
     setAllPosts([]);
+    setProfileCategories([]);
 
     async function loadProfileData() {
       if (!handle) {
@@ -77,6 +79,15 @@ const ProfileViewer = () => {
         // Step 4: Fetch referers count
         const featuredCount = await queries.features.byUserCount(profileData.id);
         setFeaturedCount(featuredCount);
+
+        // Step 5: Fetch profile categories
+        try {
+          const categories = await queries.profilesCategories.get(profileData.id);
+          setProfileCategories(categories);
+        } catch (categoriesError) {
+          console.error("Failed to fetch profile categories:", categoriesError);
+          setProfileCategories([]);
+        }
       } catch (err) {
         console.error("Error loading profile data:", err);
         setError(err instanceof Error ? err.message : "Failed to load profile");
@@ -176,6 +187,18 @@ const ProfileViewer = () => {
                   {isFeaturing ? "Unfeature" : "Feature"}
                 </button>
               </li>
+              <li>
+                <button
+                  className=""
+                  hidden={auth.user?.id !== profile.id}
+                  onClick={() => {
+                    void navigate("/profile/categories");
+                    closePopover("popover-profile")();
+                  }}
+                >
+                  Catégories
+                </button>
+              </li>
             </ul>
             <button
               className={"btn btn-sm " + (isFollowing ? "btn-secondary" : "btn-primary")}
@@ -214,6 +237,20 @@ const ProfileViewer = () => {
               <strong>{featuredCount}</strong> Featured
             </Link>
           </div>
+
+          {/* Affichage des catégories du profil */}
+          {profileCategories.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {profileCategories.map((category) => (
+                <span
+                  key={category.id}
+                  className="inline-flex cursor-pointer items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200"
+                >
+                  #{category.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
 
@@ -76,6 +76,9 @@ export default function Login() {
               </button>
             </fieldset>
           </form>
+          <Link className="btn btn-neutral lg:hidden" to="/register">
+            Register
+          </Link>
           <hr className="border-base-300 my-2" />
           <button className="btn border-[#e5e5e5] bg-white text-black" onClick={handleGoogleLogin}>
             <svg

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useAuth } from "../../contexts/auth/AuthContext";
 
 export default function Register() {
@@ -73,6 +73,10 @@ export default function Register() {
               <button className="btn btn-neutral mt-4" type="submit">
                 Register
               </button>
+              <hr className="border-base-300 my-2" />
+              <Link className="btn btn-neutral lg:hidden" to="/login">
+                Login
+              </Link>
             </fieldset>
           </form>
         </div>

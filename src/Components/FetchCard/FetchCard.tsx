@@ -105,7 +105,9 @@ export default function FetchCard(props: { profileId: string }) {
   const profileCreationDate = new Date(profile.created_at);
 
   return (
-    <div className="max-h-[70vh] w-full overflow-y-auto rounded-lg bg-white shadow-lg">
+    <div className="h-full w-full overflow-y-auto rounded-lg bg-white shadow-lg">
+      {/* ✅ CORRECTION : Ajout de h-full pour prendre toute la hauteur */}
+
       {/* Section profil - même style que ProfileViewer */}
       <section className="relative mb-4">
         <div className="bg-base-200 relative h-24 w-full lg:h-32">
@@ -186,7 +188,9 @@ export default function FetchCard(props: { profileId: string }) {
 
       {/* Posts récents */}
       {allPosts.length > 0 && (
-        <div>
+        <div className="pb-4">
+          {" "}
+          {/* ✅ CORRECTION : Padding bottom pour éviter que le contenu soit caché */}
           <h3 className="mb-2 px-4 text-sm font-semibold text-gray-700">Publications récentes</h3>
           <div className="border-t border-gray-200">
             {allPosts.slice(0, 3).map((post) => (

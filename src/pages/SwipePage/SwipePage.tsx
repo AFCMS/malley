@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router";
 
 import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
@@ -7,20 +8,23 @@ import { RejectedProfilesManager } from "../../utils/rejectedProfiles";
 import FetchCard from "../../Components/FetchCard/FetchCard";
 import TopBar from "../../layouts/TopBar/TopBar";
 
-// IMPORTANT : pour l'instant les uuids de profils sont codés en dur ici.
-// plus tard on pourrait les récupérer dynamiquement depuis la base de données
 const ALL_KNOWN_PROFILE_IDS: string[] = [
-  "f3c38d08-5223-4f3c-b730-93c3a5e0f7b0",
-  "849e8cb9-f347-493d-b147-e149a7bb4d76",
-  "acb406fd-8fe8-4923-bfc7-2d16afba243a",
-  "acb406fd-8fe8-4923-bfc7-2d16afba243a",
+  "09ae7c64-bb08-49f3-8e64-7c90f62fa37c",
+  "ac7c2be0-e885-4905-a245-9ed9c7c1fec5",
+  "d385aa53-59b5-4a83-91a6-9716c0e76dfd",
+  "e332aa67-c716-4edb-934c-dee540618f34",
+  "f5c93267-abf2-43ea-8973-bcc48520bdb7",
+  "d3dedc23-87d9-4b3f-94cc-3d68e7f4c05e",
 ];
 
-const BUFFER_SIZE = 3; // 1 affiché + 2 en réserve
-const PRELOAD_THRESHOLD = 1; // Recharger quand il reste 1 profil
+const BUFFER_SIZE = 3;
+const PRELOAD_THRESHOLD = 1;
 
 export default function SwipePage() {
   const auth = useAuth();
+  const navigate = useNavigate();
+
+  // États principaux
   const [profileIdQueue, setProfileIdQueue] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -28,19 +32,20 @@ export default function SwipePage() {
   const [isSwipeFinished, setIsSwipeFinished] = useState<boolean>(false);
   const [isRefilling, setIsRefilling] = useState<boolean>(false);
 
-  // États pour l'animation de swipe
+  // États pour l'animation
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Cache pour éviter les requêtes répétées
+  // Refs pour le cache
   const processedProfileIdsRef = useRef<Set<string>>(new Set());
   const followedProfileIdsRef = useRef<Set<string>>(new Set());
   const allAvailableProfilesRef = useRef<string[]>([]);
   const nextIndexToLoadRef = useRef<number>(0);
+  const isInitializedRef = useRef<boolean>(false);
 
-  // Fonction pour filtrer les profils disponibles (pas suivis + pas rejetés récemment)
+  // Filtrer les profils disponibles
   const filterAvailableProfiles = useCallback(
     async (profileIds: string[]): Promise<string[]> => {
       if (!auth.user) return [];
@@ -48,27 +53,17 @@ export default function SwipePage() {
       const availableProfiles: string[] = [];
 
       for (const profileId of profileIds) {
-        // Ne pas afficher son propre profil
-        if (profileId === auth.user.id) {
-          continue;
-        }
-
-        // Ne pas retraiter les profils déjà traités dans cette session
-        if (processedProfileIdsRef.current.has(profileId)) {
-          continue;
-        }
-
-        // Vérifier si déjà suivi (cache)
-        if (followedProfileIdsRef.current.has(profileId)) {
-          continue;
-        }
-
-        // Vérifier si récemment refusé (72h)
-        if (RejectedProfilesManager.isProfileRejected(profileId)) {
-          continue;
-        }
+        // Filtres de base
+        if (profileId === auth.user.id) continue;
+        if (processedProfileIdsRef.current.has(profileId)) continue;
+        if (followedProfileIdsRef.current.has(profileId)) continue;
+        if (RejectedProfilesManager.isProfileRejected(profileId)) continue;
 
         try {
+          // Vérifier existence du profil
+          await queries.profiles.get(profileId);
+
+          // Vérifier si déjà suivi
           const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profileId);
           if (isFollowing) {
             followedProfileIdsRef.current.add(profileId);
@@ -76,8 +71,8 @@ export default function SwipePage() {
             availableProfiles.push(profileId);
           }
         } catch {
-          // En cas d'erreur, inclure le profil pour ne pas bloquer l'affichage
-          availableProfiles.push(profileId);
+          // Ignorer les profils avec erreurs
+          continue;
         }
       }
 
@@ -86,16 +81,14 @@ export default function SwipePage() {
     [auth.user],
   );
 
-  // Fonction pour remplir la liste des profils disponibles
+  // Initialiser les profils disponibles
   const initializeAvailableProfiles = useCallback(async () => {
-    if (!auth.user) return;
+    if (!auth.user || isInitializedRef.current) return;
 
-    // Nettoyer les profils expirés (après 72h)
+    isInitializedRef.current = true;
     RejectedProfilesManager.clearExpiredProfiles();
 
-    // Filtrer les profils disponibles
     const availableIds = await filterAvailableProfiles(ALL_KNOWN_PROFILE_IDS);
-
     allAvailableProfilesRef.current = availableIds;
     nextIndexToLoadRef.current = 0;
 
@@ -103,129 +96,138 @@ export default function SwipePage() {
       setIsSwipeFinished(true);
       setProfileIdQueue([]);
       setCurrentIndex(0);
-      return;
+    } else {
+      const initialProfiles = availableIds.slice(0, Math.min(BUFFER_SIZE, availableIds.length));
+      setProfileIdQueue(initialProfiles);
+      nextIndexToLoadRef.current = initialProfiles.length;
+      setIsSwipeFinished(false);
     }
   }, [auth.user, filterAvailableProfiles]);
 
-  // Fonction pour remplir le buffer avec les prochains profils
-  const refillBuffer = useCallback(async () => {
-    if (isRefilling || isSwipeFinished) return;
-
-    setIsRefilling(true);
-
-    const availableProfiles = allAvailableProfilesRef.current;
-    const startIndex = nextIndexToLoadRef.current;
-
-    // Calculer combien de profils nous devons ajouter pour atteindre BUFFER_SIZE
-    const currentBufferSize = profileIdQueue.length - currentIndex;
-    const profilesNeeded = BUFFER_SIZE - currentBufferSize;
-
-    if (profilesNeeded <= 0) {
-      setIsRefilling(false);
-      return;
-    }
-
-    // Vérifier s'il y a assez de profils disponibles
-    const remainingProfiles = availableProfiles.length - startIndex;
-
-    if (remainingProfiles <= 0) {
-      // Plus de profils disponibles
-      if (currentBufferSize === 0) {
-        setIsSwipeFinished(true);
-      }
-      setIsRefilling(false);
-      return;
-    }
-
-    // Prendre les prochains profils disponibles
-    const profilesToAdd = Math.min(profilesNeeded, remainingProfiles);
-    const newProfiles = availableProfiles.slice(startIndex, startIndex + profilesToAdd);
-
-    // Ajouter les nouveaux profils à la queue
-    setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
-
-    // Mettre à jour l'index de chargement
-    nextIndexToLoadRef.current = startIndex + profilesToAdd;
-
-    // Précharger les données des nouveaux profils
-    for (const profileId of newProfiles) {
-      // Correction ESLint: await ajouté même si non nécessaire pour éviter l'erreur require-await
-      await queries.profiles.get(profileId).catch((e: unknown) => {
-        console.error("Erreur precharge:", e);
-      });
-    }
-
-    setIsRefilling(false);
-  }, [profileIdQueue.length, currentIndex, isRefilling, isSwipeFinished]);
-
-  // Initialisation - charger les profils disponibles et remplir le buffer initial
+  // Initialisation
   useEffect(() => {
-    if (auth.user) {
+    if (auth.user && !isInitializedRef.current) {
       const initialize = async () => {
         setIsLoading(true);
         setError(null);
-
-        await initializeAvailableProfiles();
-
-        if (!isSwipeFinished) {
-          await refillBuffer();
+        try {
+          await initializeAvailableProfiles();
+        } catch {
+          // ✅ FIX: Supprimer la variable err non utilisée
+          setError("Erreur lors du chargement des profils");
+        } finally {
+          setIsLoading(false);
         }
-
-        setIsLoading(false);
       };
-
       void initialize();
     }
-  }, [auth.user, initializeAvailableProfiles, refillBuffer, isSwipeFinished]);
+  }, [auth.user, initializeAvailableProfiles]);
 
-  // Surveiller le buffer et le remplir si nécessaire
+  // Refill du buffer
   useEffect(() => {
+    if (!isInitializedRef.current || isRefilling || isSwipeFinished || isLoading) return;
+
     const currentBufferSize = profileIdQueue.length - currentIndex;
 
-    if (currentBufferSize <= PRELOAD_THRESHOLD && !isRefilling && !isSwipeFinished) {
-      void refillBuffer();
-    }
-  }, [currentIndex, profileIdQueue.length, refillBuffer, isRefilling, isSwipeFinished]);
+    if (currentBufferSize <= PRELOAD_THRESHOLD) {
+      const doRefill = async () => {
+        // ✅ FIX: Supprimer les conditions redondantes déjà vérifiées dans le useEffect parent
+        setIsRefilling(true);
+        const availableProfiles = allAvailableProfilesRef.current;
+        const startIndex = nextIndexToLoadRef.current;
+        const profilesNeeded = BUFFER_SIZE - currentBufferSize;
+        const remainingProfiles = availableProfiles.length - startIndex;
 
+        if (profilesNeeded <= 0) {
+          setIsRefilling(false);
+          return;
+        }
+
+        if (remainingProfiles <= 0) {
+          if (currentBufferSize === 0) setIsSwipeFinished(true);
+          setIsRefilling(false);
+          return;
+        }
+
+        const profilesToAdd = Math.min(profilesNeeded, remainingProfiles);
+        const newProfiles = availableProfiles.slice(startIndex, startIndex + profilesToAdd);
+
+        setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
+        nextIndexToLoadRef.current = startIndex + profilesToAdd;
+
+        // Précharger les profils
+        for (const profileId of newProfiles) {
+          await queries.profiles.get(profileId).catch(() => {
+            // Ignorer les erreurs de préchargement
+          });
+        }
+
+        setIsRefilling(false);
+      };
+
+      void doRefill();
+    }
+  }, [currentIndex, profileIdQueue.length, isLoading, isRefilling, isSwipeFinished]);
+
+
+  // Détection fin de swipe
+  useEffect(() => {
+    if (!isInitializedRef.current || isLoading || isRefilling) return;
+
+    const currentBufferSize = profileIdQueue.length - currentIndex;
+    const availableProfiles = allAvailableProfilesRef.current;
+    const nextIndex = nextIndexToLoadRef.current;
+
+    if (currentBufferSize === 0 && nextIndex >= availableProfiles.length) {
+      setIsSwipeFinished(true);
+    }
+  }, [currentIndex, profileIdQueue.length, isLoading, isRefilling]);
+
+  // Reset utilisateur
+  useEffect(() => {
+    isInitializedRef.current = false;
+    processedProfileIdsRef.current.clear();
+    followedProfileIdsRef.current.clear();
+    allAvailableProfilesRef.current = [];
+    nextIndexToLoadRef.current = 0;
+    setProfileIdQueue([]);
+    setCurrentIndex(0);
+    setIsSwipeFinished(false);
+    setIsLoading(false);
+    setIsRefilling(false);
+  }, [auth.user?.id]);
+
+  // Navigation
   const advanceToNextProfile = () => {
     const currentProfileId = profileIdQueue[currentIndex];
     if (currentProfileId) {
       processedProfileIdsRef.current.add(currentProfileId);
     }
 
-    // Avancer à l'index suivant
-    setCurrentIndex((prevIndex) => prevIndex + 1);
+    const newIndex = currentIndex + 1;
+    const remainingInBuffer = profileIdQueue.length - newIndex;
+    const remainingToLoad = allAvailableProfilesRef.current.length - nextIndexToLoadRef.current;
 
-    // Nettoyer la queue si elle devient trop longue (garder seulement les profils non traités)
-    if (currentIndex >= 10) {
-      setProfileIdQueue((prevQueue) => prevQueue.slice(currentIndex + 1));
+    setCurrentIndex(newIndex);
+
+    if (remainingInBuffer === 0 && remainingToLoad === 0) {
+      setIsSwipeFinished(true);
+      return;
+    }
+
+    // Nettoyer si nécessaire
+    if (newIndex >= 10) {
+      setProfileIdQueue((prevQueue) => prevQueue.slice(newIndex));
       setCurrentIndex(0);
     }
   };
 
-  const handleSwipeComplete = (direction: "left" | "right") => {
-    setIsAnimating(true);
-
-    if (direction === "right") {
-      void handleFollow();
-    } else {
-      handlePass();
-    }
-
-    setTimeout(() => {
-      setDragOffset({ x: 0, y: 0 });
-      setIsAnimating(false);
-    }, 300);
-  };
-
+  // Actions utilisateur
   const handlePass = () => {
     if (isLoading || !profileIdQueue[currentIndex] || isAnimating) return;
 
     const profileId = profileIdQueue[currentIndex];
-
-    // Ajouter le profil aux refusés avec un cooldown de 72h
     RejectedProfilesManager.addRejectedProfile(profileId);
-
     advanceToNextProfile();
   };
 
@@ -238,7 +240,6 @@ export default function SwipePage() {
 
     try {
       await queries.follows.add(profileToFollowId);
-      // Ajouter au cache des profils suivis
       followedProfileIdsRef.current.add(profileToFollowId);
       advanceToNextProfile();
     } catch (err) {
@@ -248,6 +249,41 @@ export default function SwipePage() {
     }
   };
 
+  const resetAllCooldowns = () => {
+    RejectedProfilesManager.clearAllRejectedProfiles();
+    processedProfileIdsRef.current.clear();
+    followedProfileIdsRef.current.clear();
+    isInitializedRef.current = false;
+    allAvailableProfilesRef.current = [];
+    nextIndexToLoadRef.current = 0;
+    setProfileIdQueue([]);
+    setCurrentIndex(0);
+    setIsSwipeFinished(false);
+    setIsLoading(true);
+    setIsRefilling(false);
+
+    setTimeout(() => {
+      // ✅ FIX: Corriger la fonction qui retourne void
+      void initializeAvailableProfiles().then(() => {
+        setIsLoading(false);
+      });
+    }, 100);
+  };
+
+  const handleSwipeComplete = (direction: "left" | "right") => {
+    setIsAnimating(true);
+    if (direction === "right") {
+      void handleFollow();
+    } else {
+      handlePass();
+    }
+    setTimeout(() => {
+      setDragOffset({ x: 0, y: 0 });
+      setIsAnimating(false);
+    }, 300);
+  };
+
+  // Handlers souris/tactile
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isAnimating || isLoading) return;
     setIsDragging(true);
@@ -256,15 +292,15 @@ export default function SwipePage() {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || isAnimating) return;
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
-    setDragOffset({ x: deltaX, y: deltaY });
+    setDragOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
   };
 
   const handleMouseUp = () => {
     if (!isDragging || isAnimating) return;
     setIsDragging(false);
-
     const threshold = 100;
     if (Math.abs(dragOffset.x) > threshold) {
       handleSwipeComplete(dragOffset.x > 0 ? "right" : "left");
@@ -283,15 +319,15 @@ export default function SwipePage() {
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging || isAnimating) return;
     const touch = e.touches[0];
-    const deltaX = touch.clientX - dragStart.x;
-    const deltaY = touch.clientY - dragStart.y;
-    setDragOffset({ x: deltaX, y: deltaY });
+    setDragOffset({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y,
+    });
   };
 
   const handleTouchEnd = () => {
     if (!isDragging || isAnimating) return;
     setIsDragging(false);
-
     const threshold = 100;
     if (Math.abs(dragOffset.x) > threshold) {
       handleSwipeComplete(dragOffset.x > 0 ? "right" : "left");
@@ -300,27 +336,7 @@ export default function SwipePage() {
     }
   };
 
-  const resetSwipeSession = () => {
-    processedProfileIdsRef.current = new Set();
-    followedProfileIdsRef.current = new Set();
-    allAvailableProfilesRef.current = [];
-    nextIndexToLoadRef.current = 0;
-    setProfileIdQueue([]);
-    setCurrentIndex(0);
-    setIsSwipeFinished(false);
-    setIsLoading(true);
-
-    // Redémarrer l'initialisation
-    setTimeout(() => {
-      void initializeAvailableProfiles().then(() => {
-        void refillBuffer().then(() => {
-          setIsLoading(false);
-        });
-      });
-    }, 100);
-  };
-
-  // Vérifier si l'utilisateur est connecté
+  // Rendu conditionnel
   if (!auth.user) {
     return (
       <div className="w-full">
@@ -334,8 +350,7 @@ export default function SwipePage() {
     );
   }
 
-  // Affichage quand le swipe est terminé
-  if (isSwipeFinished) {
+  if (isSwipeFinished && !isLoading && !isRefilling) {
     return (
       <div className="w-full">
         <TopBar title="Découvrir des profils" />
@@ -347,16 +362,22 @@ export default function SwipePage() {
               Vous avez passé en revue tous les profils disponibles. Certains profils seront à nouveau disponibles dans
               72h.
             </p>
-            <button onClick={resetSwipeSession} className="btn btn-primary">
-              Recommencer la session
-            </button>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => 
+                void navigate("/")} 
+                className="btn btn-primary">
+                Retour à l&apos;accueil
+              </button>
+              <button onClick={resetAllCooldowns} className="btn btn-warning">
+                🔄 Reset tous les temps d&apos;attente
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Chargement initial
   if (isLoading && profileIdQueue.length === 0) {
     return (
       <div className="w-full">
@@ -368,7 +389,6 @@ export default function SwipePage() {
     );
   }
 
-  // Erreur
   if (error && profileIdQueue.length === 0 && !isLoading) {
     return (
       <div className="w-full">
@@ -383,7 +403,6 @@ export default function SwipePage() {
   }
 
   const currentProfileId = profileIdQueue[currentIndex];
-
   if (!currentProfileId) {
     return (
       <div className="w-full">
@@ -398,10 +417,9 @@ export default function SwipePage() {
     );
   }
 
+  // Calculs pour l'animation
   const rotation = dragOffset.x * 0.1;
   const opacity = Math.max(0.5, 1 - Math.abs(dragOffset.x) / 300);
-
-  // Calcul des couleurs de fond selon la direction
   let backgroundColor = "transparent";
   let backgroundOpacity = 0;
 
@@ -409,10 +427,6 @@ export default function SwipePage() {
     backgroundOpacity = Math.min(0.7, Math.abs(dragOffset.x) / 150);
     backgroundColor = dragOffset.x > 0 ? "#55efc4" : "#ff7675";
   }
-
-  // Afficher des informations de debug sur le buffer (optionnel)
-  const currentBufferSize = profileIdQueue.length - currentIndex;
-  const debugInfo = `Buffer: ${currentBufferSize.toString()}/3 | Queue: ${profileIdQueue.length.toString()} | Index: ${currentIndex.toString()}`;
 
   return (
     <div className="w-full">
@@ -426,22 +440,16 @@ export default function SwipePage() {
           </p>
         )}
 
-        {/* Debug info - à supprimer en production */}
-        {process.env.NODE_ENV === "development" && (
-          <p style={{ fontSize: "0.8rem", color: "#999", marginBottom: "10px" }}>{debugInfo}</p>
-        )}
-
+        {/* ✅ CORRECTION : Restructuration du layout */}
         <div
           style={{
             position: "relative",
-            overflow: "hidden",
-            height: "70vh",
+            height: "calc(100vh - 200px)", // Hauteur adaptative moins l'espace pour les boutons
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
           }}
         >
-          {/* Fond coloré animé */}
+          {/* Fond animé */}
           <div
             style={{
               position: "absolute",
@@ -449,13 +457,14 @@ export default function SwipePage() {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: backgroundColor,
+              backgroundColor,
               opacity: backgroundOpacity,
               transition: isDragging ? "none" : "opacity 0.3s ease-out",
               zIndex: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              pointerEvents: "none", // ✅ Permet les interactions avec la carte en dessous
             }}
           >
             {isDragging && Math.abs(dragOffset.x) > 50 && (
@@ -465,9 +474,7 @@ export default function SwipePage() {
                   fontWeight: "900",
                   color: "white",
                   textShadow: "3px 3px 6px rgba(0,0,0,0.5)",
-                  fontFamily: "Impact, Arial Black, sans-serif",
-                  letterSpacing: "0.1em",
-                  transform: `scale(${Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300).toString()})`,
+                  transform: `scale(${String(Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300))})`,
                   transition: "transform 0.1s ease-out",
                 }}
               >
@@ -476,66 +483,67 @@ export default function SwipePage() {
             )}
           </div>
 
-          {/* Carte swipable */}
+          {/* ✅ CORRECTION : Conteneur de la carte avec hauteur fixe et scroll */}
           <div
-            key={currentProfileId}
             style={{
-              transform: `translateX(${dragOffset.x.toString()}px) translateY(${(dragOffset.y * 0.1).toString()}px) rotate(${rotation.toString()}deg)`,
-              opacity: opacity,
-              transition: isDragging ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
-              cursor: isDragging ? "grabbing" : "grab",
-              userSelect: "none",
               flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              zIndex: 2,
               position: "relative",
+              marginBottom: "20px", // Espace pour les boutons
             }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
           >
-            <FetchCard profileId={currentProfileId} />
+            <div
+              key={currentProfileId}
+              style={{
+                transform: `translateX(${String(dragOffset.x)}px) translateY(${String(dragOffset.y * 0.1)}px) rotate(${String(rotation)}deg)`,
+                opacity,
+                transition: isDragging ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
+                cursor: isDragging ? "grabbing" : "grab",
+                userSelect: "none",
+                height: "100%", // ✅ Prend toute la hauteur disponible
+                zIndex: 2,
+                position: "relative",
+              }}
+              // ✅ FIX: Corriger les handlers de Promise
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <FetchCard profileId={currentProfileId} />
+            </div>
           </div>
 
-          {/* Boutons de contrôle */}
+          {/* ✅ CORRECTION : Boutons positionnés en position fixe en bas */}
           <div
             style={{
-              marginTop: "20px",
+              position: "sticky", // ✅ Reste visible même avec le scroll
+              bottom: 0,
+              left: 0,
+              right: 0,
               display: "flex",
               justifyContent: "space-around",
               alignItems: "center",
-              zIndex: 3,
-              position: "relative",
+              zIndex: 10, // ✅ Z-index élevé pour rester au-dessus
+              backgroundColor: "rgba(255, 255, 255, 0.95)", // ✅ Fond semi-transparent
+              backdropFilter: "blur(5px)", // ✅ Effet de flou pour la lisibilité
+              padding: "15px 0",
+              borderTop: "1px solid rgba(0,0,0,0.1)", // ✅ Séparation visuelle
             }}
           >
             <button
               onClick={handlePass}
               disabled={isLoading || isAnimating}
+              className="btn btn-circle btn-lg"
               style={{
-                padding: "15px 30px",
-                fontSize: "24px",
-                cursor: isLoading || isAnimating ? "not-allowed" : "pointer",
                 backgroundColor: "#ff7675",
                 color: "white",
                 border: "none",
-                borderRadius: "50%",
-                width: "80px",
-                height: "80px",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
                 opacity: isAnimating ? 0.5 : 1,
-                transition: "opacity 0.3s ease, transform 0.1s ease",
-                transform: isLoading || isAnimating ? "scale(0.9)" : "scale(1)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)", // ✅ Ombre pour le relief
               }}
-              aria-label="Passer le profil"
             >
               ❌
             </button>
@@ -544,29 +552,35 @@ export default function SwipePage() {
                 void handleFollow();
               }}
               disabled={isLoading || isAnimating}
+              className="btn btn-circle btn-lg"
               style={{
-                padding: "15px 30px",
-                fontSize: "24px",
-                cursor: isLoading || isAnimating ? "not-allowed" : "pointer",
                 backgroundColor: "#55efc4",
                 color: "#2d3436",
                 border: "none",
-                borderRadius: "50%",
-                width: "80px",
-                height: "80px",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
                 opacity: isAnimating ? 0.5 : 1,
-                transition: "opacity 0.3s ease, transform 0.1s ease",
-                transform: isLoading || isAnimating ? "scale(0.9)" : "scale(1)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)", // ✅ Ombre pour le relief
               }}
-              aria-label="Suivre le profil"
             >
               ✔️
             </button>
           </div>
+        </div>
+
+        {/* Bouton reset */}
+        <div style={{ marginTop: "20px" }}>
+          <button
+            onClick={resetAllCooldowns}
+            disabled={isLoading}
+            className="btn btn-sm"
+            style={{
+              backgroundColor: "#fdcb6e",
+              color: "#2d3436",
+              border: "none",
+              opacity: isLoading ? 0.6 : 1,
+            }}
+          >
+            🔄 Reset temps d&apos;attente
+          </button>
         </div>
       </div>
     </div>

@@ -60,7 +60,7 @@ export default function ViewPost() {
       )}
 
       <div className="view-post">
-        <PostViewer post={post} showParents={true} showChildren={true} />
+        <PostViewer post={post} showParents={true} showChildren={true} disableRedirect={true} />
       </div>
     </div>
   );

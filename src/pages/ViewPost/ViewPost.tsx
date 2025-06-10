@@ -60,7 +60,13 @@ export default function ViewPost() {
       )}
 
       <div className="view-post">
-        <PostViewer post={post} showParents={true} showChildren={true} disableRedirect={true} />
+        <PostViewer
+          post={post}
+          showParents={true} // Afficher les parents pour voir toute la chaîne
+          showChildren={true}
+          disableRedirect={true}
+          isMainPost={true}
+        />
       </div>
     </div>
   );

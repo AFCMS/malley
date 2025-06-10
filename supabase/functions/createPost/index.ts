@@ -16,10 +16,13 @@ Deno.serve(async (req) => {
       },
     },
   );
+
   const {
     data: { user },
   } = await supabaseUser.auth.getUser();
-  if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!user) {
+    return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+  }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -38,7 +41,9 @@ Deno.serve(async (req) => {
     .insert({ body, parent_post })
     .select("id")
     .single();
-  if (postErr) return new Response(postErr.message, { status: 500 });
+  if (postErr) {
+    return new Response(postErr.message, { status: 500, headers: corsHeaders });
+  }
 
   // Upload files
   if (files.length > 0) {
@@ -53,7 +58,12 @@ Deno.serve(async (req) => {
         path,
         file,
       );
-      if (upErr) return new Response(upErr.message, { status: 500 });
+      if (upErr) {
+        return new Response(upErr.message, {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
     }
   }
 
@@ -62,7 +72,9 @@ Deno.serve(async (req) => {
     profile: user.id,
     post: post.id,
   });
-  if (error) return new Response(error.message, { status: 500 });
+  if (error) {
+    return new Response(error.message, { status: 500, headers: corsHeaders });
+  }
 
   return new Response(JSON.stringify({ id: post.id }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },

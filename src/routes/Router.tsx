@@ -10,6 +10,7 @@ import ProfileViewerFeatured from "../pages/ProfileViewerFeatured/ProfileViewerF
 import AddPost from "../pages/AddPost/AddPost";
 import ViewPost from "../pages/ViewPost/ViewPost";
 import SwipePage from "../pages/SwipePage/SwipePage";
+import Search from "../pages/Search/Search";
 
 export default function Router() {
   return (
@@ -19,6 +20,7 @@ export default function Router() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/post" element={<AddPost />} />
         <Route path="/post/:postId" element={<ViewPost />} />
         <Route path="/:handle" element={<ProfileViewer />} />

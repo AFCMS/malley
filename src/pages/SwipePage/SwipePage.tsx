@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
-
 import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { RejectedProfilesManager } from "../../utils/rejectedProfiles";
-
 import FetchCard from "../../Components/FetchCard/FetchCard";
 import TopBar from "../../layouts/TopBar/TopBar";
 
@@ -21,7 +19,6 @@ const BUFFER_SIZE = 3;
 const PRELOAD_THRESHOLD = 1;
 const MAX_SWIPES_PER_DAY = 20;
 
-// Gestionnaire de limite de swipes quotidiens
 const DailySwipeManager = {
   STORAGE_KEY: "daily_swipe_data",
 
@@ -76,8 +73,6 @@ const DailySwipeManager = {
 export default function SwipePage() {
   const auth = useAuth();
   const navigate = useNavigate();
-
-  // États principaux
   const [profileIdQueue, setProfileIdQueue] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -86,21 +81,15 @@ export default function SwipePage() {
   const [isRefilling, setIsRefilling] = useState<boolean>(false);
   const [remainingSwipes, setRemainingSwipes] = useState<number>(MAX_SWIPES_PER_DAY);
   const [dailyLimitReached, setDailyLimitReached] = useState<boolean>(false);
-
-  // États pour l'animation
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-
-  // Refs pour le cache
   const processedProfileIdsRef = useRef<Set<string>>(new Set());
   const followedProfileIdsRef = useRef<Set<string>>(new Set());
   const allAvailableProfilesRef = useRef<string[]>([]);
   const nextIndexToLoadRef = useRef<number>(0);
   const isInitializedRef = useRef<boolean>(false);
-
-  // Vérifier la limite quotidienne
   useEffect(() => {
     const updateSwipeStatus = () => {
       const remaining = DailySwipeManager.getRemainingSwipes();
@@ -116,8 +105,6 @@ export default function SwipePage() {
       clearInterval(interval);
     };
   }, []);
-
-  // Filtrer les profils disponibles
   const filterAvailableProfiles = useCallback(
     async (profileIds: string[]): Promise<string[]> => {
       if (!auth.user) return [];
@@ -147,8 +134,6 @@ export default function SwipePage() {
     },
     [auth.user],
   );
-
-  // Initialiser les profils disponibles
   const initializeAvailableProfiles = useCallback(async () => {
     if (!auth.user || isInitializedRef.current) return;
 
@@ -170,8 +155,6 @@ export default function SwipePage() {
       setIsSwipeFinished(false);
     }
   }, [auth.user, filterAvailableProfiles]);
-
-  // Initialisation
   useEffect(() => {
     if (auth.user && !isInitializedRef.current) {
       const initialize = async () => {
@@ -185,14 +168,9 @@ export default function SwipePage() {
           setIsLoading(false);
         }
       };
-
-      initialize().catch(() => {
-        // Gestion d'erreur supplémentaire si nécessaire
-      });
+      void initialize();
     }
   }, [auth.user, initializeAvailableProfiles]);
-
-  // Refill du buffer
   useEffect(() => {
     if (!isInitializedRef.current || isRefilling || isSwipeFinished || isLoading || dailyLimitReached) return;
 
@@ -218,11 +196,9 @@ export default function SwipePage() {
 
       setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
       nextIndexToLoadRef.current = startIndex + profilesToAdd;
-
-      // Précharger les profils
       for (const profileId of newProfiles) {
         await queries.profiles.get(profileId).catch(() => {
-          // Ignorer les erreurs de préchargement
+          // Ignore preload errors
         });
       }
 
@@ -234,9 +210,6 @@ export default function SwipePage() {
       setIsRefilling(false);
     });
   }, [currentIndex, profileIdQueue.length, isLoading, isRefilling, isSwipeFinished, dailyLimitReached]);
-
-
-  // Reset utilisateur
   useEffect(() => {
     isInitializedRef.current = false;
     processedProfileIdsRef.current.clear();
@@ -249,8 +222,6 @@ export default function SwipePage() {
     setIsLoading(false);
     setIsRefilling(false);
   }, [auth.user?.id]);
-
-  // Navigation
   const advanceToNextProfile = () => {
     const currentProfileId = profileIdQueue[currentIndex];
     if (currentProfileId) {
@@ -265,18 +236,13 @@ export default function SwipePage() {
       setDailyLimitReached(true);
       return;
     }
-
     const newIndex = currentIndex + 1;
     setCurrentIndex(newIndex);
-
-    // Nettoyer si nécessaire
     if (newIndex >= 10) {
       setProfileIdQueue((prevQueue) => prevQueue.slice(newIndex));
       setCurrentIndex(0);
     }
   };
-
-  // Actions utilisateur
   const handlePass = () => {
     if (isLoading || !profileIdQueue[currentIndex] || isAnimating || dailyLimitReached) return;
 
@@ -302,7 +268,6 @@ export default function SwipePage() {
       setIsLoading(false);
     }
   };
-
 
   const resetAllCooldowns = () => {
     RejectedProfilesManager.clearAllRejectedProfiles();
@@ -346,8 +311,6 @@ export default function SwipePage() {
       setIsAnimating(false);
     }, 300);
   };
-
-  // Handlers d'événements
   const handleDragEvents = {
     onMouseDown: (e: React.MouseEvent) => {
       if (isAnimating || isLoading || dailyLimitReached) return;
@@ -396,8 +359,6 @@ export default function SwipePage() {
       }
     },
   };
-
-  // Rendu conditionnel pour les états d'erreur/chargement
   if (!auth.user) {
     return (
       <div className="w-full">
@@ -494,7 +455,6 @@ export default function SwipePage() {
       </div>
     );
   }
-
   const currentProfileId = profileIdQueue[currentIndex];
   if (!currentProfileId) {
     return (
@@ -509,8 +469,6 @@ export default function SwipePage() {
       </div>
     );
   }
-
-  // Calculs pour l'animation
   const rotation = dragOffset.x * 0.1;
   const opacity = Math.max(0.5, 1 - Math.abs(dragOffset.x) / 300);
   let backgroundColor = "transparent";
@@ -525,7 +483,6 @@ export default function SwipePage() {
     <div className="w-full">
       <TopBar title="Découvrir des profils" />
       <div style={{ textAlign: "center", padding: "20px", maxWidth: "500px", margin: "0 auto" }}>
-        {/* Compteur de swipes restants */}
         <div
           style={{
             marginBottom: "15px",
@@ -564,7 +521,6 @@ export default function SwipePage() {
             flexDirection: "column",
           }}
         >
-          {/* Fond animé */}
           <div
             style={{
               position: "absolute",
@@ -652,9 +608,7 @@ export default function SwipePage() {
 
             <button
               onClick={() => {
-                handleFollow().catch(() => {
-                  // Gestion d'erreur déjà incluse dans handleFollow
-                });
+                void handleFollow();
               }}
               disabled={isLoading || isAnimating || dailyLimitReached}
               className="btn btn-circle btn-lg"

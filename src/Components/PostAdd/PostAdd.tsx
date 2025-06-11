@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { queries, supabase } from "../../contexts/supabase/supabase";
+import { queries, supabase, utils } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import CategoriesChooser from "../CategoriesChooser/CategoriesChooser";
 import { Tables } from "../../contexts/supabase/database";
@@ -216,11 +216,7 @@ export default function PostAdd({
           {isReply && auth.profile && (
             <div className="flex-shrink-0">
               <div className="h-10 w-10 overflow-hidden rounded-full">
-                <img
-                  src={auth.profile.profile_pic ?? "https://img.daisyui.com/images/profile/demo/yellingcat@192.webp"}
-                  alt="Your profile"
-                  className="h-full w-full object-cover"
-                />
+                <img src={utils.getAvatarUrl(auth.profile)} alt="Your profile" className="h-full w-full object-cover" />
               </div>
             </div>
           )}

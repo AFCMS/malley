@@ -45,10 +45,6 @@ export default function LeftToolbarWide() {
                 <HiOutlineHome className="h-5 opacity-50" />
                 Home
               </Link>
-              <Link className="sidebarlink" to="/profile">
-                <HiOutlineBell className="h-5 opacity-50" />
-                Notifications
-              </Link>
               <Link
                 className="sidebarlink"
                 to={auth.isAuthenticated && auth.profile ? `/@${auth.profile.handle}` : "/login"}

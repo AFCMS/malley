@@ -19,6 +19,59 @@ const ALL_KNOWN_PROFILE_IDS: string[] = [
 
 const BUFFER_SIZE = 3;
 const PRELOAD_THRESHOLD = 1;
+const MAX_SWIPES_PER_DAY = 20;
+
+// Gestionnaire de limite de swipes quotidiens
+const DailySwipeManager = {
+  STORAGE_KEY: "daily_swipe_data",
+
+  getTodayKey(): string {
+    return new Date().toISOString().split("T")[0];
+  },
+
+  getSwipeData(): { date: string; count: number } {
+    const stored = localStorage.getItem(this.STORAGE_KEY);
+    if (!stored) {
+      return { date: this.getTodayKey(), count: 0 };
+    }
+
+    try {
+      const data = JSON.parse(stored) as { date: string; count: number };
+
+      if (data.date !== this.getTodayKey()) {
+        const newData = { date: this.getTodayKey(), count: 0 };
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newData));
+        return newData;
+      }
+
+      return data;
+    } catch {
+      const newData = { date: this.getTodayKey(), count: 0 };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newData));
+      return newData;
+    }
+  },
+
+  incrementSwipeCount(): void {
+    const data = this.getSwipeData();
+    data.count += 1;
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+  },
+
+  getRemainingSwipes(): number {
+    const data = this.getSwipeData();
+    return Math.max(0, MAX_SWIPES_PER_DAY - data.count);
+  },
+
+  hasReachedLimit(): boolean {
+    return this.getRemainingSwipes() === 0;
+  },
+
+  resetDailyCount(): void {
+    const data = { date: this.getTodayKey(), count: 0 };
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+  },
+};
 
 export default function SwipePage() {
   const auth = useAuth();
@@ -31,6 +84,8 @@ export default function SwipePage() {
   const [error, setError] = useState<string | null>(null);
   const [isSwipeFinished, setIsSwipeFinished] = useState<boolean>(false);
   const [isRefilling, setIsRefilling] = useState<boolean>(false);
+  const [remainingSwipes, setRemainingSwipes] = useState<number>(MAX_SWIPES_PER_DAY);
+  const [dailyLimitReached, setDailyLimitReached] = useState<boolean>(false);
 
   // États pour l'animation
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -45,6 +100,23 @@ export default function SwipePage() {
   const nextIndexToLoadRef = useRef<number>(0);
   const isInitializedRef = useRef<boolean>(false);
 
+  // Vérifier la limite quotidienne
+  useEffect(() => {
+    const updateSwipeStatus = () => {
+      const remaining = DailySwipeManager.getRemainingSwipes();
+      const limitReached = DailySwipeManager.hasReachedLimit();
+
+      setRemainingSwipes(remaining);
+      setDailyLimitReached(limitReached);
+    };
+
+    updateSwipeStatus();
+    const interval = setInterval(updateSwipeStatus, 60000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
   // Filtrer les profils disponibles
   const filterAvailableProfiles = useCallback(
     async (profileIds: string[]): Promise<string[]> => {
@@ -53,17 +125,13 @@ export default function SwipePage() {
       const availableProfiles: string[] = [];
 
       for (const profileId of profileIds) {
-        // Filtres de base
         if (profileId === auth.user.id) continue;
         if (processedProfileIdsRef.current.has(profileId)) continue;
         if (followedProfileIdsRef.current.has(profileId)) continue;
         if (RejectedProfilesManager.isProfileRejected(profileId)) continue;
 
         try {
-          // Vérifier existence du profil
           await queries.profiles.get(profileId);
-
-          // Vérifier si déjà suivi
           const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profileId);
           if (isFollowing) {
             followedProfileIdsRef.current.add(profileId);
@@ -71,7 +139,6 @@ export default function SwipePage() {
             availableProfiles.push(profileId);
           }
         } catch {
-          // Ignorer les profils avec erreurs
           continue;
         }
       }
@@ -113,75 +180,61 @@ export default function SwipePage() {
         try {
           await initializeAvailableProfiles();
         } catch {
-          // ✅ FIX: Supprimer la variable err non utilisée
           setError("Erreur lors du chargement des profils");
         } finally {
           setIsLoading(false);
         }
       };
-      void initialize();
+
+      initialize().catch(() => {
+        // Gestion d'erreur supplémentaire si nécessaire
+      });
     }
   }, [auth.user, initializeAvailableProfiles]);
 
   // Refill du buffer
   useEffect(() => {
-    if (!isInitializedRef.current || isRefilling || isSwipeFinished || isLoading) return;
+    if (!isInitializedRef.current || isRefilling || isSwipeFinished || isLoading || dailyLimitReached) return;
 
     const currentBufferSize = profileIdQueue.length - currentIndex;
 
-    if (currentBufferSize <= PRELOAD_THRESHOLD) {
-      const doRefill = async () => {
-        // ✅ FIX: Supprimer les conditions redondantes déjà vérifiées dans le useEffect parent
-        setIsRefilling(true);
-        const availableProfiles = allAvailableProfilesRef.current;
-        const startIndex = nextIndexToLoadRef.current;
-        const profilesNeeded = BUFFER_SIZE - currentBufferSize;
-        const remainingProfiles = availableProfiles.length - startIndex;
+    if (currentBufferSize > PRELOAD_THRESHOLD) return;
 
-        if (profilesNeeded <= 0) {
-          setIsRefilling(false);
-          return;
-        }
+    const doRefill = async () => {
+      setIsRefilling(true);
+      const availableProfiles = allAvailableProfilesRef.current;
+      const startIndex = nextIndexToLoadRef.current;
+      const profilesNeeded = BUFFER_SIZE - currentBufferSize;
+      const remainingProfiles = availableProfiles.length - startIndex;
 
-        if (remainingProfiles <= 0) {
-          if (currentBufferSize === 0) setIsSwipeFinished(true);
-          setIsRefilling(false);
-          return;
-        }
-
-        const profilesToAdd = Math.min(profilesNeeded, remainingProfiles);
-        const newProfiles = availableProfiles.slice(startIndex, startIndex + profilesToAdd);
-
-        setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
-        nextIndexToLoadRef.current = startIndex + profilesToAdd;
-
-        // Précharger les profils
-        for (const profileId of newProfiles) {
-          await queries.profiles.get(profileId).catch(() => {
-            // Ignorer les erreurs de préchargement
-          });
-        }
-
+      if (profilesNeeded <= 0 || remainingProfiles <= 0) {
+        if (currentBufferSize === 0 && remainingProfiles <= 0) setIsSwipeFinished(true);
         setIsRefilling(false);
-      };
+        return;
+      }
 
-      void doRefill();
-    }
-  }, [currentIndex, profileIdQueue.length, isLoading, isRefilling, isSwipeFinished]);
+      const profilesToAdd = Math.min(profilesNeeded, remainingProfiles);
+      const newProfiles = availableProfiles.slice(startIndex, startIndex + profilesToAdd);
 
+      setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
+      nextIndexToLoadRef.current = startIndex + profilesToAdd;
 
-  // Détection fin de swipe
-  useEffect(() => {
-    if (!isInitializedRef.current || isLoading || isRefilling) return;
+      // Précharger les profils
+      for (const profileId of newProfiles) {
+        await queries.profiles.get(profileId).catch(() => {
+          // Ignorer les erreurs de préchargement
+        });
+      }
 
-    const currentBufferSize = profileIdQueue.length - currentIndex;
-    const availableProfiles = allAvailableProfilesRef.current;
-    const nextIndex = nextIndexToLoadRef.current;
+      setIsRefilling(false);
+    };
 
-    if (currentBufferSize === 0 && nextIndex >= availableProfiles.length) {
-      setIsSwipeFinished(true);
-    }
-  }, [currentIndex, profileIdQueue.length, isLoading, isRefilling]);
+    doRefill().catch(() => {
+      setError("Erreur lors du chargement des profils");
+      setIsRefilling(false);
+    });
+  }, [currentIndex, profileIdQueue.length, isLoading, isRefilling, isSwipeFinished, dailyLimitReached]);
+
 
   // Reset utilisateur
   useEffect(() => {
@@ -204,16 +257,17 @@ export default function SwipePage() {
       processedProfileIdsRef.current.add(currentProfileId);
     }
 
-    const newIndex = currentIndex + 1;
-    const remainingInBuffer = profileIdQueue.length - newIndex;
-    const remainingToLoad = allAvailableProfilesRef.current.length - nextIndexToLoadRef.current;
+    DailySwipeManager.incrementSwipeCount();
+    const remaining = DailySwipeManager.getRemainingSwipes();
+    setRemainingSwipes(remaining);
 
-    setCurrentIndex(newIndex);
-
-    if (remainingInBuffer === 0 && remainingToLoad === 0) {
-      setIsSwipeFinished(true);
+    if (remaining === 0) {
+      setDailyLimitReached(true);
       return;
     }
+
+    const newIndex = currentIndex + 1;
+    setCurrentIndex(newIndex);
 
     // Nettoyer si nécessaire
     if (newIndex >= 10) {
@@ -224,7 +278,7 @@ export default function SwipePage() {
 
   // Actions utilisateur
   const handlePass = () => {
-    if (isLoading || !profileIdQueue[currentIndex] || isAnimating) return;
+    if (isLoading || !profileIdQueue[currentIndex] || isAnimating || dailyLimitReached) return;
 
     const profileId = profileIdQueue[currentIndex];
     RejectedProfilesManager.addRejectedProfile(profileId);
@@ -232,7 +286,7 @@ export default function SwipePage() {
   };
 
   const handleFollow = async () => {
-    if (isLoading || !profileIdQueue[currentIndex] || isAnimating) return;
+    if (isLoading || !profileIdQueue[currentIndex] || isAnimating || dailyLimitReached) return;
 
     const profileToFollowId = profileIdQueue[currentIndex];
     setIsLoading(true);
@@ -249,8 +303,10 @@ export default function SwipePage() {
     }
   };
 
+
   const resetAllCooldowns = () => {
     RejectedProfilesManager.clearAllRejectedProfiles();
+    DailySwipeManager.resetDailyCount();
     processedProfileIdsRef.current.clear();
     followedProfileIdsRef.current.clear();
     isInitializedRef.current = false;
@@ -259,18 +315,26 @@ export default function SwipePage() {
     setProfileIdQueue([]);
     setCurrentIndex(0);
     setIsSwipeFinished(false);
+    setDailyLimitReached(false);
+    setRemainingSwipes(MAX_SWIPES_PER_DAY);
     setIsLoading(true);
     setIsRefilling(false);
 
     setTimeout(() => {
-      // ✅ FIX: Corriger la fonction qui retourne void
-      void initializeAvailableProfiles().then(() => {
-        setIsLoading(false);
-      });
+      initializeAvailableProfiles()
+        .then(() => {
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setError("Erreur lors de l'initialisation");
+          setIsLoading(false);
+        });
     }, 100);
   };
 
   const handleSwipeComplete = (direction: "left" | "right") => {
+    if (dailyLimitReached) return;
+
     setIsAnimating(true);
     if (direction === "right") {
       void handleFollow();
@@ -283,60 +347,57 @@ export default function SwipePage() {
     }, 300);
   };
 
-  // Handlers souris/tactile
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isAnimating || isLoading) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
+  // Handlers d'événements
+  const handleDragEvents = {
+    onMouseDown: (e: React.MouseEvent) => {
+      if (isAnimating || isLoading || dailyLimitReached) return;
+      setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+    },
+    onMouseMove: (e: React.MouseEvent) => {
+      if (!isDragging || isAnimating || dailyLimitReached) return;
+      setDragOffset({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    },
+    onMouseUp: () => {
+      if (!isDragging || isAnimating || dailyLimitReached) return;
+      setIsDragging(false);
+      const threshold = 100;
+      if (Math.abs(dragOffset.x) > threshold) {
+        handleSwipeComplete(dragOffset.x > 0 ? "right" : "left");
+      } else {
+        setDragOffset({ x: 0, y: 0 });
+      }
+    },
+    onTouchStart: (e: React.TouchEvent) => {
+      if (isAnimating || isLoading || dailyLimitReached) return;
+      setIsDragging(true);
+      const touch = e.touches[0];
+      setDragStart({ x: touch.clientX, y: touch.clientY });
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      if (!isDragging || isAnimating || dailyLimitReached) return;
+      const touch = e.touches[0];
+      setDragOffset({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y,
+      });
+    },
+    onTouchEnd: () => {
+      if (!isDragging || isAnimating || dailyLimitReached) return;
+      setIsDragging(false);
+      const threshold = 100;
+      if (Math.abs(dragOffset.x) > threshold) {
+        handleSwipeComplete(dragOffset.x > 0 ? "right" : "left");
+      } else {
+        setDragOffset({ x: 0, y: 0 });
+      }
+    },
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || isAnimating) return;
-    setDragOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
-  };
-
-  const handleMouseUp = () => {
-    if (!isDragging || isAnimating) return;
-    setIsDragging(false);
-    const threshold = 100;
-    if (Math.abs(dragOffset.x) > threshold) {
-      handleSwipeComplete(dragOffset.x > 0 ? "right" : "left");
-    } else {
-      setDragOffset({ x: 0, y: 0 });
-    }
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (isAnimating || isLoading) return;
-    setIsDragging(true);
-    const touch = e.touches[0];
-    setDragStart({ x: touch.clientX, y: touch.clientY });
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || isAnimating) return;
-    const touch = e.touches[0];
-    setDragOffset({
-      x: touch.clientX - dragStart.x,
-      y: touch.clientY - dragStart.y,
-    });
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDragging || isAnimating) return;
-    setIsDragging(false);
-    const threshold = 100;
-    if (Math.abs(dragOffset.x) > threshold) {
-      handleSwipeComplete(dragOffset.x > 0 ? "right" : "left");
-    } else {
-      setDragOffset({ x: 0, y: 0 });
-    }
-  };
-
-  // Rendu conditionnel
+  // Rendu conditionnel pour les états d'erreur/chargement
   if (!auth.user) {
     return (
       <div className="w-full">
@@ -344,6 +405,35 @@ export default function SwipePage() {
         <div className="flex min-h-screen items-center justify-center">
           <div className="alert alert-warning max-w-md">
             <span>Vous devez être connecté pour découvrir des profils.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (dailyLimitReached && !isLoading && !isRefilling) {
+    return (
+      <div className="w-full">
+        <TopBar title="Découvrir des profils" />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="max-w-md p-6 text-center">
+            <div className="mb-4 text-6xl">⏰</div>
+            <h2 className="mb-4 text-2xl font-bold">Limite quotidienne atteinte !</h2>
+            <p className="mb-4 text-gray-600">Vous avez utilisé vos {MAX_SWIPES_PER_DAY} swipes quotidiens.</p>
+            <p className="mb-6 text-gray-600">Revenez demain pour découvrir de nouveaux profils !</p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  void navigate("/");
+                }}
+                className="btn btn-primary"
+              >
+                Retour à l&apos;accueil
+              </button>
+              <button onClick={resetAllCooldowns} className="btn btn-warning">
+                🔓 Annuler tous les blockages
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -363,13 +453,16 @@ export default function SwipePage() {
               72h.
             </p>
             <div className="flex flex-col gap-3">
-              <button onClick={() => 
-                void navigate("/")} 
-                className="btn btn-primary">
+              <button
+                onClick={() => {
+                  void navigate("/");
+                }}
+                className="btn btn-primary"
+              >
                 Retour à l&apos;accueil
               </button>
               <button onClick={resetAllCooldowns} className="btn btn-warning">
-                🔄 Reset tous les temps d&apos;attente
+                🔓 Annuler tous les blockages
               </button>
             </div>
           </div>
@@ -432,6 +525,29 @@ export default function SwipePage() {
     <div className="w-full">
       <TopBar title="Découvrir des profils" />
       <div style={{ textAlign: "center", padding: "20px", maxWidth: "500px", margin: "0 auto" }}>
+        {/* Compteur de swipes restants */}
+        <div
+          style={{
+            marginBottom: "15px",
+            padding: "10px",
+            backgroundColor: remainingSwipes <= 5 ? "#fff3cd" : "#e7f3ff",
+            borderRadius: "8px",
+            border: `1px solid ${remainingSwipes <= 5 ? "#ffeaa7" : "#74b9ff"}`,
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontWeight: "600",
+              color: remainingSwipes <= 5 ? "#856404" : "#0984e3",
+            }}
+          >
+            {remainingSwipes > 0
+              ? `🔥 ${remainingSwipes.toString()} swipes restants aujourd'hui`
+              : "❌ Plus de swipes disponibles aujourd'hui"}
+          </p>
+        </div>
+
         {error && <p style={{ color: "red", fontWeight: "bold", marginBottom: "10px" }}>⚠️ {error}</p>}
 
         {isRefilling && (
@@ -440,11 +556,10 @@ export default function SwipePage() {
           </p>
         )}
 
-        {/* ✅ CORRECTION : Restructuration du layout */}
         <div
           style={{
             position: "relative",
-            height: "calc(100vh - 200px)", // Hauteur adaptative moins l'espace pour les boutons
+            height: "calc(100vh - 280px)",
             display: "flex",
             flexDirection: "column",
           }}
@@ -464,17 +579,17 @@ export default function SwipePage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              pointerEvents: "none", // ✅ Permet les interactions avec la carte en dessous
+              pointerEvents: "none",
             }}
           >
-            {isDragging && Math.abs(dragOffset.x) > 50 && (
+            {isDragging && Math.abs(dragOffset.x) > 50 && !dailyLimitReached && (
               <div
                 style={{
                   fontSize: "4rem",
                   fontWeight: "900",
                   color: "white",
                   textShadow: "3px 3px 6px rgba(0,0,0,0.5)",
-                  transform: `scale(${String(Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300))})`,
+                  transform: `scale(${Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300).toString()})`,
                   transition: "transform 0.1s ease-out",
                 }}
               >
@@ -483,82 +598,73 @@ export default function SwipePage() {
             )}
           </div>
 
-          {/* ✅ CORRECTION : Conteneur de la carte avec hauteur fixe et scroll */}
-          <div
-            style={{
-              flex: 1,
-              position: "relative",
-              marginBottom: "20px", // Espace pour les boutons
-            }}
-          >
+          <div style={{ flex: 1, position: "relative", marginBottom: "20px" }}>
             <div
               key={currentProfileId}
               style={{
-                transform: `translateX(${String(dragOffset.x)}px) translateY(${String(dragOffset.y * 0.1)}px) rotate(${String(rotation)}deg)`,
-                opacity,
+                transform: `translateX(${dragOffset.x.toString()}px) translateY(${(dragOffset.y * 0.1).toString()}px) rotate(${rotation.toString()}deg)`,
+                opacity: dailyLimitReached ? 0.5 : opacity,
                 transition: isDragging ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
-                cursor: isDragging ? "grabbing" : "grab",
+                cursor: dailyLimitReached ? "not-allowed" : isDragging ? "grabbing" : "grab",
                 userSelect: "none",
-                height: "100%", // ✅ Prend toute la hauteur disponible
+                height: "100%",
                 zIndex: 2,
                 position: "relative",
               }}
-              // ✅ FIX: Corriger les handlers de Promise
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+              {...handleDragEvents}
+              onMouseLeave={handleDragEvents.onMouseUp}
             >
               <FetchCard profileId={currentProfileId} />
             </div>
           </div>
 
-          {/* ✅ CORRECTION : Boutons positionnés en position fixe en bas */}
           <div
             style={{
-              position: "sticky", // ✅ Reste visible même avec le scroll
+              position: "sticky",
               bottom: 0,
               left: 0,
               right: 0,
               display: "flex",
               justifyContent: "space-around",
               alignItems: "center",
-              zIndex: 10, // ✅ Z-index élevé pour rester au-dessus
-              backgroundColor: "rgba(255, 255, 255, 0.95)", // ✅ Fond semi-transparent
-              backdropFilter: "blur(5px)", // ✅ Effet de flou pour la lisibilité
+              zIndex: 10,
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(5px)",
               padding: "15px 0",
-              borderTop: "1px solid rgba(0,0,0,0.1)", // ✅ Séparation visuelle
+              borderTop: "1px solid rgba(0,0,0,0.1)",
             }}
           >
             <button
               onClick={handlePass}
-              disabled={isLoading || isAnimating}
+              disabled={isLoading || isAnimating || dailyLimitReached}
               className="btn btn-circle btn-lg"
               style={{
-                backgroundColor: "#ff7675",
+                backgroundColor: dailyLimitReached ? "#ddd" : "#ff7675",
                 color: "white",
                 border: "none",
-                opacity: isAnimating ? 0.5 : 1,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)", // ✅ Ombre pour le relief
+                opacity: isAnimating || dailyLimitReached ? 0.5 : 1,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                cursor: dailyLimitReached ? "not-allowed" : "pointer",
               }}
             >
               ❌
             </button>
+
             <button
               onClick={() => {
-                void handleFollow();
+                handleFollow().catch(() => {
+                  // Gestion d'erreur déjà incluse dans handleFollow
+                });
               }}
-              disabled={isLoading || isAnimating}
+              disabled={isLoading || isAnimating || dailyLimitReached}
               className="btn btn-circle btn-lg"
               style={{
-                backgroundColor: "#55efc4",
+                backgroundColor: dailyLimitReached ? "#ddd" : "#55efc4",
                 color: "#2d3436",
                 border: "none",
-                opacity: isAnimating ? 0.5 : 1,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)", // ✅ Ombre pour le relief
+                opacity: isAnimating || dailyLimitReached ? 0.5 : 1,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                cursor: dailyLimitReached ? "not-allowed" : "pointer",
               }}
             >
               ✔️
@@ -566,7 +672,6 @@ export default function SwipePage() {
           </div>
         </div>
 
-        {/* Bouton reset */}
         <div style={{ marginTop: "20px" }}>
           <button
             onClick={resetAllCooldowns}
@@ -579,7 +684,7 @@ export default function SwipePage() {
               opacity: isLoading ? 0.6 : 1,
             }}
           >
-            🔄 Reset temps d&apos;attente
+            🔓 Annuler tous les blockages
           </button>
         </div>
       </div>

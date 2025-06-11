@@ -2,9 +2,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const serviceKey = import.meta.env.DANGER_SUPABASE_SERVICE_KEY;
 
-import { supabase, queries } from "../supabase";
-import { createClient } from "@supabase/supabase-js";
+import { queries, supabase } from "../supabase";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import crypto from "node:crypto";
 
 export async function flushAllTables(): Promise<number> {
   // try calling it as anon and a regular user. refer to warning in supabase.tests.ts for details.
@@ -35,9 +37,9 @@ export async function flushAllTables(): Promise<number> {
 }
 
 export function randomName(length: number) {
-  return Math.random()
-    .toString(36)
-    .replace(/[^a-z0-9]+/gi, "")
+  return crypto
+    .randomBytes(Math.ceil(length / 2))
+    .toString("hex")
     .slice(0, length);
 }
 

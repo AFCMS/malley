@@ -255,18 +255,19 @@ export default function PostAdd({
 
             {/* Upload de fichiers seulement en mode création et si activé */}
             {!isEditMode && showFileUpload && (
-              <div className="mt-2">
+              <fieldset className="fieldset mb-4">
+                <legend className="fieldset-legend">Ajouter des images ou médias (optionnel)</legend>
                 <input
                   id={`post-file-${parentPostId ?? "main"}`}
                   type="file"
-                  className="file-input file-input-sm w-full"
+                  className="file-input w-full"
                   multiple
                   onChange={handleFileChange}
-                />
+                />{" "}
                 {mediaFiles.length > 0 && (
                   <div className="mt-1 text-sm text-gray-600">{mediaFiles.length} fichier(s) sélectionné(s)</div>
                 )}
-              </div>
+              </fieldset>
             )}
 
             {/* Catégories seulement si activées */}
@@ -287,15 +288,15 @@ export default function PostAdd({
               >
                 {isLoading
                   ? isEditMode
-                    ? "Modification..."
+                    ? "Modifying..."
                     : parentPostId
-                      ? "Réponse..."
+                      ? "Replying..."
                       : "Publication..."
                   : isEditMode
-                    ? "Modifier"
+                    ? "Modify"
                     : parentPostId
-                      ? "Répondre"
-                      : "Publier"}
+                      ? "Reply"
+                      : "Publish"}
               </button>
             </div>
           </div>

@@ -86,6 +86,20 @@ const queries = {
       }
     },
 
+    setPinnedPost: async function (postId: string | null): Promise<void> {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+
+      const pinnedPosts = postId ? [postId] : null;
+      const req = await supabase.from("profiles").update({ pinned_posts: pinnedPosts }).eq("id", user.id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+    },
+
     updateAvatar: (media: File | null) => updatePersonalFile(media, "profile_pic", "profile-pics"),
 
     updateBanner: (media: File | null) => updatePersonalFile(media, "banner", "banners"),

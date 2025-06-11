@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { HiCalendar } from "react-icons/hi2";
-
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 import PostViewer from "../PostViewer/PostViewer";
@@ -28,31 +27,22 @@ export default function FetchCard({ profileId }: FetchCardProps) {
       setIsLoading(true);
       try {
         const profile = await queries.profiles.get(profileId);
-
-        // Fetch en parallèle pour optimiser les performances
         const [pinnedPostResult, allPostsResult, featuredProfilesResult, featuredCountResult, categoriesResult] =
           await Promise.allSettled([
-            // Post épinglé (le premier s'il existe)
             profile.pinned_posts?.length
               ? queries.posts.get(profile.pinned_posts[0]).catch(() => null)
               : Promise.resolve(null),
-            // Tous les posts
             queries.authors.postsOf(profileId).catch(() => []),
-            // Profils mis en avant
             queries.features.byUser(profileId).catch(() => []),
-            // Nombre de featured
             queries.features.byUserCount(profileId).catch(() => 0),
-            // Catégories du profil
             queries.profilesCategories.get(profileId).catch(() => []),
           ]);
-
-        // Filtrer les posts principaux (sans parent) et exclure les pinned posts
         const allPostsData = allPostsResult.status === "fulfilled" ? allPostsResult.value : [];
-        const pinnedPostIds = profile.pinned_posts ?? []; // Correction: utiliser ?? au lieu de ||
+        const pinnedPostIds = profile.pinned_posts ?? [];
         const recentPosts = allPostsData
-          .filter((post) => post.parent_post === null) // Posts principaux seulement
-          .filter((post) => !pinnedPostIds.includes(post.id)) // Exclure les pinned posts
-          .slice(0, 2); // Prendre les 2 premiers
+          .filter((post) => post.parent_post === null)
+          .filter((post) => !pinnedPostIds.includes(post.id))
+          .slice(0, 2);
 
         setProfileData({
           profile,
@@ -63,8 +53,7 @@ export default function FetchCard({ profileId }: FetchCardProps) {
           featuredCount: featuredCountResult.status === "fulfilled" ? featuredCountResult.value : 0,
           profileCategories: categoriesResult.status === "fulfilled" ? categoriesResult.value : [],
         });
-      } catch (error) {
-        console.error("Error fetching profile data:", error);
+      } catch {
         setProfileData(null);
       } finally {
         setIsLoading(false);
@@ -74,18 +63,19 @@ export default function FetchCard({ profileId }: FetchCardProps) {
     void fetchAllData();
   }, [profileId]);
 
-  // Fonction pour empêcher les clics sur les posts
   const handlePostClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
-
-  // Composant pour afficher un post non-cliquable
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
   const NonClickablePost = ({ post }: { post: Tables<"posts"> }) => (
     <div
       onClick={handlePostClick}
       onMouseDown={handlePostClick}
-      onTouchStart={handlePostClick}
+      onTouchStart={handleTouchStart}
       style={{ pointerEvents: "none", userSelect: "none" }}
       className="relative"
     >
@@ -104,7 +94,7 @@ export default function FetchCard({ profileId }: FetchCardProps) {
         }}
         onClick={handlePostClick}
         onMouseDown={handlePostClick}
-        onTouchStart={handlePostClick}
+        onTouchStart={handleTouchStart}
       />
     </div>
   );
@@ -136,7 +126,6 @@ export default function FetchCard({ profileId }: FetchCardProps) {
 
   return (
     <div className="h-full w-full overflow-y-auto rounded-lg bg-white shadow-lg">
-      {/* Section profil */}
       <section className="relative mb-4">
         <div className="bg-base-200 relative h-24 w-full lg:h-32">
           <img src={utils.getBannerUrl(profile)} alt="Profile Banner" className="h-full w-full object-cover" />
@@ -165,7 +154,6 @@ export default function FetchCard({ profileId }: FetchCardProps) {
             </span>
           </div>
 
-          {/* Catégories du profil */}
           {profileCategories.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {profileCategories.map((category) => (
@@ -178,8 +166,6 @@ export default function FetchCard({ profileId }: FetchCardProps) {
               ))}
             </div>
           )}
-
-          {/* Featured users */}
           {featuredByHandles.length > 0 && (
             <div className="mt-2">
               <h4 className="mb-1 text-sm font-semibold text-gray-700">Met en avant :</h4>
@@ -201,7 +187,6 @@ export default function FetchCard({ profileId }: FetchCardProps) {
         </div>
       </section>
 
-      {/* Post épinglé */}
       {pinnedPost && (
         <div className="mb-4">
           <h3 className="mb-2 px-4 text-sm font-semibold text-gray-700">Publication épinglée</h3>
@@ -210,8 +195,6 @@ export default function FetchCard({ profileId }: FetchCardProps) {
           </div>
         </div>
       )}
-
-      {/* Posts récents */}
       {recentPosts.length > 0 && (
         <div className="pb-4">
           <h3 className="mb-2 px-4 text-sm font-semibold text-gray-700">Publications récentes</h3>
@@ -224,8 +207,6 @@ export default function FetchCard({ profileId }: FetchCardProps) {
           </div>
         </div>
       )}
-
-      {/* Message si aucune publication */}
       {!pinnedPost && recentPosts.length === 0 && (
         <div className="px-4 py-8 text-center">
           <p className="text-sm text-gray-500">Aucune publication à afficher pour ce profil.</p>

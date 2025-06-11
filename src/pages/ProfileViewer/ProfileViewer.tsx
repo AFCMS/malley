@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { HiCalendar, HiMegaphone, HiOutlineEllipsisHorizontal } from "react-icons/hi2";
-
 import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
-
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
-
 import { formatDate } from "../../utils/date";
 import { closePopover } from "../../utils/popover";
 import { useHandle } from "../../utils/routing";
@@ -16,7 +13,6 @@ import { useHandle } from "../../utils/routing";
 const ProfileViewer = () => {
   const auth = useAuth();
   const navigate = useNavigate();
-
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
@@ -24,14 +20,11 @@ const ProfileViewer = () => {
   const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
   const [featuredCount, setFeaturedCount] = useState<number>(0);
   const [profileCategories, setProfileCategories] = useState<Tables<"categories">[]>([]);
-
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFeaturing, setIsFeaturing] = useState(false);
-
   const handle = useHandle();
 
   useEffect(() => {
-    // Reset state when handle changes
     setIsLoading(true);
     setError(null);
     setProfile(null);
@@ -45,93 +38,98 @@ const ProfileViewer = () => {
         setIsLoading(false);
         return;
       }
-
       try {
-        // Step 1: Fetch profile data
         const profileData = await queries.profiles.getByHandle(handle);
         setProfile(profileData);
 
         // Step 2: If profile has pinned posts, fetch them
         if (profileData.pinned_posts && profileData.pinned_posts.length > 0) {
           const pinnedPostPromises = profileData.pinned_posts.map((postId) =>
-            queries.posts.get(postId).catch((err: unknown) => {
-              console.error(`Failed to fetch pinned post ${postId}:`, err);
-              return null;
-            }),
+            queries.posts.get(postId).catch(() => null),
           );
-
           const pinnedPostsData = await Promise.all(pinnedPostPromises);
-          // Filter out any null results (failed fetches)
           setPinnedPosts(pinnedPostsData.filter(Boolean) as Tables<"posts">[]);
         }
 
-        // Step 3: Fetch all author's posts only if we have a valid profile ID
         if (profileData.id) {
           try {
             const authorPosts = await queries.authors.postsOf(profileData.id);
-            setAllPosts(authorPosts);
-          } catch (postsError) {
-            console.error("Failed to fetch author posts:", postsError);
+            const pinnedPostIds = profileData.pinned_posts ?? [];
+            const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
+            setAllPosts(filteredPosts);
+          } catch {
             // Continue execution even if posts fetching fails
           }
         }
 
-        // Step 4: Fetch referers count
         const featuredCount = await queries.features.byUserCount(profileData.id);
         setFeaturedCount(featuredCount);
 
-        // Step 5: Fetch profile categories
         try {
           const categories = await queries.profilesCategories.get(profileData.id);
           setProfileCategories(categories);
-        } catch (categoriesError) {
-          console.error("Failed to fetch profile categories:", categoriesError);
+        } catch {
           setProfileCategories([]);
         }
       } catch (err) {
-        console.error("Error loading profile data:", err);
         setError(err instanceof Error ? err.message : "Failed to load profile");
       } finally {
         setIsLoading(false);
       }
     }
-
     void loadProfileData();
   }, [handle]);
 
   useEffect(() => {
     async function checkFollowingStatus() {
       if (!profile || !auth.user) return;
-
       const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profile.id);
       setIsFollowing(isFollowing);
     }
-
     void checkFollowingStatus();
   }, [profile, auth.user]);
 
   useEffect(() => {
     async function checkFeaturingStatus() {
       if (!profile || !auth.user) return;
-
       const isFeaturing = await queries.features.doesXfeatureY(auth.user.id, profile.id);
       setIsFeaturing(isFeaturing);
     }
-
     void checkFeaturingStatus();
   }, [profile, auth.user]);
 
-  if (isLoading) {
-    return <TopBar title="Loading profile..." />;
-  }
+  const handlePinUpdate = async () => {
+    if (!profile) return;
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+    try {
+      // Recharger les données du profil pour obtenir les posts épinglés à jour
+      const updatedProfile = await queries.profiles.getByHandle(profile.handle);
+      setProfile(updatedProfile);
 
-  if (!profile) {
-    return <div>Profile not found</div>;
-  }
+      // Recharger les posts épinglés
+      if (updatedProfile.pinned_posts && updatedProfile.pinned_posts.length > 0) {
+        const pinnedPostPromises = updatedProfile.pinned_posts.map((postId) =>
+          queries.posts.get(postId).catch(() => null),
+        );
+        const pinnedPostsData = await Promise.all(pinnedPostPromises);
+        setPinnedPosts(pinnedPostsData.filter(Boolean) as Tables<"posts">[]);
+      } else {
+        setPinnedPosts([]);
+      }
+
+      // Recharger tous les posts
+      const authorPosts = await queries.authors.postsOf(updatedProfile.id);
+      const pinnedPostIds = updatedProfile.pinned_posts ?? [];
+      const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
+      setAllPosts(filteredPosts);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour:", error);
+    }
+  };
+
+  if (isLoading) return <TopBar title="Loading profile..." />;
+  if (error) return <div>Error: {error}</div>;
+  if (!profile) return <div>Profile not found</div>;
 
   const profileCreationDate = new Date(profile.created_at);
 
@@ -141,7 +139,6 @@ const ProfileViewer = () => {
       <section className="relative mb-16">
         <div className="bg-base-200 relative h-32 w-full lg:h-48">
           <img src={utils.getBannerUrl(profile)} alt="Profile Banner" className="h-full w-full object-cover" />
-
           <div className="avatar absolute bottom-0 left-4 translate-y-1/2">
             <div className="border-base-100 w-24 rounded-full border-4">
               <img src={utils.getAvatarUrl(profile)} alt={`${profile.handle}'s Profile Picture`} className="" />
@@ -166,7 +163,6 @@ const ProfileViewer = () => {
             >
               <li>
                 <button
-                  className=""
                   disabled={!auth.isAuthenticated || auth.user?.id === profile.id}
                   onClick={() => {
                     if (auth.isAuthenticated) {
@@ -238,7 +234,6 @@ const ProfileViewer = () => {
             </Link>
           </div>
 
-          {/* Affichage des catégories du profil */}
           {profileCategories.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1">
               {profileCategories.map((category) => (
@@ -255,18 +250,19 @@ const ProfileViewer = () => {
       </section>
 
       {pinnedPosts.length > 0 && (
-        <div className="pinned-posts">
-          <h2>Pinned Posts</h2>
-          {pinnedPosts.map((post) => (
-            <PostViewer key={post.id} post={post} />
-          ))}
+        <div className="pinned-posts mb-4">
+          <h2 className="mb-2 px-4 text-sm font-semibold text-gray-700">Publications épinglées</h2>
+          <div className="border-t border-gray-200">
+            {pinnedPosts.map((post) => (
+              <PostViewer key={post.id} post={post} isPinned={true} onPinUpdate={() => void handlePinUpdate()} />
+            ))}
+          </div>
         </div>
       )}
-
       {allPosts.length > 0 && (
         <div className="">
           {allPosts.map((post) => (
-            <PostViewer key={post.id} post={post} />
+            <PostViewer key={post.id} post={post} isPinned={false} onPinUpdate={() => void handlePinUpdate()} />
           ))}
         </div>
       )}

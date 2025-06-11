@@ -1,5 +1,4 @@
 import {
-  HiOutlineBell,
   HiOutlineEllipsisHorizontal,
   HiOutlineHome,
   HiOutlineMagnifyingGlass,

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { HiOutlineBell, HiOutlineHome, HiOutlineMagnifyingGlass, HiOutlineUser } from "react-icons/hi2";
+import { HiOutlineHome, HiOutlineMagnifyingGlass, HiOutlinePencil, HiOutlineUser } from "react-icons/hi2";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
 
@@ -17,8 +17,8 @@ export default function BottomDock() {
         <HiOutlineMagnifyingGlass className="size-6" />
       </Link>
 
-      <Link className={location.pathname === "/profile" ? "dock-active" : undefined} to="/" title="Notifications">
-        <HiOutlineBell className="size-6" />
+      <Link className={location.pathname === "/post" ? "dock-active" : undefined} to="/post" title="Post">
+        <HiOutlinePencil className="size-6" />
       </Link>
 
       <Link

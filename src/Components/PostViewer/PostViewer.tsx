@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { HiOutlineChatBubbleOvalLeft, HiOutlineArrowPath, HiOutlineBookmark, HiOutlineHeart } from "react-icons/hi2";
-
-import { Tables } from "../../contexts/supabase/database";
+import { HiOutlineArrowPath, HiOutlineBookmark, HiOutlineChatBubbleOvalLeft, HiOutlineHeart } from "react-icons/hi2";
 import { queries, supabase, utils } from "../../contexts/supabase/supabase";
+import { useEffect, useState } from "react";
+
+import CategoryBadge from "../CategoryBadge/CategoryBadge";
 import MediaCarousel from "../MediaCarousel/MediaCarousel";
+import { Tables } from "../../contexts/supabase/database";
 import { formatDatePost } from "../../utils/date";
 
 interface PostViewerProps {
@@ -127,12 +128,7 @@ export default function PostViewer(props: PostViewerProps) {
           {categories.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1">
               {categories.map((category) => (
-                <span
-                  key={category.id}
-                  className="inline-flex cursor-pointer items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200"
-                >
-                  #{category.name}
-                </span>
+                <CategoryBadge key={category.id} name={category.name} />
               ))}
             </div>
           )}

@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router";
 import { HiOutlinePencil, HiEllipsisVertical } from "react-icons/hi2";
 
 import { Tables } from "../../contexts/supabase/database";
-import { queries, supabase } from "../../contexts/supabase/supabase";
+import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import PostViewer from "../../Components/PostViewer/PostViewer";
 import TopBar from "../../layouts/TopBar/TopBar";
@@ -15,8 +15,7 @@ export default function ViewPost() {
   const [error, setError] = useState<string | null>(null);
   const [isAuthor, setIsAuthor] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
-  const [loadingMedia, setLoadingMedia] = useState(false);
+  // Supprimé mediaUrls et loadingMedia car ils ne sont pas utilisés
 
   const auth = useAuth();
 
@@ -34,9 +33,6 @@ export default function ViewPost() {
           const isUserAuthor = authors.some((author) => author.id === auth.user?.id);
           setIsAuthor(isUserAuthor);
         }
-
-        // Charger les médias
-        await fetchMediaUrls(postId);
       } catch {
         setError("Impossible de charger ce post");
       } finally {
@@ -46,28 +42,6 @@ export default function ViewPost() {
 
     void fetchPostData();
   }, [postId, auth.user]);
-
-  const fetchMediaUrls = async (postId: string) => {
-    try {
-      setLoadingMedia(true);
-      const { data, error } = await supabase.storage.from("post-media").list(postId, {
-        limit: 10,
-        offset: 0,
-        sortBy: { column: "name", order: "asc" },
-      });
-
-      if (!error && data.length > 0) {
-        const urls = data.map(
-          (file) => supabase.storage.from("post-media").getPublicUrl(`${postId}/${file.name}`).data.publicUrl,
-        );
-        setMediaUrls(urls);
-      }
-    } catch {
-      setMediaUrls([]);
-    } finally {
-      setLoadingMedia(false);
-    }
-  };
 
   if (loading) return <TopBar title="Chargement..." />;
   if (error) return <div>Erreur: {error}</div>;
@@ -82,21 +56,29 @@ export default function ViewPost() {
         {isAuthor && (
           <div className="absolute top-4 right-4 z-10">
             <div className="relative">
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowMenu(!showMenu)}>
+              <button className="btn btn-ghost btn-sm" 
+              onClick={() => {
+                setShowMenu(!showMenu)
+              }}>
                 <HiEllipsisVertical className="h-5 w-5" />
               </button>
 
               {showMenu && (
                 <>
                   {/* Overlay pour fermer le menu */}
-                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                  <div className="fixed inset-0 z-40" 
+                  onClick={() => {
+                    setShowMenu(false)
+                    }} />
 
                   {/* Menu dropdown */}
                   <div className="absolute top-full right-0 z-50 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg">
                     <Link
                       to={`/post/${post.id}/edit`}
                       className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-gray-50"
-                      onClick={() => setShowMenu(false)}
+                      onClick={() => {
+                        setShowMenu(false)
+                      }}
                     >
                       <HiOutlinePencil className="h-4 w-4" />
                       Modifier ce post

@@ -129,11 +129,10 @@ pnpm run generate-pwa-assets
 
 <img align="right" src=".github/Hexa_Logo_Sign_RVB_Full.svg" width="300px"/>
 
-Made with ❤️ by:
+**Made with ❤️ by:**
 
 - [AFCMS](https://github.com/AFCMS)
 - [Roceann](https://github.com/Roceann)
 - [AKArien0](https://github.com/AKArien0)
-- [weyrito](https://github.com/weyrito)
 
-During our studies at [Ecole Hexagone](https://www.ecole-hexagone.com) 🇫🇷
+[**Ecole Hexagone**](https://www.ecole-hexagone.com) 🇫🇷 - Class of 2024/2025

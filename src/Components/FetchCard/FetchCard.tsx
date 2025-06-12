@@ -76,22 +76,13 @@ export default function FetchCard({ profileId }: FetchCardProps) {
       onClick={handlePostClick}
       onMouseDown={handlePostClick}
       onTouchStart={handleTouchStart}
-      style={{ pointerEvents: "none", userSelect: "none" }}
-      className="relative"
+      className="pointer-events-none relative select-none"
     >
       <div style={{ pointerEvents: "none" }}>
         <PostViewer post={post} disableRedirect={true} showChildren={false} showParents={false} />
       </div>
       <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 10,
-          cursor: "default",
-        }}
+        className="absolute top-0 right-0 bottom-0 left-0 z-10 cursor-default"
         onClick={handlePostClick}
         onMouseDown={handlePostClick}
         onTouchStart={handleTouchStart}

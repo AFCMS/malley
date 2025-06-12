@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
+import { HiHeart, HiOutlineCheck, HiOutlineLockOpen, HiOutlineXMark, HiXMark } from "react-icons/hi2";
+
 import { queries } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
-import { RejectedProfilesManager } from "../../utils/rejectedProfiles";
-import FetchCard from "../../Components/FetchCard/FetchCard";
+
 import TopBar from "../../layouts/TopBar/TopBar";
+
+import FetchCard from "../../Components/FetchCard/FetchCard";
+import { RejectedProfilesManager } from "../../utils/rejectedProfiles";
 
 const ALL_KNOWN_PROFILE_IDS: string[] = [
   "09ae7c64-bb08-49f3-8e64-7c90f62fa37c",
@@ -206,7 +210,7 @@ export default function SwipePage() {
     };
 
     doRefill().catch(() => {
-      setError("Erreur lors du chargement des profils");
+      setError("Error loading profiles");
       setIsRefilling(false);
     });
   }, [currentIndex, profileIdQueue.length, isLoading, isRefilling, isSwipeFinished, dailyLimitReached]);
@@ -311,6 +315,7 @@ export default function SwipePage() {
       setIsAnimating(false);
     }, 300);
   };
+
   const handleDragEvents = {
     onMouseDown: (e: React.MouseEvent) => {
       if (isAnimating || isLoading || dailyLimitReached) return;
@@ -359,13 +364,14 @@ export default function SwipePage() {
       }
     },
   };
+
   if (!auth.user) {
     return (
       <div className="w-full">
-        <TopBar title="Découvrir des profils" />
+        <TopBar title="Discover" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="alert alert-warning max-w-md">
-            <span>Vous devez être connecté pour découvrir des profils.</span>
+            <span>You must be connected to discover profiles.</span>
           </div>
         </div>
       </div>
@@ -375,7 +381,7 @@ export default function SwipePage() {
   if (dailyLimitReached && !isLoading && !isRefilling) {
     return (
       <div className="w-full">
-        <TopBar title="Découvrir des profils" />
+        <TopBar title="Discover" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="max-w-md p-6 text-center">
             <div className="mb-4 text-6xl">⏰</div>
@@ -404,7 +410,7 @@ export default function SwipePage() {
   if (isSwipeFinished && !isLoading && !isRefilling) {
     return (
       <div className="w-full">
-        <TopBar title="Découvrir des profils" />
+        <TopBar title="Discover" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="max-w-md p-6 text-center">
             <div className="mb-4 text-6xl">🎉</div>
@@ -476,13 +482,13 @@ export default function SwipePage() {
 
   if (isDragging && Math.abs(dragOffset.x) > 30) {
     backgroundOpacity = Math.min(0.7, Math.abs(dragOffset.x) / 150);
-    backgroundColor = dragOffset.x > 0 ? "#55efc4" : "#ff7675";
+    backgroundColor = dragOffset.x > 0 ? "var(--color-success)" : "var(--color-error)";
   }
 
   return (
     <div className="w-full">
-      <TopBar title="Découvrir des profils" />
-      <div style={{ textAlign: "center", padding: "20px", maxWidth: "500px", margin: "0 auto" }}>
+      <TopBar title="Discover" />
+      <div className="m-[0_auto] max-w-[500px] p-5 text-center">
         <div
           style={{
             marginBottom: "15px",
@@ -513,59 +519,46 @@ export default function SwipePage() {
           </p>
         )}
 
-        <div
-          style={{
-            position: "relative",
-            height: "calc(100vh - 280px)",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+        <div className="relative flex h-[calc(100vh-280px)] flex-col">
           <div
+            className="pointer-events-none absolute top-0 right-0 bottom-0 left-0 z-[1] flex items-center justify-center rounded-lg transition-opacity duration-300 ease-out"
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
               backgroundColor,
               opacity: backgroundOpacity,
-              transition: isDragging ? "none" : "opacity 0.3s ease-out",
-              zIndex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: "none",
             }}
           >
             {isDragging && Math.abs(dragOffset.x) > 50 && !dailyLimitReached && (
               <div
+                className="text-6xl font-black transition-transform duration-100 ease-out text-shadow-lg"
                 style={{
-                  fontSize: "4rem",
-                  fontWeight: "900",
                   color: "white",
                   textShadow: "3px 3px 6px rgba(0,0,0,0.5)",
                   transform: `scale(${Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300).toString()})`,
-                  transition: "transform 0.1s ease-out",
                 }}
               >
-                {dragOffset.x > 0 ? "💚 SUIVRE" : "❌ PASSER"}
+                {dragOffset.x > 0 ? (
+                  <span className="flex items-center gap-2">
+                    <HiHeart className="size-16" />
+                    FOLLOW
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <HiXMark className="size-16" />
+                    PASS
+                  </span>
+                )}
               </div>
             )}
           </div>
 
-          <div style={{ flex: 1, position: "relative", marginBottom: "20px" }}>
+          <div className="relative mb-5 flex-1">
             <div
               key={currentProfileId}
+              className="relative z-[2] h-full transition-[transform,opacity] duration-300 ease-out select-none"
               style={{
                 transform: `translateX(${dragOffset.x.toString()}px) translateY(${(dragOffset.y * 0.1).toString()}px) rotate(${rotation.toString()}deg)`,
                 opacity: dailyLimitReached ? 0.5 : opacity,
-                transition: isDragging ? "none" : "transform 0.3s ease-out, opacity 0.3s ease-out",
                 cursor: dailyLimitReached ? "not-allowed" : isDragging ? "grabbing" : "grab",
-                userSelect: "none",
-                height: "100%",
-                zIndex: 2,
-                position: "relative",
               }}
               {...handleDragEvents}
               onMouseLeave={handleDragEvents.onMouseUp}
@@ -575,6 +568,7 @@ export default function SwipePage() {
           </div>
 
           <div
+            className=""
             style={{
               position: "sticky",
               bottom: 0,
@@ -587,23 +581,17 @@ export default function SwipePage() {
               backgroundColor: "rgba(255, 255, 255, 0.95)",
               backdropFilter: "blur(5px)",
               padding: "15px 0",
-              borderTop: "1px solid rgba(0,0,0,0.1)",
             }}
           >
             <button
               onClick={handlePass}
               disabled={isLoading || isAnimating || dailyLimitReached}
-              className="btn btn-circle btn-lg"
+              className="btn btn-circle btn-xl btn-error"
               style={{
-                backgroundColor: dailyLimitReached ? "#ddd" : "#ff7675",
-                color: "white",
-                border: "none",
-                opacity: isAnimating || dailyLimitReached ? 0.5 : 1,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 cursor: dailyLimitReached ? "not-allowed" : "pointer",
               }}
             >
-              ❌
+              <HiOutlineXMark className="size-6" />
             </button>
 
             <button
@@ -611,34 +599,19 @@ export default function SwipePage() {
                 void handleFollow();
               }}
               disabled={isLoading || isAnimating || dailyLimitReached}
-              className="btn btn-circle btn-lg"
+              className="btn btn-circle btn-xl btn-success"
               style={{
-                backgroundColor: dailyLimitReached ? "#ddd" : "#55efc4",
-                color: "#2d3436",
-                border: "none",
-                opacity: isAnimating || dailyLimitReached ? 0.5 : 1,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 cursor: dailyLimitReached ? "not-allowed" : "pointer",
               }}
             >
-              ✔️
+              <HiOutlineCheck className="size-6" />
             </button>
           </div>
         </div>
 
-        <div style={{ marginTop: "20px" }}>
-          <button
-            onClick={resetAllCooldowns}
-            disabled={isLoading}
-            className="btn btn-sm"
-            style={{
-              backgroundColor: "#fdcb6e",
-              color: "#2d3436",
-              border: "none",
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          >
-            🔓 Annuler tous les blockages
+        <div hidden={true} className="mt-5">
+          <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning">
+            <HiOutlineLockOpen className="size-6" /> Annuler tous les blockages
           </button>
         </div>
       </div>

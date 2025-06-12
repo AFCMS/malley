@@ -42,6 +42,7 @@ export default function FetchCard({ profileId }: FetchCardProps) {
         const recentPosts = allPostsData
           .filter((post) => post.parent_post === null)
           .filter((post) => !pinnedPostIds.includes(post.id))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .slice(0, 2);
 
         setProfileData({

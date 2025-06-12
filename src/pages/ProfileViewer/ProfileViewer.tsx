@@ -61,7 +61,11 @@ const ProfileViewer = () => {
             queries.posts.get(postId).catch(() => null),
           );
           const pinnedPostsData = await Promise.all(pinnedPostPromises);
-          setPinnedPosts(pinnedPostsData.filter(Boolean) as Tables<"posts">[]);
+          const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
+          const sortedPinnedPosts = filteredPinnedPosts.sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          );
+          setPinnedPosts(sortedPinnedPosts);
         }
         if (profileData.id) {
           try {
@@ -72,10 +76,14 @@ const ProfileViewer = () => {
             const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
             // Séparer les posts principaux (sans parent) et tous les posts
-            const mainPostsData = filteredPosts.filter((post) => post.parent_post === null);
+            const mainPostsData = filteredPosts
+              .filter((post) => post.parent_post === null)
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
             // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
-            const allPostsData = [...filteredPosts];
+            const allPostsData = [...filteredPosts].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
 
             setMainPosts(mainPostsData);
             setAllPosts(allPostsData);
@@ -190,7 +198,11 @@ const ProfileViewer = () => {
           queries.posts.get(postId).catch(() => null),
         );
         const pinnedPostsData = await Promise.all(pinnedPostPromises);
-        setPinnedPosts(pinnedPostsData.filter(Boolean) as Tables<"posts">[]);
+        const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
+        const sortedPinnedPosts = filteredPinnedPosts.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+        setPinnedPosts(sortedPinnedPosts);
       } else {
         setPinnedPosts([]);
       } // Recharger tous les posts
@@ -199,10 +211,14 @@ const ProfileViewer = () => {
       const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
       // Séparer les posts principaux et tous les posts
-      const mainPostsData = filteredPosts.filter((post) => post.parent_post === null);
+      const mainPostsData = filteredPosts
+        .filter((post) => post.parent_post === null)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
-      const allPostsData = [...filteredPosts];
+      const allPostsData = [...filteredPosts].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
 
       setMainPosts(mainPostsData);
       setAllPosts(allPostsData);

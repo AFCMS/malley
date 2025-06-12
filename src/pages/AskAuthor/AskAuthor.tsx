@@ -17,11 +17,11 @@ export default function AskAuthor() {
 
   const loadUserPosts = useCallback(async () => {
     if (!auth.user) return;
-
     setIsLoading(true);
     try {
       const posts = await queries.authors.postsOf(auth.user.id);
-      setUserPosts(posts);
+      const sortedPosts = posts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setUserPosts(sortedPosts);
     } catch (error) {
       console.error("Erreur lors du chargement des posts:", error);
     } finally {

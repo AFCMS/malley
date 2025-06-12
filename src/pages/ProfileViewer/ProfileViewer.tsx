@@ -16,7 +16,7 @@ import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
 import Dropdown from "../../Components/Dropdown/Dropdown";
 
-import { formatDate } from "../../utils/date";
+import { formatDate, sortPostsByDateDesc, sortPostsByDateAsc } from "../../utils/date";
 import { closePopover } from "../../utils/popover";
 import { useHandle } from "../../utils/routing";
 
@@ -62,9 +62,7 @@ const ProfileViewer = () => {
           );
           const pinnedPostsData = await Promise.all(pinnedPostPromises);
           const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
-          const sortedPinnedPosts = filteredPinnedPosts.sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-          );
+          const sortedPinnedPosts = sortPostsByDateDesc(filteredPinnedPosts);
           setPinnedPosts(sortedPinnedPosts);
         }
         if (profileData.id) {
@@ -76,14 +74,12 @@ const ProfileViewer = () => {
             const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
             // Séparer les posts principaux (sans parent) et tous les posts
-            const mainPostsData = filteredPosts
-              .filter((post) => post.parent_post === null)
-              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            const mainPostsData = sortPostsByDateDesc(
+              filteredPosts.filter((post) => post.parent_post === null)
+            );
 
             // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
-            const allPostsData = [...filteredPosts].sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-            );
+            const allPostsData = sortPostsByDateDesc([...filteredPosts]);
 
             setMainPosts(mainPostsData);
             setAllPosts(allPostsData);
@@ -167,19 +163,15 @@ const ProfileViewer = () => {
     const addPostWithChildren = (post: Tables<"posts">, depth: number) => {
       result.push({ post, depth });
       const children = childPosts.get(post.id) ?? [];
-      children
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-        .forEach((child) => {
-          addPostWithChildren(child, depth + 1);
-        });
+      sortPostsByDateAsc(children).forEach((child) => {
+        addPostWithChildren(child, depth + 1);
+      });
     };
 
     // Trier les posts racines par date et les ajouter avec leurs enfants
-    rootPosts
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .forEach((post) => {
-        addPostWithChildren(post, 0);
-      });
+    sortPostsByDateDesc(rootPosts).forEach((post) => {
+      addPostWithChildren(post, 0);
+    });
 
     return result;
   };
@@ -199,9 +191,7 @@ const ProfileViewer = () => {
         );
         const pinnedPostsData = await Promise.all(pinnedPostPromises);
         const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
-        const sortedPinnedPosts = filteredPinnedPosts.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
+        const sortedPinnedPosts = sortPostsByDateDesc(filteredPinnedPosts);
         setPinnedPosts(sortedPinnedPosts);
       } else {
         setPinnedPosts([]);
@@ -211,14 +201,12 @@ const ProfileViewer = () => {
       const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
       // Séparer les posts principaux et tous les posts
-      const mainPostsData = filteredPosts
-        .filter((post) => post.parent_post === null)
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const mainPostsData = sortPostsByDateDesc(
+        filteredPosts.filter((post) => post.parent_post === null)
+      );
 
       // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
-      const allPostsData = [...filteredPosts].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
+      const allPostsData = sortPostsByDateDesc([...filteredPosts]);
 
       setMainPosts(mainPostsData);
       setAllPosts(allPostsData);

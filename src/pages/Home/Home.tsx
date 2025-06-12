@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 import { supabase } from "../../contexts/supabase/supabase";
 import { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -12,6 +12,12 @@ export default function Home() {
       id: string;
     }[]
   > | null>(null);
+  const [showMessage, setShowMessage] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
+
+  const location = useLocation();
 
   useEffect(() => {
     supabase
@@ -22,8 +28,49 @@ export default function Home() {
       });
   }, []);
 
+  // Gérer les messages provenant de la navigation
+  useEffect(() => {
+    if (location.state && typeof location.state === "object" && "message" in location.state) {
+      const state = location.state as { message: string; type: "success" | "error" | "info" };
+      setShowMessage({
+        message: state.message,
+        type: state.type,
+      }); // Effacer le message après 5 secondes
+      const timer = setTimeout(() => {
+        setShowMessage(null);
+      }, 5000);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [location.state]);
   return (
     <div className="mx-4 flex flex-col">
+      {/* Message de notification */}
+      {showMessage && (
+        <div
+          className={`mb-4 rounded-lg border p-4 ${
+            showMessage.type === "success"
+              ? "border-green-200 bg-green-50 text-green-800"
+              : showMessage.type === "error"
+                ? "border-red-200 bg-red-50 text-red-800"
+                : "border-blue-200 bg-blue-50 text-blue-800"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span>{showMessage.message}</span>
+            <button
+              onClick={() => {
+                setShowMessage(null);
+              }}
+              className="ml-4 text-sm underline opacity-75 hover:opacity-100"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
       <h1>Home</h1>
       <br />
       {data?.data?.map((user) => {

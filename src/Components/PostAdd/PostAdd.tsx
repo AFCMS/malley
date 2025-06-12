@@ -1,10 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { queries, supabase, utils } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import CategoriesChooser from "../CategoriesChooser/CategoriesChooser";
 import { Tables } from "../../contexts/supabase/database";
 import MediaCarousel from "../MediaCarousel/MediaCarousel";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
+
+interface EmojiData {
+  native: string;
+  id: string;
+  name: string;
+  colons: string;
+  skin: number;
+  unified: string;
+}
 
 interface PostAddProps {
   /** Post ID if editing an existing post */
@@ -40,6 +51,8 @@ export default function PostAdd({
   const [isLoadingPost, setIsLoadingPost] = useState(false);
   const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
   const [loadingExistingMedia, setLoadingExistingMedia] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const auth = useAuth();
   const navigate = useNavigate();
@@ -124,6 +137,24 @@ export default function PostAdd({
     }
   };
 
+  const handleEmojiSelect = (emoji: EmojiData) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const cursorPos = textarea.selectionStart;
+    const textBefore = body.substring(0, cursorPos);
+    const textAfter = body.substring(cursorPos);
+
+    const newText = textBefore + emoji.native + textAfter;
+    setBody(newText);
+
+    // Remettre le focus sur le textarea après insertion
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(cursorPos + emoji.native.length, cursorPos + emoji.native.length);
+    }, 0);
+  };
+
   const trySubmiting = async () => {
     try {
       // Vérification que body n'est pas vide
@@ -195,7 +226,8 @@ export default function PostAdd({
   if (isEditMode && isLoadingPost) {
     return (
       <div className={isReply ? "p-2" : "px-4"}>
-        <div className="text-gray-500">Chargement du post à modifier...</div>
+        <div className="loading loading-dots loading-md text-base-content/60"></div>
+        <span className="text-base-content/60 ml-2">Chargement du post à modifier...</span>
       </div>
     );
   }
@@ -207,44 +239,99 @@ export default function PostAdd({
       : "Écrivez votre post...";
 
   return (
-    <div className={isReply ? "border-t border-gray-200 p-3" : ""}>
-      {error && <div className="mb-4 rounded-md bg-red-100 p-3 text-red-700">{error}</div>}
+    <div className={isReply ? "border-base-300 border-t p-3" : ""}>
+      {error && (
+        <div className="alert alert-error mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{error}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className={`flex gap-3 ${isReply ? "" : "mb-4"}`}>
           {/* Profile picture for replies */}
           {isReply && auth.profile && (
             <div className="flex-shrink-0">
-              <div className="h-10 w-10 overflow-hidden rounded-full">
-                <img src={utils.getAvatarUrl(auth.profile)} alt="Your profile" className="h-full w-full object-cover" />
+              <div className="avatar">
+                <div className="w-10 rounded-full">
+                  <img src={utils.getAvatarUrl(auth.profile)} alt="Your profile" />
+                </div>
               </div>
             </div>
           )}
 
           <div className="flex-1">
-            <textarea
-              className={`textarea w-full resize-none ${isReply ? "min-h-[80px] text-sm" : ""}`}
-              placeholder={placeholder ?? defaultPlaceholder}
-              value={body}
-              onChange={(e) => {
-                setBody(e.target.value);
-              }}
-              rows={isReply ? 3 : 5}
-              required
-            />
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                className={`textarea w-full resize-none ${isReply ? "min-h-[80px] text-sm" : ""}`}
+                placeholder={placeholder ?? defaultPlaceholder}
+                value={body}
+                onChange={(e) => {
+                  setBody(e.target.value);
+                }}
+                rows={isReply ? 3 : 5}
+                required
+              />
+
+              {/* Bouton emoji avec style Daisy UI */}
+              <div className="dropdown dropdown-bottom dropdown-end absolute right-2 bottom-2">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn btn-ghost btn-sm h-8 min-h-8 w-8 p-0"
+                  title="Ajouter un emoji"
+                >
+                  😀
+                </div>
+                <div
+                  tabIndex={0}
+                  className="dropdown-content bg-base-100 rounded-box z-[1] mt-1 overflow-hidden border p-2 shadow-xl"
+                >
+                  <Picker
+                    data={data}
+                    onEmojiSelect={handleEmojiSelect}
+                    theme="light"
+                    locale="fr"
+                    previewPosition="none"
+                    searchPosition="sticky"
+                    navPosition="bottom"
+                    perLine={8}
+                    maxFrequentRows={2}
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* Affichage des médias existants en mode édition */}
             {isEditMode && (
               <div className="mt-2">
                 {loadingExistingMedia ? (
-                  <div className="text-sm text-gray-500">Chargement des médias...</div>
+                  <div className="flex items-center gap-2">
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span className="text-base-content/60 text-sm">Chargement des médias...</span>
+                  </div>
                 ) : existingMediaUrls.length > 0 ? (
                   <div>
-                    <div className="mb-2 text-sm text-gray-600">Médias associés au post (non modifiables) :</div>
+                    <div className="text-base-content/70 mb-2 text-sm font-medium">
+                      Médias associés au post (non modifiables) :
+                    </div>
                     <MediaCarousel mediaUrls={existingMediaUrls} />
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">Aucun média associé à ce post</div>
+                  <div className="text-base-content/50 text-sm">Aucun média associé à ce post</div>
                 )}
               </div>
             )}
@@ -261,7 +348,7 @@ export default function PostAdd({
                   onChange={handleFileChange}
                 />{" "}
                 {mediaFiles.length > 0 && (
-                  <div className="mt-1 text-sm text-gray-600">{mediaFiles.length} fichier(s) sélectionné(s)</div>
+                  <div className="text-base-content/60 mt-1 text-sm">{mediaFiles.length} fichier(s) sélectionné(s)</div>
                 )}
               </fieldset>
             )}
@@ -279,20 +366,11 @@ export default function PostAdd({
             <div className={`flex justify-end gap-2 ${isReply ? "mt-2" : "mt-4"}`}>
               <button
                 type="submit"
-                className={`btn btn-primary ${isReply ? "btn-sm" : ""}`}
+                className={`btn btn-primary ${isReply ? "btn-sm" : ""} ${isLoading ? "loading" : ""}`}
                 disabled={isLoading || !body.trim()}
               >
-                {isLoading
-                  ? isEditMode
-                    ? "Modifying..."
-                    : parentPostId
-                      ? "Replying..."
-                      : "Publication..."
-                  : isEditMode
-                    ? "Modify"
-                    : parentPostId
-                      ? "Reply"
-                      : "Publish"}
+                {!isLoading && <>{isEditMode ? "Modifier" : parentPostId ? "Répondre" : "Publier"}</>}
+                {isLoading && <span className="loading loading-spinner loading-sm"></span>}
               </button>
             </div>
           </div>

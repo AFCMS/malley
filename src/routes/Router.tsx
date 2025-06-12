@@ -12,6 +12,8 @@ import ViewPost from "../pages/ViewPost/ViewPost";
 import SwipePage from "../pages/SwipePage/SwipePage";
 import Search from "../pages/Search/Search";
 import ProfileCategories from "../pages/ProfileCategories/ProfileCategories";
+import ProfileFollowing from "../pages/ProfileFollowing/ProfileFollowing";
+import ProfileFollowed from "../pages/ProfileFollowed/ProfileFollowed";
 
 export default function Router() {
   return (
@@ -28,6 +30,8 @@ export default function Router() {
         <Route path="/:handle" element={<ProfileViewer />} />
         <Route path="/:handle/featured" element={<ProfileViewerFeatured />} />
         <Route path="/profile/categories" element={<ProfileCategories />} />
+        <Route path="/profile/following" element={<ProfileFollowing />} />
+        <Route path="/profile/followed" element={<ProfileFollowed />} />
         <Route path="/swipe" element={<SwipePage />} />
         <Route path="*" element={<div>404</div>} />
       </Routes>

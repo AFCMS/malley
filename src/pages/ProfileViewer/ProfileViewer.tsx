@@ -269,7 +269,7 @@ const ProfileViewer = () => {
                         void queries.features.add(profile.id);
                         setIsFeaturing(true);
                       }
-                      closePopover("popover-profile")();
+                      closePopover("popover-profile");
                     } else {
                       void navigate("/login");
                     }
@@ -281,7 +281,7 @@ const ProfileViewer = () => {
                   icon: HiOutlineTag,
                   onClick: () => {
                     void navigate("/profile/categories");
-                    closePopover("popover-profile")();
+                    closePopover("popover-profile");
                   },
                   disabled: auth.user?.id !== profile.id,
                 },
@@ -300,7 +300,7 @@ const ProfileViewer = () => {
                         alert("Profile link copied to clipboard!");
                       });
                     }
-                    closePopover("popover-profile")();
+                    closePopover("popover-profile");
                   },
                 },
               ]}

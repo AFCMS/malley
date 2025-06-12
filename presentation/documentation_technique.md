@@ -82,7 +82,8 @@ Voir [README](../README.md) pour les instructions d'installation et de configura
 - Une API REST est générée automatiquement à partir du schéma de base de données, ainsi que des types TypeScript pour l'utilisation avec le client Supabase. On a donc une sûreté de type pour les données échangées entre le frontend et le backend si on considère l'intégration complète de ces mécanismes dans le pipeline CI/CD.
 - Le stockage de fichiers est intégré, avec la même gestion via PostgreSQL et les mêmes règles de sécurité.
 - Supabase est open source et basé sur PostgreSQL, ce qui permet une grande flexibilité et un auto-hébergement si nécessaire.
-- On peut également facilement créer des notifications temps réel ainsi que des fonctions serverless (Edge Functions) pour des tâches spécifiques (non exploitées dans ce projet).
+- Des fonctions serverless (Edge Functions) en TypeScript et Deno pour des tâches spécifiques où on ne peut pas se contenter de SQL ou de la logique côté client.
+- On peut également facilement créer des systèmes de notification temps réel (non exploitées dans ce projet).
 
 **Inconvénients considérés :**
 

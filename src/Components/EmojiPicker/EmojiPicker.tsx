@@ -19,10 +19,13 @@ interface EmojiPickerProps {
 }
 
 export default function EmojiPicker(props: EmojiPickerProps) {
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   return (
     <>
       <button
         type="button"
+        hidden={isMobile}
         className="btn btn-sm btn-square text-base"
         title="Add an emoji"
         popoverTarget={props.id}
@@ -34,6 +37,7 @@ export default function EmojiPicker(props: EmojiPickerProps) {
       <div
         className="dropdown rounded-box bg-base-100 dropdown-end shadow-sm"
         popover="auto"
+        hidden={isMobile}
         id={props.id}
         style={{ positionAnchor: `--${props.id}` } as React.CSSProperties}
       >

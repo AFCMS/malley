@@ -252,6 +252,29 @@ const queries = {
       }
       return req.data.map((e) => e.posts);
     },
+
+    remove: async function (postId: string): Promise<boolean> {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+
+      const req = await supabase.from("authors").delete().eq("post", postId).eq("profile", user.id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return true;
+    },
+
+    countAuthors: async function (postId: string): Promise<number> {
+      const req = await supabase.from("authors").select("*", { count: "exact" }).eq("post", postId);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.count ?? 0;
+    },
   },
 
   pendingAuthors: {

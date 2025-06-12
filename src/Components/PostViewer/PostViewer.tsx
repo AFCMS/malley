@@ -10,6 +10,8 @@ import {
   HiOutlinePencil,
   HiOutlineMapPin,
   HiMapPin,
+  HiOutlineUserMinus,
+  HiOutlineExclamationTriangle,
 } from "react-icons/hi2";
 
 import { queries, supabase, utils } from "../../contexts/supabase/supabase";
@@ -48,6 +50,9 @@ export default function PostViewer(props: PostViewerProps) {
   const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [isAbandoning, setIsAbandoning] = useState(false);
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [isLastAuthor, setIsLastAuthor] = useState(false);
 
   const auth = useAuth();
   const navigate = useNavigate();
@@ -64,13 +69,21 @@ export default function PostViewer(props: PostViewerProps) {
       try {
         const postAuthors = await queries.authors.ofPost(props.post.id);
         setAuthors(postAuthors);
+
+        // Vérifier si l'utilisateur est le dernier auteur
+        if (auth.user && postAuthors.length === 1 && postAuthors[0]?.id === auth.user.id) {
+          setIsLastAuthor(true);
+        } else {
+          setIsLastAuthor(false);
+        }
       } catch {
         setAuthors([]);
+        setIsLastAuthor(false);
       }
     }
 
     void fetchAuthors();
-  }, [props.post.id]);
+  }, [props.post.id, auth.user]);
 
   // Récupération des catégories
   useEffect(() => {
@@ -301,6 +314,74 @@ export default function PostViewer(props: PostViewerProps) {
     }
   };
 
+  const handleAbandonOwnership = async () => {
+    if (!auth.user || isAbandoning) return;
+
+    try {
+      setIsAbandoning(true);
+
+      // Abandon de la propriété
+      await queries.authors.remove(props.post.id);
+
+      // Animation de succès
+      setShowAbandonConfirm(false);
+
+      // Si c'est un post principal (page ViewPost)
+      if (props.isMainPost) {
+        if (isLastAuthor) {
+          // Rediriger vers l'accueil avec un message de suppression
+          setTimeout(() => {
+            void navigate("/", {
+              state: {
+                message: "Post supprimé avec succès après abandon de propriété",
+                type: "success",
+              },
+            });
+          }, 1000);
+        } else {
+          // Rediriger vers l'accueil avec un message d'abandon
+          setTimeout(() => {
+            void navigate("/", {
+              state: {
+                message: "Propriété du post abandonnée avec succès",
+                type: "success",
+              },
+            });
+          }, 1000);
+        }
+      } else {
+        // Si ce n'est pas un post principal, rafraîchir la page pour actualiser visuellement
+        if (isLastAuthor) {
+          // Le post sera supprimé, rafraîchir la page
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          // Recharger les auteurs et rafraîchir après un délai
+          setTimeout(() => {
+            void (async () => {
+              try {
+                const postAuthors = await queries.authors.ofPost(props.post.id);
+                setAuthors(postAuthors);
+                // Rafraîchir la page pour s'assurer que tout est à jour
+                setTimeout(() => {
+                  window.location.reload();
+                }, 500);
+              } catch {
+                // Le post a peut-être été supprimé, rafraîchir la page
+                window.location.reload();
+              }
+            })();
+          }, 500);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'abandon de propriété:", error);
+    } finally {
+      setIsAbandoning(false);
+    }
+  };
+
   const formatPostDate = (date: Date): string => {
     try {
       if (isNaN(date.getTime())) {
@@ -389,27 +470,54 @@ export default function PostViewer(props: PostViewerProps) {
               >
                 <HiOutlineEllipsisHorizontal className="h-5 w-5" />
               </button>
-              <Dropdown id={`popover-post-${props.post.id}`}>
-                {[
-                  {
-                    title: "Modify",
-                    icon: HiOutlinePencil,
-                    onClick: () => {
-                      void navigate(`/post/${props.post.id}/edit`);
-                      closePopover(`popover-post-${props.post.id}`)();
-                    },
-                  },
-                  {
-                    title: isPinned ? "Unpin" : "Pin",
-                    icon: isPinned ? HiMapPin : HiOutlineMapPin,
-                    onClick: () => {
-                      void handlePinPost();
-                      closePopover(`popover-post-${props.post.id}`)();
-                    },
-                    disabled: isPinning,
-                  },
-                ]}
-              </Dropdown>
+
+              {showBurgerMenu && (
+                <div className="absolute right-0 z-20 mt-2 w-52 rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <div className="py-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void navigate(`/post/${props.post.id}/edit`);
+                        setShowBurgerMenu(false);
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-gray-100"
+                    >
+                      <HiOutlinePencil className="h-4 w-4" />
+                      Modifier
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handlePinPost();
+                        setShowBurgerMenu(false);
+                      }}
+                      disabled={isPinning}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      {isPinned ? (
+                        <HiMapPin className="h-4 w-4 text-blue-500" />
+                      ) : (
+                        <HiOutlineMapPin className="h-4 w-4" />
+                      )}
+                      {isPinned ? "Désépingler" : "Épingler"}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAbandonConfirm(true);
+                        setShowBurgerMenu(false);
+                      }}
+                      disabled={isAbandoning}
+                      className={`flex w-full items-center gap-2 px-4 py-2 text-left transition-all duration-200 hover:bg-gray-100 disabled:opacity-50 ${
+                        isAbandoning ? "animate-pulse bg-orange-50" : ""
+                      }`}
+                    >
+                      <HiOutlineUserMinus className={`h-4 w-4 ${isAbandoning ? "animate-spin" : ""}`} />
+                      {isAbandoning ? "Abandon en cours..." : "Abandonner la propriété"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div className="flex items-start gap-3">
@@ -703,6 +811,76 @@ export default function PostViewer(props: PostViewerProps) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de confirmation d'abandon de propriété */}
+      {showAbandonConfirm && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+                <HiOutlineExclamationTriangle className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Abandonner la propriété</h3>
+                <p className="text-sm text-gray-500">Cette action est irréversible</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              {isLastAuthor ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <HiOutlineExclamationTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">Attention : Suppression du post</p>
+                      <p className="mt-1 text-sm text-red-700">
+                        Vous êtes le dernier auteur de ce post. L&apos;abandonner entraînera sa suppression définitive.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-700">
+                  Vous abandonnerez la propriété de ce post. Vous ne pourrez plus le modifier ni le supprimer.
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowAbandonConfirm(false);
+                }}
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  void handleAbandonOwnership();
+                }}
+                disabled={isAbandoning}
+                className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
+                  isLastAuthor
+                    ? "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                    : "bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400"
+                } disabled:cursor-not-allowed`}
+              >
+                {isAbandoning ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    {isLastAuthor ? "Suppression..." : "Abandon..."}
+                  </div>
+                ) : isLastAuthor ? (
+                  "Supprimer le post"
+                ) : (
+                  "Abandonner"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

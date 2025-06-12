@@ -19,10 +19,10 @@ import { Tables } from "../../contexts/supabase/database";
 
 import MediaCarousel from "../MediaCarousel/MediaCarousel";
 import PostAdd from "../PostAdd/PostAdd";
-import Dropdown from "../Dropdown/Dropdown";
+// Removed unused import Dropdown
 import { useAuth } from "../../contexts/auth/AuthContext";
 
-import { closePopover } from "../../utils/popover";
+// Removed unused import closePopover
 
 interface PostViewerProps {
   post: Tables<"posts">;
@@ -52,6 +52,8 @@ export default function PostViewer(props: PostViewerProps) {
   const [isLiking, setIsLiking] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  // State for burger menu visibility
+  const [showBurgerMenu, setShowBurgerMenu] = useState(false);
   const [isLastAuthor, setIsLastAuthor] = useState(false);
 
   const auth = useAuth();
@@ -466,6 +468,7 @@ export default function PostViewer(props: PostViewerProps) {
                 style={{ anchorName: `--popover-post-${props.post.id}` } as React.CSSProperties}
                 onClick={(e) => {
                   e.stopPropagation();
+                  setShowBurgerMenu((prev) => !prev);
                 }}
               >
                 <HiOutlineEllipsisHorizontal className="h-5 w-5" />

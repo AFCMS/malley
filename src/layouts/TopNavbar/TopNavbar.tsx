@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { HiOutlineArrowLeftStartOnRectangle, HiOutlineCog6Tooth } from "react-icons/hi2";
+import { HiOutlineArrowLeftStartOnRectangle, HiOutlineCog6Tooth, HiOutlineUsers } from "react-icons/hi2";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { utils } from "../../contexts/supabase/supabase";
@@ -36,6 +36,16 @@ export default function TopNavbar() {
                   title: "Settings",
                   icon: HiOutlineCog6Tooth,
                   href: "/settings",
+                },
+                {
+                  title: "Following",
+                  icon: HiOutlineUsers,
+                  href: "/profile/following",
+                },
+                {
+                  title: "Followed",
+                  icon: HiOutlineUsers,
+                  href: "/profile/followed",
                 },
               ]}
             </Dropdown>

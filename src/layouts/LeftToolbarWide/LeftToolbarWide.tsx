@@ -7,6 +7,7 @@ import {
   HiOutlinePencil,
   HiOutlineSquare2Stack,
   HiOutlineUser,
+  HiOutlineUsers,
 } from "react-icons/hi2";
 import { Link, useNavigate } from "react-router";
 
@@ -105,6 +106,16 @@ export default function LeftToolbarWide() {
                     title: "Settings",
                     icon: HiOutlineCog6Tooth,
                     href: "/settings",
+                  },
+                  {
+                    title: "Following",
+                    icon: HiOutlineUsers,
+                    href: "/profile/following",
+                  },
+                  {
+                    title: "Followed",
+                    icon: HiOutlineUsers,
+                    href: "/profile/followed",
                   },
                 ]}
               </Dropdown>

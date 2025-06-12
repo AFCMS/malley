@@ -341,6 +341,52 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_posts_feed: {
+        Args: {
+          has_text?: string[]
+          has_authors?: string[]
+          has_categories?: string[]
+          liked_by?: string[]
+          from_date?: string
+          to_date?: string
+          sort_by?: string
+          sort_order?: string
+          paging_limit?: number
+          paging_offset?: number
+        }
+        Returns: {
+          body: string | null
+          created_at: string
+          id: string
+          parent_post: string | null
+        }[]
+      }
+      get_profiles_feed: {
+        Args: {
+          has_handle?: string[]
+          has_bio?: string[]
+          has_categories?: string[]
+          featured_by?: string[]
+          features_user?: string[]
+          author_of?: string[]
+          likes_posts?: string[]
+          from_date?: string
+          to_date?: string
+          sort_by?: string
+          sort_order?: string
+          paging_limit?: number
+          paging_offset?: number
+        }
+        Returns: {
+          banner: string | null
+          bio: string | null
+          created_at: string
+          handle: string
+          id: string
+          pinned_posts: string[] | null
+          profile_pic: string | null
+        }[]
+      }
       id_of_ensured_category: {
         Args: { request: string }
         Returns: string

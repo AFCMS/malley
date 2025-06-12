@@ -284,6 +284,130 @@ export function minimal_function() {
       });
     });
 
+    describe("get_posts_feed", () => {
+      test("text matches", async () => {
+        await registerAndLoginNewUser();
+        const body = randomName(130); // avoids collision by having twice the length (+1 just to be sure)
+        await queries.posts.new(body);
+        const { data } = await supabase.rpc("get_posts_feed", { has_text: [body.slice(0, 65), body.slice(65, 130)] });
+        expect(data?.length).toBe(1);
+      });
+
+      test("authors match", async () => {
+        const { user: user1, session: session1 } = await registerAndLoginNewUser();
+        const { id } = await createRandomPost();
+        const { user: user2, session: session2 } = await registerAndLoginNewUser();
+        await supabase.auth.setSession(session1);
+        await queries.pendingAuthors.invite(user2.id, id);
+        await supabase.auth.setSession(session2);
+        await queries.pendingAuthors.accept(id);
+
+        const { data } = await supabase.rpc("get_posts_feed", { has_authors: [user1.id, user2.id] });
+        expect(data?.length).toBe(1);
+      });
+
+      test("categories match", async () => {
+        await registerAndLoginNewUser();
+        const { id } = await createRandomPost();
+        const category1 = randomName(12);
+        const category2 = randomName(12);
+        await queries.postsCategories.add(id, category1);
+        await queries.postsCategories.add(id, category2);
+
+        const { data } = await supabase.rpc("get_posts_feed", {
+          has_categories: [
+            await queries.categories.getEnsuredId(category1),
+            await queries.categories.getEnsuredId(category2),
+          ],
+        });
+        expect(data?.length).toBe(1);
+      });
+
+      test("liked_by matches", async () => {
+        const { user } = await registerAndLoginNewUser();
+        const { id } = await createRandomPost();
+        await queries.like.add(id);
+
+        const { data } = await supabase.rpc("get_posts_feed", { liked_by: [user.id] });
+        expect(data?.length).toBe(1);
+      });
+
+      /*
+      test("returns post with all parameters specified", async () => {
+      
+      });
+      */
+    });
+
+    describe("get_profiles_feed", () => {
+      test("handle matches", async () => {
+        const { user } = await registerAndLoginNewUser();
+        const { data } = await supabase.rpc("get_profiles_feed", {
+          has_handle: [user.handle.slice(0, 8), user.handle.slice(8, 16)],
+        });
+        expect(data?.length).toBe(1);
+      });
+
+      test("bio matches", async () => {
+        await registerAndLoginNewUser();
+        const bio = randomName(32);
+        await queries.profiles.updateBio(bio);
+        const { data } = await supabase.rpc("get_profiles_feed", { has_bio: [bio.slice(0, 16), bio.slice(16, 32)] });
+        expect(data?.length).toBe(1);
+      });
+
+      test("categories match", async () => {
+        await registerAndLoginNewUser();
+        const category1 = randomName(8);
+        const category2 = randomName(8);
+        await queries.profilesCategories.add(category1);
+        await queries.profilesCategories.add(category2);
+
+        const { data } = await supabase.rpc("get_profiles_feed", {
+          has_categories: [
+            await queries.categories.getEnsuredId(category1),
+            await queries.categories.getEnsuredId(category2),
+          ],
+        });
+        expect(data?.length).toBe(1);
+      });
+
+      test("featured_by matches", async () => {
+        const { user: featuree } = await registerAndLoginNewUser();
+        const { user: featurer } = await registerAndLoginNewUser();
+        // featurer features featuree
+        await queries.features.add(featuree.id);
+
+        const { data } = await supabase.rpc("get_profiles_feed", { featured_by: [featurer.id] });
+        expect(data?.length).toBe(1);
+      });
+
+      test("features_user matches", async () => {
+        await registerAndLoginNewUser();
+        const { user: featuree } = await registerAndLoginNewUser();
+        // featurer features featuree
+        await queries.features.add(featuree.id);
+
+        const { data } = await supabase.rpc("get_profiles_feed", { features_user: [featuree.id] });
+        expect(data?.length).toBe(1);
+      });
+
+      test("likes_posts matches", async () => {
+        await registerAndLoginNewUser();
+        const { id } = await createRandomPost();
+        await queries.like.add(id);
+
+        const { data } = await supabase.rpc("get_profiles_feed", { likes_posts: [id] });
+        expect(data?.length).toBe(1);
+      });
+
+      /*
+      test("returns profile with all parameters specified", async () => {
+
+      });
+      */
+    });
+
     describe("storage", () => {
       const registerPersonalFilesTests = (
         updateFn: (file: File | null) => Promise<void>,

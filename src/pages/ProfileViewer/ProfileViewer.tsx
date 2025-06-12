@@ -146,7 +146,7 @@ const ProfileViewer = () => {
   return (
     <div className="w-full">
       <TopBar title={profile.handle} />
-      <section className="relative mb-16">
+      <section className="relative mb-4">
         <div className="bg-base-200 relative h-32 w-full lg:h-48">
           <img src={utils.getBannerUrl(profile)} alt="Profile Banner" className="h-full w-full object-cover" />
           <div className="avatar absolute bottom-0 left-4 translate-y-1/2">
@@ -268,10 +268,11 @@ const ProfileViewer = () => {
         </div>
       </section>
 
+      <div className="border-t border-gray-200"></div>
+
       {pinnedPosts.length > 0 && (
         <div className="pinned-posts mb-4">
-          <h2 className="mb-2 px-4 text-sm font-semibold text-gray-700">Publications épinglées</h2>
-          <div className="border-t border-gray-200">
+          <div className="">
             {pinnedPosts.map((post) => (
               <PostViewer key={post.id} post={post} isPinned={true} onPinUpdate={() => void handlePinUpdate()} />
             ))}

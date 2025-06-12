@@ -432,10 +432,9 @@ const ProfileViewer = () => {
           {/* Tous les posts avec hiérarchie */}
           {(() => {
             const organizedPosts = organizePostsHierarchically(allPosts);
-
             return organizedPosts.map((item, index) => {
               const { post, depth } = item;
-              const nextItem = organizedPosts[index + 1];
+              const nextItem = organizedPosts[index + 1] as typeof item | undefined;
 
               return (
                 <div key={post.id} className="relative">

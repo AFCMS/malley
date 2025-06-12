@@ -14,7 +14,7 @@ dist-ssr
 
 # Editor directories and files
 .vscode/*
-!.vscode/daisyui.md
+!.vscode/copilot
 !.vscode/settings.json
 !.vscode/extensions.json
 .idea

@@ -26,6 +26,9 @@
   "github.copilot.chat.codeGeneration.useInstructionFiles": true,
   "github.copilot.chat.codeGeneration.instructions": [
     {
+      "file": "./.vscode/copilot/project.md",
+    },
+    {
       "file": "./.vscode/copilot/daisyui.md",
     }
   ],

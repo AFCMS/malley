@@ -29,7 +29,12 @@ export default function Dropdown(props: DropdownProps) {
         .map((element, index) => (
           <li key={index}>
             {element.href && !element.onClick ? (
-              <Link to={element.href} onClick={closePopover(props.id)}>
+              <Link
+                to={element.href}
+                onClick={() => {
+                  closePopover(props.id);
+                }}
+              >
                 <element.icon className="" />
                 {element.title}
               </Link>

@@ -160,7 +160,7 @@ const queries = {
       return req.data;
     },
 
-    new: async function (body: string, media: File[], parent: string | null = null): Promise<string> {
+    new: async function (body: string, media: File[] = [], parent: string | null = null): Promise<string> {
       const formData = new FormData();
       formData.append("body", body);
       if (parent != null) formData.append("parent", parent);
@@ -614,5 +614,33 @@ const utils = {
     return profileBannerPlaceholder;
   },
 };
+
+export interface postSearchQuery {
+  has_text?: string[] | null;
+  has_authors?: string[] | null;
+  has_categories?: string[] | null;
+  liked_by?: string[] | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort_by?: "created_at" | "popularity" | "likes";
+  sort_order?: "asc" | "desc";
+  paging_limit?: number | null;
+  paging_offset?: number | null;
+}
+
+export interface profileSearchQuery {
+  has_handle?: string[] | null;
+  has_bio?: string[] | null;
+  has_categories?: string[] | null;
+  featured_by?: string[] | null;
+  features_user?: string[] | null;
+  likes_posts?: string[] | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort_by?: "created_at" | "popularity" | "likes";
+  sort_order?: "asc" | "desc";
+  paging_limit?: number | null;
+  paging_offset?: number | null;
+}
 
 export { supabase, queries, utils };

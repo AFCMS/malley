@@ -578,9 +578,9 @@ export default function SwipePage() {
           </div>
         </div>
 
-        <div hidden={true} className="mt-5">
+        <div hidden={import.meta.env.PROD} className="mt-5">
           <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning">
-            <HiOutlineLockOpen className="size-6" /> Annuler tous les blockages
+            <HiOutlineLockOpen className="size-6" /> Reset rejected profiles
           </button>
         </div>
       </div>

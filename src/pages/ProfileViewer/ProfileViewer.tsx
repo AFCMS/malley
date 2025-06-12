@@ -74,9 +74,7 @@ const ProfileViewer = () => {
             const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
             // Séparer les posts principaux (sans parent) et tous les posts
-            const mainPostsData = sortPostsByDateDesc(
-              filteredPosts.filter((post) => post.parent_post === null)
-            );
+            const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
 
             // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
             const allPostsData = sortPostsByDateDesc([...filteredPosts]);
@@ -201,9 +199,7 @@ const ProfileViewer = () => {
       const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
       // Séparer les posts principaux et tous les posts
-      const mainPostsData = sortPostsByDateDesc(
-        filteredPosts.filter((post) => post.parent_post === null)
-      );
+      const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
 
       // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
       const allPostsData = sortPostsByDateDesc([...filteredPosts]);
@@ -243,7 +239,7 @@ const ProfileViewer = () => {
             >
               <HiOutlineEllipsisHorizontal className="h-5 w-5" />
             </button>
-            <Dropdown id="popover-profile">
+            <Dropdown id="popover-profile" placement="bottom-end">
               {[
                 {
                   title: isFeaturing ? "Unfeature" : "Feature",

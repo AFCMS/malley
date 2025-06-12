@@ -325,6 +325,18 @@ const queries = {
       }
       return true;
     },
+    refuse: async function (id: string): Promise<boolean> {
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+      const req = await supabase.from("pendingAuthors").delete().eq("post", id).eq("to_profile", user.id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return true;
+    },
   },
 
   categories: {
@@ -577,31 +589,31 @@ const queries = {
   like: {
     byUser: async function (id: string): Promise<Tables<"posts">[]> {
       // posts a user liked
-      const req = await supabase.from("likes").select("posts(*)").eq("profile", id);
+      const req = await supabase.from("likes").select("post:posts(*)").eq("profile", id);
 
       if (req.error) {
         throw new Error(req.error.message);
       }
-      return req.data.map((e) => e.posts);
+      return req.data.map((e) => e.post);
     },
 
     byWho: async function (id: string): Promise<Tables<"profiles">[]> {
       // profiles who liked the provided post id
-      const req = await supabase.from("likes").select("profiles!profile(*)").eq("post", id);
+      const req = await supabase.from("likes").select("profile:profiles(*)").eq("post", id);
 
       if (req.error) {
         throw new Error(req.error.message);
       }
-      return req.data.map((e) => e.profiles);
+      return req.data.map((e) => e.profile);
     },
 
     doesUserLikePost: async function (user: string, post: string): Promise<boolean> {
-      const req = await supabase.from("likes").select("1").eq("profile", user).eq("post", post);
+      const req = await supabase.from("likes").select("*").eq("profile", user).eq("post", post).limit(1);
 
       if (req.error) {
         throw new Error(req.error.message);
       }
-      return req.data.length != 0;
+      return req.data.length > 0;
     },
 
     add: async function (id: string): Promise<boolean> {
@@ -629,11 +641,24 @@ const queries = {
         throw new Error("not logged in");
       }
 
+      console.log(`[DEBUG SUPABASE] Remove like - Post: ${id}, User: ${user.id}`);
+
+      // Vérifier d'abord que le like existe
+      const checkReq = await supabase.from("likes").select("*").eq("post", id).eq("profile", user.id);
+      console.log(`[DEBUG SUPABASE] Check before delete:`, checkReq.data);
+
       const req = await supabase.from("likes").delete().eq("post", id).eq("profile", user.id);
 
+      console.log(`[DEBUG SUPABASE] Delete request result:`, req);
       if (req.error) {
+        console.error(`[DEBUG SUPABASE] Delete error:`, req.error);
         throw new Error(req.error.message);
       }
+
+      // Vérifier après suppression
+      const afterReq = await supabase.from("likes").select("*").eq("post", id).eq("profile", user.id);
+      console.log(`[DEBUG SUPABASE] Check after delete:`, afterReq.data);
+
       return true;
     },
   },

@@ -383,6 +383,7 @@ const ProfileViewer = () => {
                     key={post.id}
                     post={post}
                     isPinned={true}
+                    showChildren={false}
                     onPinUpdate={() => {
                       void handlePinUpdate();
                     }}
@@ -397,6 +398,7 @@ const ProfileViewer = () => {
               key={post.id}
               post={post}
               isPinned={false}
+              showChildren={false}
               onPinUpdate={() => {
                 void handlePinUpdate();
               }}

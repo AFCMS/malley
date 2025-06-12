@@ -332,11 +332,24 @@ export function minimal_function() {
         expect(data?.length).toBe(1);
       });
 
-      /*
-      test("returns post with all parameters specified", async () => {
-      
+      test("query generator", async () => {
+        await registerAndLoginNewUser();
+        const category1 = randomName(12);
+        const category2 = randomName(12);
+        await queries.profilesCategories.add(category1);
+        await queries.profilesCategories.add(category2);
+        const { id: id1 } = await createRandomPost();
+        const { id: id2 } = await createRandomPost();
+        await queries.postsCategories.add(id1, category1);
+        await queries.postsCategories.add(id2, category2);
+        const params = await queries.feed.posts.generateParams();
+        expect(
+          params.has_categories?.includes(await queries.categories.getEnsuredId(category1)) &&
+            params.has_categories.includes(await queries.categories.getEnsuredId(category2)),
+        ).toBe(true);
+        const posts = await queries.feed.posts.get(params);
+        expect(posts.length).toBe(2);
       });
-      */
     });
 
     describe("get_profiles_feed", () => {
@@ -401,11 +414,23 @@ export function minimal_function() {
         expect(data?.length).toBe(1);
       });
 
-      /*
-      test("returns profile with all parameters specified", async () => {
-
+      test("query generator", async () => {
+        await registerAndLoginNewUser();
+        const category1 = randomName(12);
+        const category2 = randomName(12);
+        await queries.profilesCategories.add(category1);
+        await queries.profilesCategories.add(category2);
+        await registerAndLoginNewUser();
+        await queries.profilesCategories.add(category1);
+        await queries.profilesCategories.add(category2);
+        const params = await queries.feed.profiles.generateParams();
+        expect(
+          params.has_categories?.includes(await queries.categories.getEnsuredId(category1)) &&
+            params.has_categories.includes(await queries.categories.getEnsuredId(category2)),
+        ).toBe(true);
+        const profiles = await queries.feed.profiles.get(params);
+        expect(profiles.length).toBe(2);
       });
-      */
     });
 
     describe("storage", () => {

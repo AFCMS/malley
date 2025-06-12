@@ -697,20 +697,50 @@ const queries = {
   },
 
   feed: {
-    postsFeed: async function (params: PostSearchQuery): Promise<Tables<"posts">[]> {
-      const { data, error } = await supabase.rpc("get_posts_feed", {
-        ...params,
-      });
-      if (error) throw error;
-      return data;
+    posts: {
+      generateParams: async function (): Promise<PostSearchQuery> {
+        // Generates personalised query parameters for the user
+        // for now, this only matches the profile’s tags. A better algorithm could be implemented later on
+        const user = await getUser();
+        if (!user) {
+          throw new Error("not logged in");
+        }
+
+        return {
+          has_categories: (await queries.profilesCategories.get(user.id)).map((cat) => cat.id),
+        };
+      },
+
+      get: async function (params: PostSearchQuery): Promise<Tables<"posts">[]> {
+        const { data, error } = await supabase.rpc("get_posts_feed", {
+          ...params,
+        });
+        if (error) throw error;
+        return data;
+      },
     },
 
-    profilesFeed: async function (params: ProfileSearchQuery): Promise<Tables<"profiles">[]> {
-      const { data, error } = await supabase.rpc("get_profiles_feed", {
-        ...params,
-      });
-      if (error) throw error;
-      return data;
+    profiles: {
+      generateParams: async function (): Promise<ProfileSearchQuery> {
+        // Generates personalised query parameters for the user
+        // for now, this only matches the profile’s tags. A better algorithm could be implemented later on
+        const user = await getUser();
+        if (!user) {
+          throw new Error("not logged in");
+        }
+
+        return {
+          has_categories: (await queries.profilesCategories.get(user.id)).map((cat) => cat.id),
+        };
+      },
+
+      get: async function (params: ProfileSearchQuery): Promise<Tables<"profiles">[]> {
+        const { data, error } = await supabase.rpc("get_profiles_feed", {
+          ...params,
+        });
+        if (error) throw error;
+        return data;
+      },
     },
   },
 };

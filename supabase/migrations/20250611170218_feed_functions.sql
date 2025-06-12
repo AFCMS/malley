@@ -1,3 +1,10 @@
+/*
+Please note this was merged prematurely by @AFCMS.
+I am not changing it anymore, because it works as is.
+However, do note that the functions have differing sub-select standards, and that there is a random select *.
+Next time, wait for me to be done eating.
+*/
+
 CREATE OR REPLACE FUNCTION get_posts_feed(
   has_text text[] default null,
   has_authors uuid[] default null,

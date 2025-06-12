@@ -489,34 +489,18 @@ export default function SwipePage() {
     <div className="w-full">
       <TopBar title="Discover" />
       <div className="m-[0_auto] max-w-[500px] p-5 text-center">
-        <div
-          style={{
-            marginBottom: "15px",
-            padding: "10px",
-            backgroundColor: remainingSwipes <= 5 ? "#fff3cd" : "#e7f3ff",
-            borderRadius: "8px",
-            border: `1px solid ${remainingSwipes <= 5 ? "#ffeaa7" : "#74b9ff"}`,
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontWeight: "600",
-              color: remainingSwipes <= 5 ? "#856404" : "#0984e3",
-            }}
-          >
+        <div className="btn btn-outline btn-info mb-4 w-full rounded-lg p-2.5 hover:cursor-auto">
+          <p>
             {remainingSwipes > 0
               ? `🔥 ${remainingSwipes.toString()} swipes restants aujourd'hui`
               : "❌ Plus de swipes disponibles aujourd'hui"}
           </p>
         </div>
 
-        {error && <p style={{ color: "red", fontWeight: "bold", marginBottom: "10px" }}>⚠️ {error}</p>}
+        {error && <p style={{ color: "red", fontWeight: "bold", marginBottom: "10px" }}>Error: {error}</p>}
 
         {isRefilling && (
-          <p style={{ marginBottom: "10px", color: "#666", fontSize: "0.9rem" }}>
-            🔄 Chargement de nouveaux profils...
-          </p>
+          <p style={{ marginBottom: "10px", color: "#666", fontSize: "0.9rem" }}>Loading more profiles...</p>
         )}
 
         <div className="relative flex h-[calc(100vh-280px)] flex-col">

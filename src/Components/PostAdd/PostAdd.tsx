@@ -65,6 +65,16 @@ export default function PostAdd({
     async function loadPostForEdit() {
       if (!isEditMode || !editPostId) return;
 
+      // Attendre que l'authentification soit chargée
+      if (!auth.isAuthenticated) {
+        setError("Vous devez être connecté pour modifier un post");
+        return;
+      }
+
+      if (!auth.user) {
+        return; // Attendre que l'utilisateur soit chargé
+      }
+
       try {
         setIsLoadingPost(true);
 
@@ -73,16 +83,12 @@ export default function PostAdd({
         setBody(post.body ?? "");
 
         // Vérifier que l'utilisateur est bien auteur du post
-        if (auth.user) {
-          const authors = await queries.authors.ofPost(editPostId);
-          const isAuthor = authors.some((author) => author.id === auth.user?.id);
+        const authors = await queries.authors.ofPost(editPostId);
+        const currentUserId = auth.user.id;
+        const isAuthor = authors.some((author) => author.id === currentUserId);
 
-          if (!isAuthor) {
-            setError("Vous n'êtes pas autorisé à modifier ce post");
-            return;
-          }
-        } else {
-          setError("Vous devez être connecté pour modifier un post");
+        if (!isAuthor) {
+          setError("Vous n'êtes pas autorisé à modifier ce post");
           return;
         }
 
@@ -107,7 +113,7 @@ export default function PostAdd({
     }
 
     void loadPostForEdit();
-  }, [isEditMode, editPostId, auth.user, showCategories]);
+  }, [isEditMode, editPostId, auth.user, auth.isAuthenticated, auth.profile, showCategories]);
 
   const loadExistingMedia = async (postId: string) => {
     try {
@@ -286,19 +292,21 @@ export default function PostAdd({
                 required
               />
 
-              {/* Bouton emoji avec style Daisy UI */}
-              <div className="dropdown dropdown-bottom dropdown-end absolute right-2 bottom-2">
+              {/* Bouton emoji - Toujours visible en mode création ET édition */}
+              <div className="dropdown dropdown-bottom dropdown-end absolute right-3 bottom-3 z-50">
                 <div
                   tabIndex={0}
                   role="button"
-                  className="btn btn-ghost btn-sm h-8 min-h-8 w-8 p-0"
-                  title="Ajouter un emoji"
+                  className="btn btn-ghost btn-sm hover:bg-base-200 bg-base-100/80 border-base-300/50 h-9 min-h-9 w-9 border p-0 shadow-sm backdrop-blur-sm"
+                  title={`Ajouter un emoji ${isEditMode ? "(mode édition)" : ""}`}
+                  style={{ fontSize: "16px" }}
                 >
                   😀
                 </div>
                 <div
                   tabIndex={0}
-                  className="dropdown-content bg-base-100 rounded-box z-[1] mt-1 overflow-hidden border p-2 shadow-xl"
+                  className="dropdown-content bg-base-100 rounded-box border-base-300 z-[999] mt-1 overflow-hidden border p-2 shadow-2xl"
+                  style={{ transform: "translateX(-20px)" }}
                 >
                   <Picker
                     data={data}

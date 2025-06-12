@@ -1,21 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-import { queries, supabase, utils } from "../../contexts/supabase/supabase";
-import { useAuth } from "../../contexts/auth/AuthContext";
-import CategoriesChooser from "../CategoriesChooser/CategoriesChooser";
-import { Tables } from "../../contexts/supabase/database";
-import MediaCarousel from "../MediaCarousel/MediaCarousel";
-import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
+import { HiOutlineExclamationCircle } from "react-icons/hi2";
 
-interface EmojiData {
-  native: string;
-  id: string;
-  name: string;
-  colons: string;
-  skin: number;
-  unified: string;
-}
+import { useAuth } from "../../contexts/auth/AuthContext";
+import { queries, supabase, utils } from "../../contexts/supabase/supabase";
+import { Tables } from "../../contexts/supabase/database";
+
+import CategoriesChooser from "../CategoriesChooser/CategoriesChooser";
+import MediaCarousel from "../MediaCarousel/MediaCarousel";
+import EmojiPicker from "../EmojiPicker/EmojiPicker";
 
 interface PostAddProps {
   /** Post ID if editing an existing post */
@@ -57,22 +50,22 @@ export default function PostAdd({
   const auth = useAuth();
   const navigate = useNavigate();
 
-  // Détermine si on est en mode édition
+  // Determine if we are in edit mode
   const isEditMode = Boolean(editPostId);
 
-  // Charger le post à éditer si on est en mode édition
+  // Load the post to edit if we are in edit mode
   useEffect(() => {
     async function loadPostForEdit() {
       if (!isEditMode || !editPostId) return;
 
-      // Attendre que l'authentification soit chargée
+      // Wait for authentication to be loaded
       if (!auth.isAuthenticated) {
-        setError("Vous devez être connecté pour modifier un post");
+        setError("You must be logged in to edit a post.");
         return;
       }
 
       if (!auth.user) {
-        return; // Attendre que l'utilisateur soit chargé
+        return; // Wait for user to be loaded
       }
 
       try {
@@ -82,31 +75,31 @@ export default function PostAdd({
         const post = await queries.posts.get(editPostId);
         setBody(post.body ?? "");
 
-        // Vérifier que l'utilisateur est bien auteur du post
+        // Check that the user is the author of the post
         const authors = await queries.authors.ofPost(editPostId);
         const currentUserId = auth.user.id;
         const isAuthor = authors.some((author) => author.id === currentUserId);
 
         if (!isAuthor) {
-          setError("Vous n'êtes pas autorisé à modifier ce post");
+          setError("You are not allowed to edit this post.");
           return;
         }
 
-        // Charger les catégories du post
+        // Load post categories
         if (showCategories) {
           try {
             const categories = await queries.postsCategories.get(editPostId);
             setSelectedCategories(categories);
           } catch (err: unknown) {
-            console.error("Erreur lors du chargement des catégories:", err);
+            console.error("Error loading categories:", err);
           }
         }
 
-        // Charger les médias existants en mode édition
+        // Load existing media in edit mode
         await loadExistingMedia(editPostId);
       } catch (err: unknown) {
-        console.error("Erreur lors du chargement du post:", err);
-        setError("Impossible de charger le post à modifier");
+        console.error("Error loading post:", err);
+        setError("Unable to load the post to edit");
       } finally {
         setIsLoadingPost(false);
       }
@@ -143,7 +136,7 @@ export default function PostAdd({
     }
   };
 
-  const handleEmojiSelect = (emoji: EmojiData) => {
+  const handleEmojiSelect = (emoji: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -151,29 +144,29 @@ export default function PostAdd({
     const textBefore = body.substring(0, cursorPos);
     const textAfter = body.substring(cursorPos);
 
-    const newText = textBefore + emoji.native + textAfter;
+    const newText = textBefore + emoji + textAfter;
     setBody(newText);
 
-    // Remettre le focus sur le textarea après insertion
+    // Restore focus to textarea after insertion
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(cursorPos + emoji.native.length, cursorPos + emoji.native.length);
+      textarea.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
     }, 0);
   };
 
   const trySubmiting = async () => {
     try {
-      // Vérification que body n'est pas vide
+      // Check that body is not empty
       if (!body.trim()) {
-        throw new Error("Le contenu du post ne peut pas être vide");
+        throw new Error("Post content cannot be empty");
       }
 
       if (isEditMode && editPostId) {
-        // Mode édition : mettre à jour le post existant
+        // Edit mode: update existing post
         const success = await queries.posts.edit(editPostId, body);
 
         if (!success) {
-          throw new Error("Échec de la modification du post");
+          throw new Error("Failed to edit post");
         }
 
         setError(null);
@@ -182,10 +175,10 @@ export default function PostAdd({
           void navigate(`/post/${editPostId}`);
         }
       } else {
-        // Mode création : créer un nouveau post
+        // Creation mode: create new post
         const id: string = await queries.posts.new(body, mediaFiles, parentPostId);
 
-        // Ajouter les catégories seulement si le composant les supporte
+        // Add categories only if component supports them
         if (showCategories) {
           for (const category of selectedCategories) {
             await queries.postsCategories.add(id, category.name);
@@ -204,8 +197,8 @@ export default function PostAdd({
         }
       }
     } catch (err: unknown) {
-      console.error("Erreur:", err);
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      console.error("Error:", err);
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -216,51 +209,39 @@ export default function PostAdd({
     setIsLoading(true);
 
     if (!auth.isAuthenticated || !auth.profile) {
-      setError("Vous devez être connecté pour publier.");
+      setError("You must be logged in to post.");
       setIsLoading(false);
       return;
     }
 
     trySubmiting().catch((error: unknown) => {
-      console.error("Erreur lors de la soumission:", error);
-      setError(error instanceof Error ? error.message : "Erreur lors de la soumission");
+      console.error("Error during submission:", error);
+      setError(error instanceof Error ? error.message : "Error during submission");
       setIsLoading(false);
     });
   };
 
-  // Affichage du loading pendant le chargement du post à éditer
+  // Display loading while loading post to edit
   if (isEditMode && isLoadingPost) {
     return (
       <div className={isReply ? "p-2" : "px-4"}>
         <div className="loading loading-dots loading-md text-base-content/60"></div>
-        <span className="text-base-content/60 ml-2">Chargement du post à modifier...</span>
+        <span className="text-base-content/60 ml-2">Loading post to edit...</span>
       </div>
     );
   }
 
   const defaultPlaceholder = isEditMode
-    ? "Modifiez votre post..."
+    ? "Edit your post..."
     : parentPostId
-      ? "Écrivez votre réponse..."
-      : "Écrivez votre post...";
+      ? "Write your reply..."
+      : "Write your post...";
 
   return (
     <div className={isReply ? "border-base-300 border-t p-3" : ""}>
       {error && (
         <div className="alert alert-error mb-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 shrink-0 stroke-current"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <HiOutlineExclamationCircle className="size-6" />
           <span>{error}</span>
         </div>
       )}
@@ -292,62 +273,36 @@ export default function PostAdd({
                 required
               />
 
-              {/* Bouton emoji - Toujours visible en mode création ET édition */}
-              <div className="dropdown dropdown-bottom dropdown-end absolute right-3 bottom-3 z-50">
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="btn btn-ghost btn-sm hover:bg-base-200 bg-base-100/80 border-base-300/50 h-9 min-h-9 w-9 border p-0 shadow-sm backdrop-blur-sm"
-                  title={`Ajouter un emoji ${isEditMode ? "(mode édition)" : ""}`}
-                  style={{ fontSize: "16px" }}
-                >
-                  😀
-                </div>
-                <div
-                  tabIndex={0}
-                  className="dropdown-content bg-base-100 rounded-box border-base-300 z-[999] mt-1 overflow-hidden border p-2 shadow-2xl"
-                  style={{ transform: "translateX(-20px)" }}
-                >
-                  <Picker
-                    data={data}
-                    onEmojiSelect={handleEmojiSelect}
-                    theme="light"
-                    locale="fr"
-                    previewPosition="none"
-                    searchPosition="sticky"
-                    navPosition="bottom"
-                    perLine={8}
-                    maxFrequentRows={2}
-                  />
-                </div>
+              <div className="absolute right-3 bottom-3 z-50">
+                <EmojiPicker id="add-post-emoji" onEmojiSelect={handleEmojiSelect} />
               </div>
             </div>
 
-            {/* Affichage des médias existants en mode édition */}
+            {/* Display existing media in edit mode */}
             {isEditMode && (
               <div className="mt-2">
                 {loadingExistingMedia ? (
                   <div className="flex items-center gap-2">
                     <span className="loading loading-spinner loading-sm"></span>
-                    <span className="text-base-content/60 text-sm">Chargement des médias...</span>
+                    <span className="text-base-content/60 text-sm">Loading media...</span>
                   </div>
                 ) : existingMediaUrls.length > 0 ? (
                   <div>
                     <div className="text-base-content/70 mb-2 text-sm font-medium">
-                      Médias associés au post (non modifiables) :
+                      Media associated with the post (non-editable):
                     </div>
                     <MediaCarousel mediaUrls={existingMediaUrls} />
                   </div>
                 ) : (
-                  <div className="text-base-content/50 text-sm">Aucun média associé à ce post</div>
+                  <div className="text-base-content/50 text-sm">No media associated with this post</div>
                 )}
               </div>
             )}
 
-            {/* Upload de fichiers seulement en mode création et si activé */}
+            {/* File upload only in creation mode and if enabled */}
             {!isEditMode && showFileUpload && (
               <fieldset className="fieldset mb-4">
-                <legend className="fieldset-legend">Ajouter des images ou médias (optionnel)</legend>
+                <legend className="fieldset-legend">Add images or media (optional)</legend>
                 <input
                   id={`post-file-${parentPostId ?? "main"}`}
                   type="file"
@@ -356,12 +311,12 @@ export default function PostAdd({
                   onChange={handleFileChange}
                 />{" "}
                 {mediaFiles.length > 0 && (
-                  <div className="text-base-content/60 mt-1 text-sm">{mediaFiles.length} fichier(s) sélectionné(s)</div>
+                  <div className="text-base-content/60 mt-1 text-sm">{mediaFiles.length} file(s) selected</div>
                 )}
               </fieldset>
             )}
 
-            {/* Catégories seulement si activées */}
+            {/* Categories only if enabled */}
             {showCategories && (
               <div className="mt-2">
                 <CategoriesChooser
@@ -377,7 +332,7 @@ export default function PostAdd({
                 className={`btn btn-primary ${isReply ? "btn-sm" : ""} ${isLoading ? "loading" : ""}`}
                 disabled={isLoading || !body.trim()}
               >
-                {!isLoading && <>{isEditMode ? "Modifier" : parentPostId ? "Répondre" : "Publier"}</>}
+                {!isLoading && <>{isEditMode ? "Edit" : parentPostId ? "Reply" : "Post"}</>}
                 {isLoading && <span className="loading loading-spinner loading-sm"></span>}
               </button>
             </div>

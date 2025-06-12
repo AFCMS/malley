@@ -3,17 +3,7 @@ import { useState, useRef } from "react";
 import { queries } from "../../contexts/supabase/supabase";
 
 import TopBar from "../../layouts/TopBar/TopBar";
-import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
-
-interface EmojiData {
-  native: string;
-  id: string;
-  name: string;
-  colons: string;
-  skin: number;
-  unified: string;
-}
+import EmojiPicker from "../../Components/EmojiPicker/EmojiPicker";
 
 const maxAllowedSize = 2 * 1024 * 1024; // 2MB in bytes
 
@@ -24,7 +14,7 @@ export default function Settings() {
 
   const bioTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleEmojiSelect = (emoji: EmojiData) => {
+  const handleEmojiSelect = (emoji: string) => {
     const textarea = bioTextareaRef.current;
     if (!textarea) return;
 
@@ -32,13 +22,13 @@ export default function Settings() {
     const textBefore = bio.substring(0, cursorPos);
     const textAfter = bio.substring(cursorPos);
 
-    const newText = textBefore + emoji.native + textAfter;
+    const newText = textBefore + emoji + textAfter;
     setBio(newText);
 
     // Remettre le focus sur le textarea après insertion
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(cursorPos + emoji.native.length, cursorPos + emoji.native.length);
+      textarea.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
     }, 0);
   };
 
@@ -50,63 +40,36 @@ export default function Settings() {
         {" "}
         <fieldset className="fieldset bg-base-200 border-base-300 rounded-box border p-4">
           <legend className="fieldset-legend">Bio</legend>
-          <div className="join">
-            <div className="relative flex-1">
-              <textarea
-                ref={bioTextareaRef}
-                id="bio"
-                className="textarea join-item w-full resize-none"
-                placeholder="Décrivez-vous en quelques mots..."
-                rows={3}
-                maxLength={500}
-                value={bio}
-                onChange={(e) => {
-                  setBio(e.target.value);
-                }}
-              />
-
-              {/* Bouton emoji */}
-              <div className="dropdown dropdown-bottom dropdown-end absolute right-3 bottom-3 z-50">
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="btn btn-ghost btn-sm hover:bg-base-200 bg-base-100/80 border-base-300/50 h-9 min-h-9 w-9 border p-0 shadow-sm backdrop-blur-sm"
-                  title="Ajouter un emoji"
-                  style={{ fontSize: "16px" }}
-                >
-                  😀
-                </div>
-                <div
-                  tabIndex={0}
-                  className="dropdown-content bg-base-100 rounded-box border-base-300 z-[999] mt-1 overflow-hidden border p-2 shadow-2xl"
-                  style={{ transform: "translateX(-20px)" }}
-                >
-                  <Picker
-                    data={data}
-                    onEmojiSelect={handleEmojiSelect}
-                    theme="light"
-                    locale="fr"
-                    previewPosition="none"
-                    searchPosition="sticky"
-                    navPosition="bottom"
-                    perLine={8}
-                    maxFrequentRows={2}
-                  />
-                </div>
-              </div>
-            </div>
-            <button
-              className="btn join-item"
-              onClick={() => {
-                void queries.profiles.updateBio(bio);
+          <div className="relative">
+            <textarea
+              ref={bioTextareaRef}
+              id="bio"
+              className="textarea w-full resize-none"
+              placeholder="Describe yourself in a few words..."
+              rows={3}
+              maxLength={500}
+              value={bio}
+              onChange={(e) => {
+                setBio(e.target.value);
               }}
-            >
-              Save
-            </button>
+            />
+            <div className="absolute right-3 bottom-3 z-50">
+              <EmojiPicker id="settings-emoji" onEmojiSelect={handleEmojiSelect} />
+            </div>
           </div>
-          <div className="mt-2 flex justify-between text-sm text-gray-500">
-            <span>Ajoutez des emojis pour personnaliser votre bio !</span>
-            <span>{bio.length}/500</span>
+          <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
+            <span>Add emojis to personalize your bio!</span>
+            <div className="flex items-center gap-2">
+              <span>{bio.length}/500</span>
+              <button
+                className="btn"
+                onClick={() => {
+                  void queries.profiles.updateBio(bio);
+                }}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </fieldset>
         <fieldset className="fieldset bg-base-200 border-base-300 rounded-box border p-4">
@@ -136,7 +99,7 @@ export default function Settings() {
                   .updateAvatar(avatarMediaFile)
                   .then(() => {
                     setAvatarMediaFile(null);
-                    alert("Sucess!");
+                    alert("Success!");
                   })
                   .catch((error: unknown) => {
                     alert("Error updating avatar. Please try again.");
@@ -176,7 +139,7 @@ export default function Settings() {
                   .updateBanner(bannerMediaFile)
                   .then(() => {
                     setBannerMediaFile(null);
-                    alert("Sucess!");
+                    alert("Success!");
                   })
                   .catch((error: unknown) => {
                     alert("Error updating banner. Please try again.");

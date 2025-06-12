@@ -18,6 +18,34 @@ interface stdPostInfo {
   profiles: Tables<"profiles">[];
 }
 
+interface PostSearchQuery {
+  has_text?: string[];
+  has_authors?: string[];
+  has_categories?: string[];
+  liked_by?: string[];
+  from_date?: string;
+  to_date?: string;
+  sort_by?: "created_at" | "likes";
+  sort_order?: "asc" | "desc";
+  paging_limit?: number;
+  paging_offset?: number;
+}
+
+interface ProfileSearchQuery {
+  has_handle?: string[];
+  has_bio?: string[];
+  has_categories?: string[];
+  featured_by?: string[];
+  features_user?: string[];
+  likes_posts?: string[];
+  from_date?: string;
+  to_date?: string;
+  sort_by?: "created_at" | "features_count";
+  sort_order?: "asc" | "desc";
+  paging_limit?: number;
+  paging_offset?: number;
+}
+
 const getUser = async () => {
   const {
     data: { user },
@@ -667,6 +695,24 @@ const queries = {
       };
     },
   },
+
+  feed: {
+    postsFeed: async function (params: PostSearchQuery): Promise<Tables<"posts">[]> {
+      const { data, error } = await supabase.rpc("get_posts_feed", {
+        ...params,
+      });
+      if (error) throw error;
+      return data;
+    },
+
+    profilesFeed: async function (params: ProfileSearchQuery): Promise<Tables<"profiles">[]> {
+      const { data, error } = await supabase.rpc("get_profiles_feed", {
+        ...params,
+      });
+      if (error) throw error;
+      return data;
+    },
+  },
 };
 
 const utils = {
@@ -683,33 +729,5 @@ const utils = {
     return profileBannerPlaceholder;
   },
 };
-
-export interface PostSearchQuery {
-  has_text?: string[] | null;
-  has_authors?: string[] | null;
-  has_categories?: string[] | null;
-  liked_by?: string[] | null;
-  from_date?: string | null;
-  to_date?: string | null;
-  sort_by?: "created_at" | "likes";
-  sort_order?: "asc" | "desc";
-  paging_limit?: number | null;
-  paging_offset?: number | null;
-}
-
-export interface ProfileSearchQuery {
-  has_handle?: string[] | null;
-  has_bio?: string[] | null;
-  has_categories?: string[] | null;
-  featured_by?: string[] | null;
-  features_user?: string[] | null;
-  likes_posts?: string[] | null;
-  from_date?: string | null;
-  to_date?: string | null;
-  sort_by?: "created_at" | "features_count";
-  sort_order?: "asc" | "desc";
-  paging_limit?: number | null;
-  paging_offset?: number | null;
-}
 
 export { supabase, queries, utils };

@@ -12,15 +12,12 @@ import {
   HiMapPin,
 } from "react-icons/hi2";
 
-import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries, supabase, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 
 import MediaCarousel from "../MediaCarousel/MediaCarousel";
 import PostAdd from "../PostAdd/PostAdd";
-import Dropdown from "../Dropdown/Dropdown";
-
-import { closePopover } from "../../utils/popover";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 interface PostViewerProps {
   post: Tables<"posts">;
@@ -44,8 +41,8 @@ export default function PostViewer(props: PostViewerProps) {
   const [children, setChildren] = useState<Tables<"posts">[]>([]);
   const [parents, setParents] = useState<Tables<"posts">[]>([]);
   const [isPinning, setIsPinning] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editContent, setEditContent] = useState(props.post.body ?? "");
+  const [showPinAnimation, setShowPinAnimation] = useState(false);
+  const [showBurgerMenu, setShowBurgerMenu] = useState(false);
   const [showChildrenPosts, setShowChildrenPosts] = useState(props.showChildren ?? false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -255,6 +252,7 @@ export default function PostViewer(props: PostViewerProps) {
 
     try {
       setIsPinning(true);
+      setShowPinAnimation(true);
 
       if (isPinned) {
         await queries.profiles.setPinnedPost(null);
@@ -265,30 +263,18 @@ export default function PostViewer(props: PostViewerProps) {
       // Appeler la callback de mise à jour immédiatement
       props.onPinUpdate?.();
 
+      // Animation d'épinglage avec feedback visuel
+      setTimeout(() => {
+        setShowPinAnimation(false);
+      }, 2000);
+
       // Ne pas recharger la page, l'état est déjà mis à jour
     } catch (error) {
       console.error("Erreur lors de l'épinglage:", error);
+      setShowPinAnimation(false);
     } finally {
       setIsPinning(false);
     }
-  };
-
-  const handleEditPost = async () => {
-    if (!editContent.trim()) return;
-
-    try {
-      await queries.posts.edit(props.post.id, editContent);
-      setIsEditMode(false);
-      // Mise à jour du post parent si nécessaire
-      props.onPinUpdate?.();
-    } catch (error) {
-      console.error("Erreur lors de l'édition:", error);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-    setEditContent(props.post.body ?? "");
   };
   const handleLikeToggle = async () => {
     if (!auth.user || isLiking) return;
@@ -402,6 +388,36 @@ export default function PostViewer(props: PostViewerProps) {
           <div className="absolute top-6 left-5.5 h-3 w-3 rounded-full border-2 border-white bg-gray-500"></div>
         )}
 
+        {/* Indicateur de post épinglé */}
+        {isPinned && (
+          <div
+            className={`relative overflow-hidden border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 ${
+              showPinAnimation ? "animate-pulse" : ""
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-md ${
+                  showPinAnimation ? "animate-bounce" : ""
+                }`}
+              >
+                <HiMapPin className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-blue-800">
+                  📌 Post épinglé par @{mainAuthor?.handle ?? "Utilisateur inconnu"}
+                </span>
+                <span className="text-xs text-blue-600">
+                  {showPinAnimation ? "Épinglage en cours..." : "Ce post est mis en avant sur le profil"}
+                </span>
+              </div>
+            </div>
+            {showPinAnimation && (
+              <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-blue-200 to-indigo-200 opacity-70"></div>
+            )}
+          </div>
+        )}
+
         <div
           className={`relative transition-colors ${
             isMainPost
@@ -409,7 +425,7 @@ export default function PostViewer(props: PostViewerProps) {
               : "border-b border-gray-100 px-4 py-3 hover:bg-gray-50/50"
           } ${props.disableRedirect && isMainPost ? "cursor-default" : "cursor-pointer"} ${depth > 0 ? "ml-10" : ""} ${
             props.highlightPostId === props.post.id ? "border-yellow-200 bg-yellow-50" : ""
-          } ${isPinned ? "border-b-4 border-blue-500" : ""}`}
+          }`}
           onClick={handlePostClick}
         >
           {/* Menu burger pour l'auteur */}
@@ -417,35 +433,47 @@ export default function PostViewer(props: PostViewerProps) {
             <div className="absolute top-3 right-3 z-10">
               <button
                 className="btn btn-ghost btn-sm btn-circle hover:bg-gray-100"
-                popoverTarget={`popover-post-${props.post.id}`}
-                style={{ anchorName: `--popover-post-${props.post.id}` } as React.CSSProperties}
                 onClick={(e) => {
                   e.stopPropagation();
+                  setShowBurgerMenu(!showBurgerMenu);
                 }}
               >
                 <HiOutlineEllipsisHorizontal className="h-5 w-5" />
               </button>
-              <Dropdown id={`popover-post-${props.post.id}`}>
-                {[
-                  {
-                    title: "Modify",
-                    icon: HiOutlinePencil,
-                    onClick: () => {
-                      setIsEditMode(true);
-                      closePopover(`popover-post-${props.post.id}`)();
-                    },
-                  },
-                  {
-                    title: isPinned ? "Unpin" : "Pin",
-                    icon: isPinned ? HiMapPin : HiOutlineMapPin,
-                    onClick: () => {
-                      void handlePinPost();
-                      closePopover(`popover-post-${props.post.id}`)();
-                    },
-                    disabled: isPinning,
-                  },
-                ]}
-              </Dropdown>
+
+              {showBurgerMenu && (
+                <div className="absolute right-0 z-20 mt-2 w-52 rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <div className="py-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void navigate(`/post/${props.post.id}/edit`);
+                        setShowBurgerMenu(false);
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-gray-100"
+                    >
+                      <HiOutlinePencil className="h-4 w-4" />
+                      Modifier
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handlePinPost();
+                        setShowBurgerMenu(false);
+                      }}
+                      disabled={isPinning}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-gray-100 disabled:opacity-50"
+                    >
+                      {isPinned ? (
+                        <HiMapPin className="h-4 w-4 text-blue-500" />
+                      ) : (
+                        <HiOutlineMapPin className="h-4 w-4" />
+                      )}
+                      {isPinned ? "Désépingler" : "Épingler"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div className="flex items-start gap-3">
@@ -483,15 +511,6 @@ export default function PostViewer(props: PostViewerProps) {
                 <span className="text-gray-500" title={dateCreation.toLocaleDateString()}>
                   {formatPostDate(dateCreation)}
                 </span>
-                {isPinned && (
-                  <>
-                    <span className="text-gray-500">·</span>
-                    <span className="flex items-center gap-1 text-gray-500">
-                      <HiOutlineMapPin className="h-3 w-3" />
-                      Pinned
-                    </span>
-                  </>
-                )}
               </div>
 
               {/* Co-authors */}
@@ -520,48 +539,12 @@ export default function PostViewer(props: PostViewerProps) {
               )}
 
               {/* Post content */}
-              {isEditMode ? (
-                <div className="mt-2">
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => {
-                      setEditContent(e.target.value);
-                    }}
-                    className="min-h-20 w-full resize-none rounded-lg border border-gray-300 p-3 focus:border-transparent focus:ring-2 focus:ring-blue-500"
-                    placeholder="Modifiez votre post..."
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  />
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleEditPost();
-                      }}
-                      className="btn btn-primary"
-                    >
-                      Sauvegarder
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCancelEdit();
-                      }}
-                      className="btn btn-secondary"
-                    >
-                      Annuler
-                    </button>
-                  </div>
+              {props.post.body && (
+                <div
+                  className={`mt-2 break-words whitespace-pre-wrap text-gray-900 ${isMainPost ? "text-lg leading-relaxed" : ""}`}
+                >
+                  {props.post.body}
                 </div>
-              ) : (
-                props.post.body && (
-                  <div
-                    className={`mt-2 break-words whitespace-pre-wrap text-gray-900 ${isMainPost ? "text-lg leading-relaxed" : ""}`}
-                  >
-                    {props.post.body}
-                  </div>
-                )
               )}
 
               {/* Media carousel */}

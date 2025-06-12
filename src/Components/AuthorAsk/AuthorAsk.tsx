@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { HiOutlineUserPlus, HiOutlineMagnifyingGlass, HiOutlineXMark } from "react-icons/hi2";
+import {
+  HiOutlineUserPlus,
+  HiOutlineMagnifyingGlass,
+  HiOutlineXMark,
+  HiOutlineUserMinus,
+  HiOutlineExclamationTriangle,
+} from "react-icons/hi2";
 import { Tables } from "../../contexts/supabase/database";
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
@@ -30,7 +36,11 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
   const [inviteSuccess, setInviteSuccess] = useState(false);
   const [parentPostAuthor, setParentPostAuthor] = useState<Tables<"profiles"> | null>(null);
   const [loadingParentAuthor, setLoadingParentAuthor] = useState(false);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false); // Fonction pour charger les profils déjà invités pour ce post
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isAbandoning, setIsAbandoning] = useState(false);
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [isLastAuthor, setIsLastAuthor] = useState(false);
+  const [authors, setAuthors] = useState<Tables<"profiles">[]>([]); // Fonction pour charger les profils déjà invités pour ce post
   const loadAlreadyInvitedProfiles = useCallback(async (): Promise<Set<string>> => {
     if (!auth.user) return new Set();
 
@@ -111,7 +121,6 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
 
     void loadSuggestions();
   }, [showSearchModal, loadSuggestedProfiles, loadAlreadyInvitedProfiles]);
-
   // Récupérer l'auteur du post parent si c'est une réponse
   useEffect(() => {
     async function fetchParentPostAuthor() {
@@ -139,6 +148,28 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
 
     void fetchParentPostAuthor();
   }, [post.parent_post]);
+
+  // Charger les auteurs du post pour vérifier si l'utilisateur est le dernier auteur
+  useEffect(() => {
+    async function fetchAuthors() {
+      try {
+        const postAuthors = await queries.authors.ofPost(post.id);
+        setAuthors(postAuthors);
+
+        // Vérifier si l'utilisateur est le dernier auteur
+        if (auth.user && postAuthors.length === 1 && postAuthors[0]?.id === auth.user.id) {
+          setIsLastAuthor(true);
+        } else {
+          setIsLastAuthor(false);
+        }
+      } catch {
+        setAuthors([]);
+        setIsLastAuthor(false);
+      }
+    }
+
+    void fetchAuthors();
+  }, [post.id, auth.user]);
 
   const handleSearchUsers = async (query: string) => {
     if (query.trim().length < 2) {
@@ -169,7 +200,6 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
       return newSet;
     });
   };
-
   const handleInviteSelectedUsers = async () => {
     if (selectedProfiles.size === 0) return;
 
@@ -197,8 +227,30 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
     }
   };
 
-  // Fonction supprimée car non utilisée - utilisation de handleInviteSelectedUsers à la place
+  const handleAbandonOwnership = async () => {
+    if (!auth.user || isAbandoning) return;
 
+    try {
+      setIsAbandoning(true);
+
+      // Abandon de la propriété
+      await queries.authors.remove(post.id);
+
+      // Animation de succès
+      setShowAbandonConfirm(false);
+
+      // Rafraîchir la page pour actualiser visuellement
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Erreur lors de l'abandon de propriété:", error);
+    } finally {
+      setIsAbandoning(false);
+    }
+  };
+
+  // Fonction supprimée car non utilisée - utilisation de handleInviteSelectedUsers à la place
   const dateCreation = new Date(post.created_at);
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("fr-FR", {
@@ -207,6 +259,9 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
       year: "numeric",
     });
   };
+
+  // Vérifier si l'utilisateur connecté est auteur de ce post
+  const isAuthor = auth.user && authors.some((author) => author.id === auth.user?.id);
 
   return (
     <>
@@ -225,18 +280,34 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
                   <span>💬 Réponse à un autre post</span>
                 )}
               </div>
+            )}{" "}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setShowSearchModal(true);
+              }}
+              className="btn btn-sm btn-primary gap-2"
+              disabled={inviteSuccess}
+            >
+              <HiOutlineUserPlus className="h-4 w-4" />
+              {inviteSuccess ? "Invité !" : "Ajouter un auteur"}
+            </button>
+
+            {/* Bouton d'abandon de propriété - affiché uniquement si l'utilisateur est auteur */}
+            {isAuthor && (
+              <button
+                onClick={() => {
+                  setShowAbandonConfirm(true);
+                }}
+                className="btn btn-sm btn-outline btn-warning gap-2"
+                disabled={isAbandoning}
+              >
+                <HiOutlineUserMinus className="h-4 w-4" />
+                {isAbandoning ? "Abandon..." : "Abandonner"}
+              </button>
             )}
           </div>
-          <button
-            onClick={() => {
-              setShowSearchModal(true);
-            }}
-            className="btn btn-sm btn-primary gap-2"
-            disabled={inviteSuccess}
-          >
-            <HiOutlineUserPlus className="h-4 w-4" />
-            {inviteSuccess ? "Invité !" : "Ajouter un auteur"}
-          </button>
         </div>
 
         {/* Contenu du post */}
@@ -268,7 +339,6 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
                 <HiOutlineXMark className="h-5 w-5" />
               </button>
             </div>
-
             {/* Indicateur de sélection multiple */}
             {selectedProfiles.size > 0 && (
               <div className="mb-4 rounded-lg bg-blue-50 p-3">
@@ -288,7 +358,6 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
                 </div>
               </div>
             )}
-
             {/* Barre de recherche */}
             <div className="relative mb-4">
               <input
@@ -304,7 +373,6 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
               />
               <HiOutlineMagnifyingGlass className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
             </div>
-
             {/* Résultats de recherche */}
             <div className="max-h-60 overflow-y-auto">
               {isSearching ? (
@@ -347,7 +415,6 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
                 <div className="py-4 text-center text-gray-500">Tapez au moins 2 caractères pour rechercher</div>
               )}
             </div>
-
             {/* Suggestions de profils */}
             {searchQuery.length < 2 && (
               <div className="mt-4">
@@ -387,7 +454,6 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
                 )}
               </div>
             )}
-
             {/* Boutons d'action */}
             <div className="mt-6 flex gap-2">
               <button
@@ -410,6 +476,76 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
                   <div className="loading loading-spinner loading-xs"></div>
                 ) : (
                   `Inviter ${selectedProfiles.size > 0 ? selectedProfiles.size.toString() : ""} personne${selectedProfiles.size > 1 ? "s" : ""}`
+                )}
+              </button>
+            </div>{" "}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation d'abandon de propriété */}
+      {showAbandonConfirm && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+                <HiOutlineExclamationTriangle className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Abandonner la propriété</h3>
+                <p className="text-sm text-gray-500">Cette action est irréversible</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              {isLastAuthor ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <HiOutlineExclamationTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+                    <div>
+                      <p className="text-sm font-medium text-red-800">Attention : Suppression du post</p>
+                      <p className="mt-1 text-sm text-red-700">
+                        Vous êtes le dernier auteur de ce post. L&apos;abandonner entraînera sa suppression définitive.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-700">
+                  Vous abandonnerez la propriété de ce post. Vous ne pourrez plus le modifier ni le supprimer.
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowAbandonConfirm(false);
+                }}
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  void handleAbandonOwnership();
+                }}
+                disabled={isAbandoning}
+                className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
+                  isLastAuthor
+                    ? "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                    : "bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400"
+                } disabled:cursor-not-allowed`}
+              >
+                {isAbandoning ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    {isLastAuthor ? "Suppression..." : "Abandon..."}
+                  </div>
+                ) : isLastAuthor ? (
+                  "Supprimer le post"
+                ) : (
+                  "Abandonner"
                 )}
               </button>
             </div>

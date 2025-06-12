@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { HiCalendar, HiMegaphone, HiOutlineEllipsisHorizontal } from "react-icons/hi2";
-import TopBar from "../../layouts/TopBar/TopBar";
-import PostViewer from "../../Components/PostViewer/PostViewer";
+import { HiCalendar, HiOutlineEllipsisHorizontal, HiOutlineMegaphone, HiOutlineTag } from "react-icons/hi2";
+
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
+
+import TopBar from "../../layouts/TopBar/TopBar";
+import PostViewer from "../../Components/PostViewer/PostViewer";
+import Dropdown from "../../Components/Dropdown/Dropdown";
+
 import { formatDate } from "../../utils/date";
 import { closePopover } from "../../utils/popover";
 import { useHandle } from "../../utils/routing";
@@ -155,16 +159,12 @@ const ProfileViewer = () => {
             >
               <HiOutlineEllipsisHorizontal className="h-5 w-5" />
             </button>
-            <ul
-              className="dropdown dropdown-top dropdown-end menu rounded-box bg-base-100 mb-2 w-52 shadow-sm"
-              popover="auto"
-              id="popover-profile"
-              style={{ positionAnchor: "--popover-profile" } as React.CSSProperties}
-            >
-              <li>
-                <button
-                  disabled={!auth.isAuthenticated || auth.user?.id === profile.id}
-                  onClick={() => {
+            <Dropdown id="popover-profile">
+              {[
+                {
+                  title: isFeaturing ? "Unfeature" : "Feature",
+                  icon: HiOutlineMegaphone,
+                  onClick: () => {
                     if (auth.isAuthenticated) {
                       if (isFeaturing) {
                         void queries.features.remove(profile.id);
@@ -177,25 +177,20 @@ const ProfileViewer = () => {
                     } else {
                       void navigate("/login");
                     }
-                  }}
-                >
-                  <HiMegaphone />
-                  {isFeaturing ? "Unfeature" : "Feature"}
-                </button>
-              </li>
-              <li>
-                <button
-                  className=""
-                  hidden={auth.user?.id !== profile.id}
-                  onClick={() => {
+                  },
+                  disabled: !auth.isAuthenticated || auth.user?.id === profile.id,
+                },
+                {
+                  title: "Categories",
+                  icon: HiOutlineTag,
+                  onClick: () => {
                     void navigate("/profile/categories");
                     closePopover("popover-profile")();
-                  }}
-                >
-                  Catégories
-                </button>
-              </li>
-            </ul>
+                  },
+                  disabled: auth.user?.id !== profile.id,
+                },
+              ]}
+            </Dropdown>
             <button
               className={"btn btn-sm " + (isFollowing ? "btn-secondary" : "btn-primary")}
               hidden={auth.user?.id === profile.id}

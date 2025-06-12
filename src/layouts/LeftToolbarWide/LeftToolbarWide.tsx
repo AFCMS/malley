@@ -1,4 +1,6 @@
 import {
+  HiOutlineArrowLeftStartOnRectangle,
+  HiOutlineCog6Tooth,
   HiOutlineEllipsisHorizontal,
   HiOutlineHome,
   HiOutlineMagnifyingGlass,
@@ -8,9 +10,9 @@ import {
 } from "react-icons/hi2";
 import { Link, useNavigate } from "react-router";
 
-import { closePopover } from "../../utils/popover";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { utils } from "../../contexts/supabase/supabase";
+import Dropdown from "../../Components/Dropdown/Dropdown";
 
 export default function LeftToolbarWide() {
   const auth = useAuth();
@@ -90,28 +92,22 @@ export default function LeftToolbarWide() {
               >
                 <HiOutlineEllipsisHorizontal className="h-5 w-5" />
               </button>
-              <ul
-                className="dropdown dropdown-top dropdown-end menu rounded-box bg-base-100 mb-2 w-52 shadow-sm"
-                popover="auto"
-                id="popover-left-toolbar-profile"
-                style={{ positionAnchor: "--popover-left-toolbar-profile" } as React.CSSProperties}
-              >
-                <li>
-                  <button
-                    className=""
-                    onClick={() => {
+              <Dropdown id="popover-left-toolbar-profile">
+                {[
+                  {
+                    title: "Logout",
+                    icon: HiOutlineArrowLeftStartOnRectangle,
+                    onClick: () => {
                       void auth.logout();
-                    }}
-                  >
-                    Logout
-                  </button>
-                </li>
-                <li>
-                  <Link to="/settings" onClick={closePopover("popover-left-toolbar-profile")}>
-                    Settings
-                  </Link>
-                </li>
-              </ul>
+                    },
+                  },
+                  {
+                    title: "Settings",
+                    icon: HiOutlineCog6Tooth,
+                    href: "/settings",
+                  },
+                ]}
+              </Dropdown>
             </div>
           ) : (
             <div className="flex gap-2">

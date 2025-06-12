@@ -1,8 +1,10 @@
 import { Link } from "react-router";
+import { HiOutlineArrowLeftStartOnRectangle, HiOutlineCog6Tooth } from "react-icons/hi2";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { utils } from "../../contexts/supabase/supabase";
-import { closePopover } from "../../utils/popover";
+
+import Dropdown from "../../Components/Dropdown/Dropdown";
 
 export default function TopNavbar() {
   const auth = useAuth();
@@ -21,29 +23,22 @@ export default function TopNavbar() {
                 <img src={utils.getAvatarUrl(auth.profile)} />
               </div>
             </button>
-            <ul
-              tabIndex={0}
-              className="menu menu-sm dropdown dropdown-bottom dropdown-start bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
-              popover="auto"
-              id="popover-top-navbar-profile"
-              style={{ positionAnchor: "--popover-top-navbar-profile" } as React.CSSProperties}
-            >
-              <li>
-                <button
-                  className=""
-                  onClick={() => {
+            <Dropdown id="popover-top-navbar-profile" bottomRight={true}>
+              {[
+                {
+                  title: "Logout",
+                  icon: HiOutlineArrowLeftStartOnRectangle,
+                  onClick: () => {
                     void auth.logout();
-                  }}
-                >
-                  Logout
-                </button>
-              </li>
-              <li>
-                <Link to="/settings" onClick={closePopover("popover-top-navbar-profile")}>
-                  Settings
-                </Link>
-              </li>
-            </ul>
+                  },
+                },
+                {
+                  title: "Settings",
+                  icon: HiOutlineCog6Tooth,
+                  href: "/settings",
+                },
+              ]}
+            </Dropdown>
           </div>
         )}
       </div>

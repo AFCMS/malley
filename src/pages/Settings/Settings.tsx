@@ -99,7 +99,7 @@ export default function Settings() {
                   .updateAvatar(avatarMediaFile)
                   .then(() => {
                     setAvatarMediaFile(null);
-                    alert("Success!");
+                    alert("Avatar updated successfully!");
                   })
                   .catch((error: unknown) => {
                     alert("Error updating avatar. Please try again.");

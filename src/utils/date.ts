@@ -49,3 +49,23 @@ export function formatDatePost(date: Date): string {
     });
   }
 }
+
+/**
+ * Sorts an array of posts by creation date, with the newest posts first.
+ *
+ * @param posts - Array of posts with a created_at property
+ * @returns A new sorted array (does not mutate the original array)
+ */
+export function sortPostsByDateDesc<T extends { created_at: string }>(posts: T[]): T[] {
+  return [...posts].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+/**
+ * Sorts an array of posts by creation date, with the oldest posts first.
+ *
+ * @param posts - Array of posts with a created_at property
+ * @returns A new sorted array (does not mutate the original array)
+ */
+export function sortPostsByDateAsc<T extends { created_at: string }>(posts: T[]): T[] {
+  return [...posts].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+}

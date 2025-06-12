@@ -392,7 +392,6 @@ const ProfileViewer = () => {
           {/* Posts épinglés en premier */}
           {pinnedPosts.length > 0 && (
             <div className="pinned-posts mb-4">
-              <h2 className="mb-2 px-4 text-sm font-semibold text-gray-700">Publications épinglées</h2>
               <div className="border-t border-gray-200">
                 {pinnedPosts.map((post) => (
                   <PostViewer

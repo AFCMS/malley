@@ -520,38 +520,38 @@ export default function SwipePage() {
         )}
 
         <div className="relative flex h-[calc(100vh-280px)] flex-col">
-          <div
-            className="pointer-events-none absolute top-0 right-0 bottom-0 left-0 z-[1] flex items-center justify-center rounded-lg transition-opacity duration-300 ease-out"
-            style={{
-              backgroundColor,
-              opacity: backgroundOpacity,
-            }}
-          >
-            {isDragging && Math.abs(dragOffset.x) > 50 && !dailyLimitReached && (
-              <div
-                className="text-6xl font-black transition-transform duration-100 ease-out text-shadow-lg"
-                style={{
-                  color: "white",
-                  textShadow: "3px 3px 6px rgba(0,0,0,0.5)",
-                  transform: `scale(${Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300).toString()})`,
-                }}
-              >
-                {dragOffset.x > 0 ? (
-                  <span className="flex items-center gap-2">
-                    <HiHeart className="size-16" />
-                    FOLLOW
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <HiXMark className="size-16" />
-                    PASS
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
           <div className="relative mb-5 flex-1">
+            <div
+              className="pointer-events-none absolute top-0 right-0 bottom-0 left-0 z-[10] flex items-center justify-center rounded-lg transition-opacity duration-300 ease-out"
+              style={{
+                backgroundColor,
+                opacity: backgroundOpacity,
+              }}
+            >
+              {isDragging && Math.abs(dragOffset.x) > 50 && !dailyLimitReached && (
+                <div
+                  className="text-6xl font-black transition-transform duration-100 ease-out text-shadow-lg"
+                  style={{
+                    color: "white",
+                    textShadow: "3px 3px 6px rgba(0,0,0,0.5)",
+                    transform: `scale(${Math.min(1.5, 1 + Math.abs(dragOffset.x) / 300).toString()})`,
+                  }}
+                >
+                  {dragOffset.x > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <HiHeart className="size-16" />
+                      FOLLOW
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <HiXMark className="size-16" />
+                      PASS
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div
               key={currentProfileId}
               className="relative z-[2] h-full transition-[transform,opacity] duration-300 ease-out select-none"
@@ -567,22 +567,7 @@ export default function SwipePage() {
             </div>
           </div>
 
-          <div
-            className=""
-            style={{
-              position: "sticky",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              zIndex: 10,
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(5px)",
-              padding: "15px 0",
-            }}
-          >
+          <div className="z-20 flex items-center justify-around py-4">
             <button
               onClick={handlePass}
               disabled={isLoading || isAnimating || dailyLimitReached}

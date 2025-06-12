@@ -615,20 +615,20 @@ const utils = {
   },
 };
 
-export interface postSearchQuery {
+export interface PostSearchQuery {
   has_text?: string[] | null;
   has_authors?: string[] | null;
   has_categories?: string[] | null;
   liked_by?: string[] | null;
   from_date?: string | null;
   to_date?: string | null;
-  sort_by?: "created_at" | "popularity" | "likes";
+  sort_by?: "created_at" | "likes";
   sort_order?: "asc" | "desc";
   paging_limit?: number | null;
   paging_offset?: number | null;
 }
 
-export interface profileSearchQuery {
+export interface ProfileSearchQuery {
   has_handle?: string[] | null;
   has_bio?: string[] | null;
   has_categories?: string[] | null;
@@ -637,7 +637,7 @@ export interface profileSearchQuery {
   likes_posts?: string[] | null;
   from_date?: string | null;
   to_date?: string | null;
-  sort_by?: "created_at" | "popularity" | "likes";
+  sort_by?: "created_at" | "features_count";
   sort_order?: "asc" | "desc";
   paging_limit?: number | null;
   paging_offset?: number | null;

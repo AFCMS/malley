@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { HiCalendar, HiOutlineEllipsisHorizontal, HiOutlineMegaphone, HiOutlineTag } from "react-icons/hi2";
+import {
+  HiCalendar,
+  HiOutlineEllipsisHorizontal,
+  HiOutlineMegaphone,
+  HiOutlineShare,
+  HiOutlineTag,
+} from "react-icons/hi2";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries, utils } from "../../contexts/supabase/supabase";
@@ -188,6 +194,24 @@ const ProfileViewer = () => {
                     closePopover("popover-profile")();
                   },
                   disabled: auth.user?.id !== profile.id,
+                },
+                {
+                  title: "Share",
+                  icon: HiOutlineShare,
+                  onClick: () => {
+                    const shareUrl = `${window.location.origin}/@${profile.handle}`;
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    if (navigator.share) {
+                      void navigator.share({
+                        url: shareUrl,
+                      });
+                    } else {
+                      void navigator.clipboard.writeText(shareUrl).then(() => {
+                        alert("Profile link copied to clipboard!");
+                      });
+                    }
+                    closePopover("popover-profile")();
+                  },
                 },
               ]}
             </Dropdown>

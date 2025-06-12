@@ -3,6 +3,7 @@ import {
   HiOutlineHome,
   HiOutlineMagnifyingGlass,
   HiOutlinePencil,
+  HiOutlineSquare2Stack,
   HiOutlineUser,
 } from "react-icons/hi2";
 import { Link, useNavigate } from "react-router";
@@ -50,6 +51,10 @@ export default function LeftToolbarWide() {
               >
                 <HiOutlineUser className="h-5 opacity-50" />
                 Profile
+              </Link>
+              <Link className="sidebarlink" to={auth.isAuthenticated && auth.profile ? `/swipe` : "/login"}>
+                <HiOutlineSquare2Stack className="h-5 opacity-50" />
+                Discover
               </Link>
               <Link
                 className="btn flex shrink-0 flex-nowrap items-center justify-start gap-1.5 p-2 align-middle text-xl font-normal outline-offset-2 select-none"

@@ -21,6 +21,7 @@ import MediaCarousel from "../MediaCarousel/MediaCarousel";
 import PostAdd from "../PostAdd/PostAdd";
 // Removed unused import Dropdown
 import { useAuth } from "../../contexts/auth/AuthContext";
+import Dropdown from "../Dropdown/Dropdown";
 
 // Removed unused import closePopover
 
@@ -52,8 +53,7 @@ export default function PostViewer(props: PostViewerProps) {
   const [isLiking, setIsLiking] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
-  // State for burger menu visibility
-  const [showBurgerMenu, setShowBurgerMenu] = useState(false);
+
   const [isLastAuthor, setIsLastAuthor] = useState(false);
 
   const auth = useAuth();
@@ -468,59 +468,33 @@ export default function PostViewer(props: PostViewerProps) {
                 style={{ anchorName: `--popover-post-${props.post.id}` } as React.CSSProperties}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowBurgerMenu((prev) => !prev);
                 }}
               >
                 <HiOutlineEllipsisHorizontal className="h-5 w-5" />
               </button>
-
-              {showBurgerMenu && (
-                <div className="absolute right-0 z-20 mt-2 w-52 rounded-lg border border-gray-200 bg-white shadow-lg">
-                  <div className="py-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void navigate(`/post/${props.post.id}/edit`);
-                        setShowBurgerMenu(false);
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-gray-100"
-                    >
-                      <HiOutlinePencil className="h-4 w-4" />
-                      Modifier
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handlePinPost();
-                        setShowBurgerMenu(false);
-                      }}
-                      disabled={isPinning}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-gray-100 disabled:opacity-50"
-                    >
-                      {isPinned ? (
-                        <HiMapPin className="h-4 w-4 text-blue-500" />
-                      ) : (
-                        <HiOutlineMapPin className="h-4 w-4" />
-                      )}
-                      {isPinned ? "Désépingler" : "Épingler"}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowAbandonConfirm(true);
-                        setShowBurgerMenu(false);
-                      }}
-                      disabled={isAbandoning}
-                      className={`flex w-full items-center gap-2 px-4 py-2 text-left transition-all duration-200 hover:bg-gray-100 disabled:opacity-50 ${
-                        isAbandoning ? "animate-pulse bg-orange-50" : ""
-                      }`}
-                    >
-                      <HiOutlineUserMinus className={`h-4 w-4 ${isAbandoning ? "animate-spin" : ""}`} />
-                      {isAbandoning ? "Abandon en cours..." : "Abandonner la propriété"}
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Dropdown id={`popover-post-${props.post.id}`} placement="bottom-end">
+                {[
+                  {
+                    title: "Edit",
+                    icon: HiOutlinePencil,
+                    href: `/post/${props.post.id}/edit`,
+                  },
+                  {
+                    title: isPinned ? "Unpin" : "Pin",
+                    icon: isPinned ? HiMapPin : HiOutlineMapPin,
+                    onClick: () => {
+                      void handlePinPost();
+                    },
+                  },
+                  {
+                    title: isAbandoning ? "Abandoning..." : "Abandon ownership",
+                    icon: HiOutlineUserMinus,
+                    onClick() {
+                      setShowAbandonConfirm(true);
+                    },
+                  },
+                ]}
+              </Dropdown>
             </div>
           )}
           <div className="flex items-start gap-3">

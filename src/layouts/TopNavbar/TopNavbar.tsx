@@ -23,7 +23,7 @@ export default function TopNavbar() {
                 <img src={utils.getAvatarUrl(auth.profile)} />
               </div>
             </button>
-            <Dropdown id="popover-top-navbar-profile" bottomRight={true}>
+            <Dropdown id="popover-top-navbar-profile" placement="bottom-start">
               {[
                 {
                   title: "Logout",

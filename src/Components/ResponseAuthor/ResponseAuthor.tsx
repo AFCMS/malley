@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { HiOutlineCheck, HiOutlineClock } from "react-icons/hi2";
+import { HiOutlineCheck, HiOutlineClock, HiOutlineXMark } from "react-icons/hi2";
 import { Tables } from "../../contexts/supabase/database";
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
@@ -91,6 +91,25 @@ export default function ResponseAuthor() {
     }
   };
 
+  const handleRefuseRequest = async (postId: string) => {
+    setProcessingIds((prev) => new Set(prev).add(postId));
+    try {
+      const success = await queries.pendingAuthors.refuse(postId);
+      if (success) {
+        // Retirer la demande de la liste
+        setPendingRequests((prev) => prev.filter((req) => req.post !== postId));
+      }
+    } catch (error) {
+      console.error("Erreur lors du refus:", error);
+    } finally {
+      setProcessingIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(postId);
+        return newSet;
+      });
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("fr-FR", {
@@ -162,7 +181,7 @@ export default function ResponseAuthor() {
               {/* Date de la demande */}
               <div className="mb-3 text-xs text-gray-500">Demandé le {formatDate(request.created_at)}</div>
 
-              {/* Boutons d'action - Seulement accepter pour l'instant */}
+              {/* Boutons d'action */}
               <div className="flex gap-2">
                 <button
                   onClick={() => {
@@ -179,8 +198,20 @@ export default function ResponseAuthor() {
                   Accepter
                 </button>
 
-                {/* Note: Bouton refuser retiré temporairement */}
-                <div className="text-xs text-gray-500 italic">(Fonction refuser en développement)</div>
+                <button
+                  onClick={() => {
+                    void handleRefuseRequest(request.post);
+                  }}
+                  disabled={processingIds.has(request.post)}
+                  className="btn btn-sm btn-error gap-2"
+                >
+                  {processingIds.has(request.post) ? (
+                    <div className="loading loading-spinner loading-xs"></div>
+                  ) : (
+                    <HiOutlineXMark className="h-4 w-4" />
+                  )}
+                  Refuser
+                </button>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import {
   HiOutlineArrowPath,
   HiOutlineBookmark,
   HiOutlineHeart,
+  HiHeart,
   HiOutlineEllipsisHorizontal,
   HiOutlinePencil,
   HiOutlineMapPin,
@@ -46,6 +47,9 @@ export default function PostViewer(props: PostViewerProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editContent, setEditContent] = useState(props.post.body ?? "");
   const [showChildrenPosts, setShowChildrenPosts] = useState(props.showChildren ?? false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   const auth = useAuth();
   const navigate = useNavigate();
@@ -84,12 +88,41 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchCategories();
   }, [props.post.id]);
 
-  // Récupération des posts enfants
+  // Récupération des posts enfants avec tri par likes
   useEffect(() => {
     async function fetchChildren() {
       try {
         const childPosts = await queries.posts.getChildren(props.post.id);
-        setChildren(childPosts);
+
+        // Pour chaque enfant, récupérer le nombre de likes
+        const childrenWithLikes = await Promise.all(
+          childPosts.map(async (child) => {
+            try {
+              const likes = await queries.like.byWho(child.id);
+              return {
+                ...child,
+                likeCount: likes.length,
+              };
+            } catch {
+              return {
+                ...child,
+                likeCount: 0,
+              };
+            }
+          }),
+        );
+
+        // Trier par nombre de likes (décroissant), puis par date de création (plus récent en cas d'égalité)
+        const sortedChildren = childrenWithLikes.sort((a, b) => {
+          // D'abord par nombre de likes (décroissant)
+          if (b.likeCount !== a.likeCount) {
+            return b.likeCount - a.likeCount;
+          }
+          // En cas d'égalité, par date de création (plus récent d'abord)
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+        setChildren(sortedChildren);
       } catch {
         setChildren([]);
       }
@@ -148,6 +181,45 @@ export default function PostViewer(props: PostViewerProps) {
 
     void fetchMediaUrls();
   }, [props.post.id]);
+
+  // Récupération des likes
+  useEffect(() => {
+    async function fetchLikes() {
+      try {
+        const likedByUsers = await queries.like.byWho(props.post.id);
+        setLikeCount(likedByUsers.length);
+
+        if (auth.user) {
+          const userLikesPost = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
+          setIsLiked(userLikesPost);
+        } else {
+          setIsLiked(false);
+        }
+      } catch (error) {
+        console.error("[ERROR] Erreur lors de la récupération des likes:", error);
+        setLikeCount(0);
+        setIsLiked(false);
+      }
+    }
+
+    void fetchLikes();
+  }, [props.post.id, auth.user]);
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (showBurgerMenu) {
+        setShowBurgerMenu(false);
+      }
+    };
+
+    if (showBurgerMenu) {
+      document.addEventListener("click", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [showBurgerMenu]);
 
   const handleReplySuccess = () => {
     setShowReplyForm(false);
@@ -217,6 +289,52 @@ export default function PostViewer(props: PostViewerProps) {
   const handleCancelEdit = () => {
     setIsEditMode(false);
     setEditContent(props.post.body ?? "");
+  };
+  const handleLikeToggle = async () => {
+    if (!auth.user || isLiking) return;
+
+    try {
+      setIsLiking(true);
+      console.log(
+        `[DEBUG] Like toggle - Post: ${props.post.id}, Current isLiked: ${String(isLiked)}, User: ${auth.user.id}`,
+      );
+
+      if (isLiked) {
+        console.log(`[DEBUG] Removing like for user ${auth.user.id} on post ${props.post.id}...`);
+
+        // Vérifier avant suppression
+        const beforeRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
+        console.log(`[DEBUG] Before remove - User likes post:`, beforeRemove);
+
+        const result = await queries.like.remove(props.post.id);
+        console.log(`[DEBUG] Remove function returned:`, result);
+
+        // Vérifier après suppression
+        const afterRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
+        console.log(`[DEBUG] After remove - User likes post:`, afterRemove);
+
+        if (!afterRemove) {
+          setLikeCount((prev) => prev - 1);
+          setIsLiked(false);
+          console.log(`[DEBUG] Like successfully removed from database`);
+        } else {
+          console.error(`[ERROR] Like was not removed from database!`);
+        }
+      } else {
+        console.log(`[DEBUG] Adding like for user ${auth.user.id} on post ${props.post.id}...`);
+        const result = await queries.like.add(props.post.id);
+        console.log(`[DEBUG] Add result:`, result);
+        setLikeCount((prev) => prev + 1);
+        setIsLiked(true);
+        console.log(`[DEBUG] Like added, new state: isLiked=true, count=`, likeCount + 1);
+      }
+    } catch (error) {
+      console.error("[ERROR] Erreur lors du like/unlike:", error);
+      // En cas d'erreur, on remet l'état d'origine
+      console.log(`[DEBUG] Erreur, remise à l'état original`);
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const formatPostDate = (date: Date): string => {
@@ -376,6 +494,31 @@ export default function PostViewer(props: PostViewerProps) {
                 )}
               </div>
 
+              {/* Co-authors */}
+              {authors.length > 1 && (
+                <div className={`mt-1 ${isMainPost ? "text-sm" : "text-xs"} text-gray-600`}>
+                  <span>co-écrit par </span>
+                  {authors
+                    .filter((author) => author.id !== mainAuthor?.id)
+                    .map((coAuthor, index, filteredAuthors) => (
+                      <span key={coAuthor.id}>
+                        <span
+                          className="cursor-pointer font-medium text-gray-700 hover:text-blue-600 hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void navigate(`/@${coAuthor.handle}`);
+                          }}
+                        >
+                          @{coAuthor.handle}
+                        </span>
+                        {index < filteredAuthors.length - 1 && (
+                          <span>{index === filteredAuthors.length - 2 ? " et " : ", "}</span>
+                        )}
+                      </span>
+                    ))}
+                </div>
+              )}
+
               {/* Post content */}
               {isEditMode ? (
                 <div className="mt-2">
@@ -464,21 +607,37 @@ export default function PostViewer(props: PostViewerProps) {
                 </button>
 
                 {/* Bouton pour afficher les réponses - uniquement pour les posts enfants sur ViewPost */}
-                {props.allowExpandChildren &&
-                  !isMainPost &&
-                  !showChildrenPosts &&
-                  !props.showChildren &&
-                  children.length > 0 && (
-                    <button
-                      className="text-xs text-blue-600 underline transition-colors hover:text-blue-800"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowChildrenPosts(true);
-                      }}
-                    >
-                      Afficher les {children.length.toString()} réponse{children.length > 1 ? "s" : ""}
-                    </button>
-                  )}
+                {(() => {
+                  const shouldShow =
+                    props.allowExpandChildren &&
+                    !isMainPost &&
+                    !showChildrenPosts &&
+                    !props.showChildren &&
+                    children.length > 0;
+
+                  console.log(`Debug bouton réponses - Post ${props.post.id}:`, {
+                    allowExpandChildren: props.allowExpandChildren,
+                    isMainPost,
+                    showChildrenPosts,
+                    showChildren: props.showChildren,
+                    childrenLength: children.length,
+                    shouldShow,
+                  });
+
+                  return shouldShow;
+                })() && (
+                  <button
+                    className="text-xs text-blue-600 underline transition-colors hover:text-blue-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowChildrenPosts(true);
+                    }}
+                  >
+                    {children.length === 1
+                      ? "Afficher la réponse"
+                      : `Afficher les ${children.length.toString()} réponses`}
+                  </button>
+                )}
 
                 {/* Bouton pour masquer les réponses quand elles sont affichées via l'état local */}
                 {props.allowExpandChildren &&
@@ -510,15 +669,19 @@ export default function PostViewer(props: PostViewerProps) {
                 </button>
 
                 <button
-                  className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-red-500"
+                  className={`group flex items-center gap-2 transition-colors ${
+                    isLiked ? "text-red-500" : "text-gray-500 hover:text-red-500"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
+                    void handleLikeToggle();
                   }}
+                  disabled={isLiking}
                 >
                   <div className="rounded-full p-2 transition-colors group-hover:bg-red-50">
-                    <HiOutlineHeart className="h-5 w-5" />
+                    {isLiked ? <HiHeart className="h-5 w-5" /> : <HiOutlineHeart className="h-5 w-5" />}
                   </div>
-                  <span className="text-sm">156</span>
+                  <span className="text-sm">{likeCount}</span>
                 </button>
 
                 <button

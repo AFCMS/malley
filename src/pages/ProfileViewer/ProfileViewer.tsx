@@ -16,7 +16,7 @@ import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
 import Dropdown from "../../Components/Dropdown/Dropdown";
 
-import { formatDate, sortPostsByDateDesc, sortPostsByDateAsc } from "../../utils/date";
+import { formatDate } from "../../utils/date";
 import { closePopover } from "../../utils/popover";
 import { useHandle } from "../../utils/routing";
 
@@ -55,49 +55,54 @@ const ProfileViewer = () => {
       }
       try {
         const profileData = await queries.profiles.getByHandle(handle);
-        setProfile(profileData);
-
-        // Step 2: If profile has pinned posts, fetch them
+        setProfile(profileData); // Step 2: If profile has pinned posts, fetch them
         if (profileData.pinned_posts && profileData.pinned_posts.length > 0) {
           const pinnedPostPromises = profileData.pinned_posts.map((postId) =>
             queries.posts.get(postId).catch(() => null),
           );
           const pinnedPostsData = await Promise.all(pinnedPostPromises);
           const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
-          const sortedPinnedPosts = sortPostsByDateDesc(filteredPinnedPosts);
+          // Tri par date directement ici
+          const sortedPinnedPosts = filteredPinnedPosts.sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          );
           setPinnedPosts(sortedPinnedPosts);
         }
         if (profileData.id) {
           try {
+            // Pour l'onglet "main" : récupère les posts normaux ET les retweets simples
             const authorPosts = await queries.authors.postsOf(profileData.id);
-            const pinnedPostIds = profileData.pinned_posts ?? [];
+            const simpleRetweets = await queries.authors.simpleRetweetsOf(profileData.id);
 
-            // Filter pinned posts
-            const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
-
-            // Separate main posts (without parent) and replies (with parent)
-            const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
-            const repliesData = filteredPosts.filter((post) => post.parent_post !== null);
-
-            // For replies, fetch their parent posts to show context
-            const repliesWithParentsData: Tables<"posts">[] = [];
-            const parentPostIds = new Set<string>();
-
-            // Collect all unique parent post IDs
-            repliesData.forEach((reply) => {
-              if (reply.parent_post) {
-                parentPostIds.add(reply.parent_post);
-              }
+            console.log(`[DEBUG ProfileViewer] Posts récupérés:`, {
+              authorPosts: authorPosts.length,
+              simpleRetweets: simpleRetweets.length,
+              profileId: profileData.id,
             });
 
-            // Fetch all parent posts
-            const parentPostPromises = Array.from(parentPostIds).map((parentId) =>
-              queries.posts.get(parentId).catch(() => null),
-            );
-            const parentPosts = (await Promise.all(parentPostPromises)).filter(Boolean) as Tables<"posts">[];
+            const pinnedPostIds = profileData.pinned_posts ?? [];
 
-            // Combine parent posts and replies for the replies tab
-            repliesWithParentsData.push(...parentPosts, ...repliesData);
+            // Pour l'onglet "Posts" (main) : combine posts normaux et retweets simples
+            const mainPostsCombined = [...authorPosts, ...simpleRetweets];
+            const filteredMainPosts = mainPostsCombined.filter((post) => !pinnedPostIds.includes(post.id));
+
+            // Pour l'onglet "All posts" : utilise seulement les posts normaux (avec conversations)
+            const filteredAllPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
+
+            // Separate main posts (without parent) from main posts combined and sort by date
+            const mainPostsData = filteredMainPosts
+              .filter((post) => post.parent_post === null)
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+            // For the "all" tab, keep all posts (including replies) and sort by date
+            const allPostsData = filteredAllPosts.sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
+
+            console.log(`[DEBUG ProfileViewer] Posts finaux:`, {
+              mainPosts: mainPostsData.length,
+              allPosts: allPostsData.length,
+            });
 
             setMainPosts(mainPostsData);
             setAllPosts(sortPostsByDateDesc(repliesWithParentsData));
@@ -178,23 +183,26 @@ const ProfileViewer = () => {
 
     // Build ordered list with hierarchy and depth
     const result: { post: Tables<"posts">; depth: number }[] = [];
-
     const addPostWithChildren = (post: Tables<"posts">, depth: number) => {
       result.push({ post, depth });
       const children = childPosts.get(post.id) ?? [];
-      sortPostsByDateAsc(children).forEach((child) => {
-        addPostWithChildren(child, depth + 1);
-      });
+      // Sort children by date (oldest first)
+      children
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        .forEach((child) => {
+          addPostWithChildren(child, depth + 1);
+        });
     };
 
-    // Sort root posts by date and add them with their children
-    sortPostsByDateDesc(rootPosts).forEach((post) => {
-      addPostWithChildren(post, 0);
-    });
+    // Sort root posts by date (newest first) and add them with their children
+    rootPosts
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .forEach((post) => {
+        addPostWithChildren(post, 0);
+      });
 
     return result;
   };
-
   const handlePinUpdate = async () => {
     if (!profile) return;
 
@@ -210,38 +218,34 @@ const ProfileViewer = () => {
         );
         const pinnedPostsData = await Promise.all(pinnedPostPromises);
         const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
-        const sortedPinnedPosts = sortPostsByDateDesc(filteredPinnedPosts);
+        // Tri par date directement ici
+        const sortedPinnedPosts = filteredPinnedPosts.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
         setPinnedPosts(sortedPinnedPosts);
       } else {
         setPinnedPosts([]);
-      } // Reload all posts
+      } // Reload all posts using the new approach
       const authorPosts = await queries.authors.postsOf(updatedProfile.id);
+      const simpleRetweets = await queries.authors.simpleRetweetsOf(updatedProfile.id);
       const pinnedPostIds = updatedProfile.pinned_posts ?? [];
-      const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
-      // Separate main posts and replies
-      const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
-      const repliesData = filteredPosts.filter((post) => post.parent_post !== null);
+      // For main tab: combine regular posts and simple retweets
+      const mainPostsCombined = [...authorPosts, ...simpleRetweets];
+      const filteredMainPosts = mainPostsCombined.filter((post) => !pinnedPostIds.includes(post.id));
 
-      // For replies, fetch their parent posts to show context
-      const repliesWithParentsData: Tables<"posts">[] = [];
-      const parentPostIds = new Set<string>();
+      // For all tab: only regular posts (with conversations)
+      const filteredAllPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
-      // Collect all unique parent post IDs
-      repliesData.forEach((reply) => {
-        if (reply.parent_post) {
-          parentPostIds.add(reply.parent_post);
-        }
-      });
+      // Main posts: filter main posts only and sort by date
+      const mainPostsData = filteredMainPosts
+        .filter((post) => post.parent_post === null)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      // Fetch all parent posts
-      const parentPostPromises = Array.from(parentPostIds).map((parentId) =>
-        queries.posts.get(parentId).catch(() => null),
+      // All posts: keep all posts (including replies) and sort by date
+      const allPostsData = filteredAllPosts.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
-      const parentPosts = (await Promise.all(parentPostPromises)).filter(Boolean) as Tables<"posts">[];
-
-      // Combine parent posts and replies for the replies tab
-      repliesWithParentsData.push(...parentPosts, ...repliesData);
 
       setMainPosts(mainPostsData);
       setAllPosts(sortPostsByDateDesc(repliesWithParentsData));

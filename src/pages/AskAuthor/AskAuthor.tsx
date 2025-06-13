@@ -41,9 +41,8 @@ export default function AskAuthor() {
       case "demander":
         return (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Sélectionnez un de vos posts pour inviter un autre utilisateur comme co-auteur.
-            </p>
+            {" "}
+            <p className="text-sm text-gray-600">Select one of your posts to invite another user as a co-author.</p>
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <div className="loading loading-spinner loading-lg"></div>
@@ -84,7 +83,7 @@ export default function AskAuthor() {
   if (!auth.isAuthenticated) {
     return (
       <div className="w-full">
-        <TopBar title="Gestion des co-auteurs" />
+        <TopBar title="Co-author Management" />
         <div className="flex items-center justify-center py-16">
           <div className="text-center">
             <h2 className="mb-2 text-xl font-semibold">Connexion requise</h2>
@@ -97,7 +96,7 @@ export default function AskAuthor() {
 
   return (
     <div className="w-full">
-      <TopBar title="Gestion des co-auteurs" />
+      <TopBar title="Co-author Management" />
 
       <div className="mx-auto max-w-2xl p-4">
         {/* Onglets */}

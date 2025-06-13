@@ -15,17 +15,14 @@ import {
   HiOutlineShare,
 } from "react-icons/hi2";
 
+import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries, supabase, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
 
 import MediaCarousel from "../MediaCarousel/MediaCarousel";
 import PostAdd from "../PostAdd/PostAdd";
-// Removed unused import Dropdown
-import { useAuth } from "../../contexts/auth/AuthContext";
 import Dropdown from "../Dropdown/Dropdown";
 import { closePopover } from "../../utils/popover";
-
-// Removed unused import closePopover
 
 interface PostViewerProps {
   post: Tables<"posts">;

@@ -9,7 +9,7 @@ import {
   HiOutlineUser,
   HiOutlineUsers,
 } from "react-icons/hi2";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { utils } from "../../contexts/supabase/supabase";
@@ -17,17 +17,6 @@ import Dropdown from "../../Components/Dropdown/Dropdown";
 
 export default function LeftToolbarWide() {
   const auth = useAuth();
-  const navigate = useNavigate();
-
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const queryValue = formData.get("search");
-    if (queryValue && typeof queryValue === "string" && queryValue.trim()) {
-      void navigate(`/search?query=${encodeURIComponent(queryValue.trim())}`);
-      e.currentTarget.reset();
-    }
-  };
 
   return (
     <div className="hidden border-r border-slate-200 lg:block lg:w-full lg:max-w-72 lg:shrink-0 lg:pt-[30px] lg:pr-8">
@@ -37,13 +26,11 @@ export default function LeftToolbarWide() {
             <Link className="flex h-10 items-center justify-center px-4 text-xl font-semibold select-none" to="/">
               Malley
             </Link>
-            <form onSubmit={handleSearchSubmit}>
-              <label className="input">
-                <HiOutlineMagnifyingGlass className="h-[1em] opacity-50" />
-                <input type="search" name="search" required placeholder="Search" />
-              </label>
-            </form>
             <div className="flex flex-col space-y-2">
+              <Link className="sidebarlink" to="/search">
+                <HiOutlineMagnifyingGlass className="h-5 opacity-50" />
+                Search
+              </Link>
               <Link className="sidebarlink" to="/">
                 <HiOutlineHome className="h-5 opacity-50" />
                 Home

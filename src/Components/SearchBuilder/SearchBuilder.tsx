@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Tables } from "../../contexts/supabase/database";
 import { queries } from "../../contexts/supabase/supabase";
 import CategoriesChooser from "../CategoriesChooser/CategoriesChooser";
-import { HiChevronDown, HiMagnifyingGlass } from "react-icons/hi2";
+import { HiMagnifyingGlass } from "react-icons/hi2";
 import { HiXMark } from "react-icons/hi2";
 
 interface PostSearchQuery {
@@ -149,7 +149,9 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
               <button
                 type="button"
                 className="btn btn-circle btn-ghost btn-xs"
-                onClick={() => removeFromStringArray(index, setter)}
+                onClick={() => {
+                  removeFromStringArray(index, setter);
+                }}
               >
                 ✕
               </button>
@@ -162,7 +164,9 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
             placeholder={placeholder}
             className="input input-bordered join-item flex-1"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -270,7 +274,9 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
               @{handle}
               <button
                 className="size-[0.75rem] cursor-pointer"
-                onClick={() => handleRemoveUser(handle)}
+                onClick={() => {
+                  handleRemoveUser(handle);
+                }}
                 aria-label={`Remove ${handle}`}
               >
                 <HiXMark className="size-[0.75rem]" />
@@ -285,7 +291,9 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
               placeholder={placeholder}
               className="input w-full pr-10"
               value={entry}
-              onChange={(e) => setEntry(e.target.value)}
+              onChange={(e) => {
+                setEntry(e.target.value);
+              }}
               onKeyDown={handleKeyDown}
             />
             <button
@@ -306,7 +314,12 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
           >
             {matching.map((profile, index) => (
               <li key={profile.id} className={highlightedIndex === index ? "bg-primary text-white" : ""}>
-                <a onClick={() => handleSelectUser(profile)} className="cursor-pointer">
+                <a
+                  onClick={() => {
+                    handleSelectUser(profile);
+                  }}
+                  className="cursor-pointer"
+                >
                   @{profile.handle}
                 </a>
               </li>
@@ -327,12 +340,19 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
 
         {/* Search Type Toggle */}
         <div className="tabs tabs-boxed w-fit">
-          <a className={`tab ${searchType === "posts" ? "tab-active" : ""}`} onClick={() => setSearchType("posts")}>
+          <a
+            className={`tab ${searchType === "posts" ? "tab-active" : ""}`}
+            onClick={() => {
+              setSearchType("posts");
+            }}
+          >
             Posts
           </a>
           <a
             className={`tab ${searchType === "profiles" ? "tab-active" : ""}`}
-            onClick={() => setSearchType("profiles")}
+            onClick={() => {
+              setSearchType("profiles");
+            }}
           >
             Profiles
           </a>
@@ -348,7 +368,9 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
             placeholder={searchType === "posts" ? "Search post content..." : "Search usernames or bios..."}
             className="input input-bordered"
             value={basicSearch}
-            onChange={(e) => setBasicSearch(e.target.value)}
+            onChange={(e) => {
+              setBasicSearch(e.target.value);
+            }}
           />
         </div>
 
@@ -358,10 +380,7 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
         {/* Advanced Options */}
         <div className="collapse-arrow border-base-300 bg-base-200 collapse border">
           <input type="checkbox" className="peer" />
-          <div className="collapse-title flex items-center gap-2 text-lg font-medium">
-            <HiChevronDown className="h-4 w-4" />
-            Advanced Options
-          </div>
+          <div className="collapse-title">Advanced Options</div>
           <div className="collapse-content space-y-4">
             {/* Post-specific advanced options */}
             {searchType === "posts" && (
@@ -396,34 +415,34 @@ export default function SearchBuilder({ onSearch, isLoading = false }: SearchBui
 
             {/* Date Range */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">From Date</span>
-                </label>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">From Date</legend>
                 <input
                   type="date"
-                  className="input input-bordered"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">To Date</span>
-                </label>
-                <input
-                  type="date"
-                  className="input input-bordered"
+                  className="input"
                   value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
+                  onChange={(e) => {
+                    setFromDate(e.target.value);
+                  }}
                 />
-              </div>
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">To Date</legend>
+                <input
+                  type="date"
+                  className="input"
+                  value={toDate}
+                  onChange={(e) => {
+                    setToDate(e.target.value);
+                  }}
+                />
+              </fieldset>
             </div>
           </div>
         </div>
 
         {/* Search Button */}
-        <div className="card-actions justify-end">
+        <div className="card-actions mt-4 justify-end">
           <button
             className={`btn btn-primary ${isLoading ? "loading" : ""}`}
             onClick={handleSearch}

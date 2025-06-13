@@ -44,7 +44,7 @@ export default function SentRequests() {
 
       setSentRequests(requestsWithDetails);
     } catch (error) {
-      console.error("Erreur lors du chargement des demandes envoyées:", String(error));
+      console.error("Error loading sent requests:", String(error));
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +90,7 @@ export default function SentRequests() {
     return (
       <div className="py-8 text-center text-gray-500">
         <HiOutlineCheckCircle className="mx-auto mb-4 h-12 w-12 text-gray-300" />
-        <p>Vous n&apos;avez envoyé aucune demande de co-auteur.</p>
+        <p>You haven&apos;t sent any co-author requests.</p>
       </div>
     );
   }
@@ -109,7 +109,7 @@ export default function SentRequests() {
               </div>
               <div>
                 <div className="font-semibold">@{toProfile.handle}</div>
-                <div className="text-sm text-gray-500">Demande envoyée (date non disponible)</div>
+                <div className="text-sm text-gray-500">Request sent (date unavailable)</div>
               </div>
             </div>
             <div className="flex items-center gap-2">

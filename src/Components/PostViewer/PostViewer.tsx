@@ -23,6 +23,7 @@ import MediaCarousel from "../MediaCarousel/MediaCarousel";
 import PostAdd from "../PostAdd/PostAdd";
 import Dropdown from "../Dropdown/Dropdown";
 import { closePopover } from "../../utils/popover";
+import QuoteTweetModal from "../QuoteTweetModal/QuoteTweetModal";
 
 interface PostViewerProps {
   post: Tables<"posts">;
@@ -51,9 +52,17 @@ export default function PostViewer(props: PostViewerProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
-
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [retweetCount, setRetweetCount] = useState(0);
   const [isLastAuthor, setIsLastAuthor] = useState(false);
-
+  const [hasRetweeted, setHasRetweeted] = useState(false);
+  const [originalPost, setOriginalPost] = useState<Tables<"posts"> | null>(null);
+  const [retweetedBy, setRetweetedBy] = useState<Tables<"profiles"> | null>(null);
+  const [quotedPost, setQuotedPost] = useState<Tables<"posts"> | null>(null);
+  const [quotedPostAuthors, setQuotedPostAuthors] = useState<Tables<"profiles">[]>([]);
+  const [quotedPostCategories, setQuotedPostCategories] = useState<Tables<"categories">[]>([]);
+  const [quotedPostMediaUrls, setQuotedPostMediaUrls] = useState<string[]>([]);
+  const [loadingQuotedMedia, setLoadingQuotedMedia] = useState(false);
   const auth = useAuth();
   const navigate = useNavigate();
   const dateCreation = new Date(props.post.created_at);
@@ -62,11 +71,25 @@ export default function PostViewer(props: PostViewerProps) {
   const isPinned = props.isPinned ?? false;
   const mainAuthor = authors.length > 0 ? authors[0] : null;
   const isAuthor = auth.user && authors.some((author) => author.id === auth.user?.id);
-
+  const isSimpleRetweet = queries.posts.isSimpleRetweet(props.post);
   // Fetch post authors
   useEffect(() => {
     async function fetchAuthors() {
       try {
+        // Si c'est un retweet simple, on récupère les auteurs du post original
+        if (queries.posts.isSimpleRetweet(props.post)) {
+          const originalPost = await queries.posts.getOriginalPost(props.post);
+          if (originalPost) {
+            const originalAuthors = await queries.authors.ofPost(originalPost.id);
+            setAuthors(originalAuthors);
+
+            // Pour un retweet simple, l'utilisateur n'est jamais le dernier auteur du post original
+            setIsLastAuthor(false);
+            return;
+          }
+        }
+
+        // Pour les posts normaux ou les quote retweets
         const postAuthors = await queries.authors.ofPost(props.post.id);
         setAuthors(postAuthors);
 
@@ -81,23 +104,26 @@ export default function PostViewer(props: PostViewerProps) {
         setIsLastAuthor(false);
       }
     }
-
     void fetchAuthors();
-  }, [props.post.id, auth.user]);
-
+  }, [props.post.id, props.post, auth.user]);
   // Fetch categories
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const postCategories = await queries.postsCategories.get(props.post.id);
+        // Si c'est un retweet simple, récupérer les catégories du post original
+        let postIdToUse = props.post.id;
+        if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+          postIdToUse = originalPost.id;
+        }
+
+        const postCategories = await queries.postsCategories.get(postIdToUse);
         setCategories(postCategories);
       } catch {
         setCategories([]);
       }
     }
-
     void fetchCategories();
-  }, [props.post.id]);
+  }, [props.post.id, props.post, originalPost]);
 
   // Fetch child posts with likes sorting
   useEffect(() => {
@@ -164,14 +190,20 @@ export default function PostViewer(props: PostViewerProps) {
   // Fetch media
   useEffect(() => {
     async function fetchMediaUrls() {
-      if (!props.post.id) {
+      // Si c'est un retweet simple, utiliser l'ID du post original
+      let postIdToUse = props.post.id;
+      if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+        postIdToUse = originalPost.id;
+      }
+
+      if (!postIdToUse) {
         setMediaUrls([]);
         return;
       }
 
       try {
         setLoadingMedia(true);
-        const { data, error } = await supabase.storage.from("post-media").list(props.post.id, {
+        const { data, error } = await supabase.storage.from("post-media").list(postIdToUse, {
           limit: 10,
           offset: 0,
           sortBy: { column: "name", order: "asc" },
@@ -179,7 +211,7 @@ export default function PostViewer(props: PostViewerProps) {
 
         if (!error && data.length > 0) {
           const urls = data.map(
-            (file) => supabase.storage.from("post-media").getPublicUrl(`${props.post.id}/${file.name}`).data.publicUrl,
+            (file) => supabase.storage.from("post-media").getPublicUrl(`${postIdToUse}/${file.name}`).data.publicUrl,
           );
           setMediaUrls(urls);
         }
@@ -197,11 +229,17 @@ export default function PostViewer(props: PostViewerProps) {
   useEffect(() => {
     async function fetchLikes() {
       try {
-        const likedByUsers = await queries.like.byWho(props.post.id);
+        // Si c'est un retweet simple, on récupère les likes du post original
+        let targetPostId = props.post.id;
+        if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+          targetPostId = originalPost.id;
+        }
+
+        const likedByUsers = await queries.like.byWho(targetPostId);
         setLikeCount(likedByUsers.length);
 
         if (auth.user) {
-          const userLikesPost = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
+          const userLikesPost = await queries.like.doesUserLikePost(auth.user.id, targetPostId);
           setIsLiked(userLikesPost);
         } else {
           setIsLiked(false);
@@ -212,9 +250,132 @@ export default function PostViewer(props: PostViewerProps) {
         setIsLiked(false);
       }
     }
-
     void fetchLikes();
-  }, [props.post.id, auth.user]);
+  }, [props.post.id, props.post, auth.user, originalPost]); // Récupération des retweets
+  useEffect(() => {
+    async function fetchRetweets() {
+      try {
+        // Pour les retweets simples, compter les retweets du post original
+        let targetPostId = props.post.id;
+        if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+          targetPostId = originalPost.id;
+        }
+
+        const retweets = await queries.posts.getRetweetsOf(targetPostId);
+        setRetweetCount(retweets.length);
+      } catch (error) {
+        console.error("[ERROR] Error fetching retweets:", error);
+        setRetweetCount(0);
+      }
+    }
+    void fetchRetweets();
+  }, [props.post.id, props.post, originalPost]); // Vérifier si l'utilisateur a déjà retweeté ce post
+  useEffect(() => {
+    async function checkUserRetweet() {
+      if (!auth.user) {
+        setHasRetweeted(false);
+        return;
+      }
+
+      try {
+        // Pour les retweets simples, vérifier sur le post original
+        let targetPostId = props.post.id;
+        if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+          targetPostId = originalPost.id;
+        }
+
+        const hasUserRetweeted = await queries.posts.hasUserRetweeted(targetPostId, auth.user.id);
+        setHasRetweeted(hasUserRetweeted);
+      } catch (error) {
+        console.error("[ERROR] Error checking retweet:", error);
+        setHasRetweeted(false);
+      }
+    }
+
+    void checkUserRetweet();
+  }, [props.post.id, props.post, auth.user, originalPost]);
+
+  // Récupérer le post original si c'est un retweet simple
+  useEffect(() => {
+    async function fetchOriginalPost() {
+      if (queries.posts.isSimpleRetweet(props.post)) {
+        try {
+          const original = await queries.posts.getOriginalPost(props.post);
+          setOriginalPost(original);
+
+          // Récupérer l'auteur du retweet
+          const retweetAuthors = await queries.authors.ofPost(props.post.id);
+          setRetweetedBy(retweetAuthors[0] || null);
+        } catch (error) {
+          console.error("[ERROR] Error fetching original post:", error);
+          setOriginalPost(null);
+          setRetweetedBy(null);
+        }
+      } else {
+        setOriginalPost(null);
+        setRetweetedBy(null);
+      }
+    }
+
+    void fetchOriginalPost();
+  }, [props.post]);
+  // Récupérer le post cité si c'est un quote tweet
+  useEffect(() => {
+    async function fetchQuotedPost() {
+      if (queries.posts.isQuoteRetweet(props.post)) {
+        try {
+          const quoted = await queries.posts.getOriginalPost(props.post);
+          setQuotedPost(quoted);
+
+          if (quoted) {
+            const quotedAuthors = await queries.authors.ofPost(quoted.id);
+            setQuotedPostAuthors(quotedAuthors);
+
+            // Récupérer les catégories du post cité
+            const quotedCategories = await queries.postsCategories.get(quoted.id);
+            setQuotedPostCategories(quotedCategories);
+
+            // Récupérer les médias du post cité
+            try {
+              setLoadingQuotedMedia(true);
+              const { data, error } = await supabase.storage.from("post-media").list(quoted.id, {
+                limit: 10,
+                offset: 0,
+                sortBy: { column: "name", order: "asc" },
+              });
+
+              if (!error && data.length > 0) {
+                const urls = data.map(
+                  (file) =>
+                    supabase.storage.from("post-media").getPublicUrl(`${quoted.id}/${file.name}`).data.publicUrl,
+                );
+                setQuotedPostMediaUrls(urls);
+              } else {
+                setQuotedPostMediaUrls([]);
+              }
+            } catch {
+              setQuotedPostMediaUrls([]);
+            } finally {
+              setLoadingQuotedMedia(false);
+            }
+          }
+        } catch (error) {
+          console.error("[ERROR] Error fetching quoted post:", error);
+          setQuotedPost(null);
+          setQuotedPostAuthors([]);
+          setQuotedPostCategories([]);
+          setQuotedPostMediaUrls([]);
+        }
+      } else {
+        setQuotedPost(null);
+        setQuotedPostAuthors([]);
+        setQuotedPostCategories([]);
+        setQuotedPostMediaUrls([]);
+      }
+    }
+
+    void fetchQuotedPost();
+  }, [props.post]);
 
   const handleReplySuccess = () => {
     setShowReplyForm(false);
@@ -272,18 +433,25 @@ export default function PostViewer(props: PostViewerProps) {
 
     try {
       setIsLiking(true);
+
+      // Déterminer quel post liker (original pour les retweets simples)
+      let targetPostId = props.post.id;
+      if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+        targetPostId = originalPost.id;
+      }
+
       console.log(
-        `[DEBUG] Like toggle - Post: ${props.post.id}, Current isLiked: ${String(isLiked)}, User: ${auth.user.id}`,
+        `[DEBUG] Like toggle - Post: ${targetPostId}, Current isLiked: ${String(isLiked)}, User: ${auth.user.id}`,
       );
 
       if (isLiked) {
-        console.log(`[DEBUG] Removing like for user ${auth.user.id} on post ${props.post.id}...`);
+        console.log(`[DEBUG] Removing like for user ${auth.user.id} on post ${targetPostId}...`);
 
         // Check before removal
         const beforeRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
         console.log(`[DEBUG] Before remove - User likes post:`, beforeRemove);
 
-        const result = await queries.like.remove(props.post.id);
+        const result = await queries.like.remove(targetPostId);
         console.log(`[DEBUG] Remove function returned:`, result);
 
         // Check after removal
@@ -298,8 +466,8 @@ export default function PostViewer(props: PostViewerProps) {
           console.error(`[ERROR] Like was not removed from database!`);
         }
       } else {
-        console.log(`[DEBUG] Adding like for user ${auth.user.id} on post ${props.post.id}...`);
-        const result = await queries.like.add(props.post.id);
+        console.log(`[DEBUG] Adding like for user ${auth.user.id} on post ${targetPostId}...`);
+        const result = await queries.like.add(targetPostId);
         console.log(`[DEBUG] Add result:`, result);
         setLikeCount((prev) => prev + 1);
         setIsLiked(true);
@@ -382,7 +550,6 @@ export default function PostViewer(props: PostViewerProps) {
       setIsAbandoning(false);
     }
   };
-
   const formatPostDate = (date: Date): string => {
     try {
       if (isNaN(date.getTime())) {
@@ -443,11 +610,9 @@ export default function PostViewer(props: PostViewerProps) {
       {/* Main post */}
       <div className="relative" id={`post-${props.post.id}`}>
         {!isMainPost && depth > 0 && <div className="absolute top-0 left-6 h-full w-1 bg-gray-400"></div>}
-
         {!isMainPost && (
           <div className="absolute top-6 left-5.5 h-3 w-3 rounded-full border-2 border-white bg-gray-500"></div>
-        )}
-
+        )}{" "}
         <div
           className={`relative transition-colors ${
             isMainPost
@@ -458,7 +623,15 @@ export default function PostViewer(props: PostViewerProps) {
           } ${isPinned ? "border-b-4 border-blue-500" : ""}`}
           onClick={handlePostClick}
         >
-          {/* Author menu */}
+          {" "}
+          {/* Indicateur de retweet simple */}
+          {queries.posts.isSimpleRetweet(props.post) && retweetedBy && (
+            <div className="mb-2 flex items-center gap-1 text-sm text-gray-500">
+              <HiOutlineArrowPath className="h-4 w-4" />
+              <span>{retweetedBy.handle} retweeted</span>
+            </div>
+          )}
+          {/* Menu burger pour l'auteur */}
           {isAuthor && (
             <div className="absolute top-3 right-3 z-10">
               <button
@@ -470,50 +643,62 @@ export default function PostViewer(props: PostViewerProps) {
                 }}
               >
                 <HiOutlineEllipsisHorizontal className="h-5 w-5" />
-              </button>
+              </button>{" "}
               <Dropdown id={`popover-post-${props.post.id}`} placement="bottom-end">
-                {[
-                  {
-                    title: "Edit",
-                    icon: HiOutlinePencil,
-                    href: `/post/${props.post.id}/edit`,
-                  },
-                  {
-                    title: isPinned ? "Unpin" : "Pin",
-                    icon: isPinned ? HiMapPin : HiOutlineMapPin,
-                    onClick: () => {
-                      void handlePinPost();
-                    },
-                  },
-                  {
-                    title: "Share",
-                    icon: HiOutlineShare,
-                    onClick: () => {
-                      const shareUrl = `${window.location.origin}/post/${props.post.id}`;
-                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                      if (navigator.share) {
-                        void navigator.share({
-                          url: shareUrl,
-                        });
-                      } else {
-                        void navigator.clipboard.writeText(shareUrl).then(() => {
-                          alert("Profile link copied to clipboard!");
-                        });
-                      }
-                      closePopover(`popover-post-${props.post.id}`);
-                    },
-                  },
-                  {
-                    title: isAbandoning ? "Abandoning..." : "Abandon ownership",
-                    icon: HiOutlineUserMinus,
-                    onClick() {
-                      const modal = document.getElementById(
-                        `abandon-modal-${props.post.id}`,
-                      ) as HTMLDialogElement | null;
-                      modal?.showModal();
-                    },
-                  },
-                ]}
+                {isSimpleRetweet
+                  ? [
+                      // Menu spécial pour les retweets : seulement abandon ownership
+                      {
+                        title: isAbandoning ? "Abandoning..." : "Abandon retweet",
+                        icon: HiOutlineUserMinus,
+                        onClick() {
+                          setShowAbandonConfirm(true);
+                        },
+                      },
+                    ]
+                  : [
+                      // Menu normal pour les posts originaux
+                      {
+                        title: "Edit",
+                        icon: HiOutlinePencil,
+                        href: `/post/${props.post.id}/edit`,
+                      },
+                      {
+                        title: isPinned ? "Unpin" : "Pin",
+                        icon: isPinned ? HiMapPin : HiOutlineMapPin,
+                        onClick: () => {
+                          void handlePinPost();
+                        },
+                      },
+                      {
+                        title: "Share",
+                        icon: HiOutlineShare,
+                        onClick: () => {
+                          const shareUrl = `${window.location.origin}/post/${props.post.id}`;
+                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                          if (navigator.share) {
+                            void navigator.share({
+                              url: shareUrl,
+                            });
+                          } else {
+                            void navigator.clipboard.writeText(shareUrl).then(() => {
+                              alert("Profile link copied to clipboard!");
+                            });
+                          }
+                          closePopover(`popover-post-${props.post.id}`);
+                        },
+                      },
+                      {
+                        title: isAbandoning ? "Abandoning..." : "Abandon ownership",
+                        icon: HiOutlineUserMinus,
+                        onClick() {
+                          const modal = document.getElementById(
+                            `abandon-modal-${props.post.id}`,
+                          ) as HTMLDialogElement | null;
+                          modal?.showModal();
+                        },
+                      },
+                    ]}
               </Dropdown>
             </div>
           )}
@@ -557,8 +742,7 @@ export default function PostViewer(props: PostViewerProps) {
                     </span>
                   </>
                 )}
-              </div>
-
+              </div>{" "}
               {/* Co-authors */}
               {authors.length > 1 && (
                 <div className={`mt-1 ${isMainPost ? "text-sm" : "text-xs"} text-gray-600`}>
@@ -582,24 +766,116 @@ export default function PostViewer(props: PostViewerProps) {
                       </span>
                     ))}
                 </div>
-              )}
-
+              )}{" "}
               {/* Post content */}
-              {props.post.body && (
-                <div
-                  className={`mt-2 break-words whitespace-pre-wrap text-gray-900 ${isMainPost ? "text-lg leading-relaxed" : ""}`}
-                >
-                  {props.post.body}
-                </div>
-              )}
+              {queries.posts.isSimpleRetweet(props.post) && originalPost ? (
+                // Display original post for simple retweets
+                <div className="mt-2 break-words whitespace-pre-wrap text-gray-900">{originalPost.body}</div>
+              ) : (
+                // Display normal content for other posts (including quote tweets)
+                <>
+                  {props.post.body && (
+                    <div
+                      className={`mt-2 break-words whitespace-pre-wrap text-gray-900 ${isMainPost ? "text-lg leading-relaxed" : ""}`}
+                    >
+                      {props.post.body}
+                    </div>
+                  )}
 
+                  {/* Quote tweet display - integrated within post content */}
+                  {queries.posts.isQuoteRetweet(props.post) && quotedPost && quotedPostAuthors.length > 0 && (
+                    <div className="mt-3">
+                      {/* Quoted post container - compact version */}
+                      <div
+                        className="cursor-pointer rounded-lg border border-gray-300 bg-gray-50 p-3 transition-colors hover:bg-gray-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void navigate(`/post/${quotedPost.id}`);
+                        }}
+                      >
+                        <div className="flex items-start gap-2">
+                          {/* Quoted post author avatar - smaller */}
+                          <div className="flex-shrink-0">
+                            <div className="h-8 w-8 overflow-hidden rounded-full">
+                              <img
+                                src={
+                                  quotedPostAuthors[0]
+                                    ? utils.getAvatarUrl(quotedPostAuthors[0])
+                                    : "https://img.daisyui.com/images/profile/demo/yellingcat@192.webp"
+                                }
+                                alt={`${quotedPostAuthors[0]?.handle ?? "Unknown"}'s profile`}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Quoted post content - compact */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1 text-xs">
+                              <span
+                                className="cursor-pointer font-bold text-gray-900 hover:underline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void navigate(`/@${quotedPostAuthors[0]?.handle}`);
+                                }}
+                              >
+                                @{quotedPostAuthors[0]?.handle ?? "Unknown"}
+                              </span>
+                              <span className="text-gray-500">·</span>
+                              <span className="text-gray-500">{formatPostDate(new Date(quotedPost.created_at))}</span>
+                            </div>
+                            {quotedPost.body && (
+                              <div className="mt-1 line-clamp-3 text-sm break-words whitespace-pre-wrap text-gray-700">
+                                {quotedPost.body}
+                              </div>
+                            )}
+                            {/* Quoted post media carousel - smaller */}
+                            {quotedPost.id && !loadingQuotedMedia && quotedPostMediaUrls.length > 0 && (
+                              <div className="relative mt-2">
+                                <div className="max-h-24 overflow-hidden rounded-lg">
+                                  <img
+                                    src={quotedPostMediaUrls[0]}
+                                    alt="Quoted post media"
+                                    className="h-24 w-full object-cover"
+                                  />
+                                </div>
+                                {quotedPostMediaUrls.length > 1 && (
+                                  <div className="bg-opacity-70 absolute right-1 bottom-1 rounded bg-black px-1.5 py-0.5 text-xs text-white">
+                                    +{quotedPostMediaUrls.length - 1}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Quoted post categories - smaller */}
+                            {quotedPostCategories.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {quotedPostCategories.slice(0, 3).map((category) => (
+                                  <span
+                                    key={category.id}
+                                    className="inline-flex cursor-pointer items-center rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800 hover:bg-green-200"
+                                  >
+                                    #{category.name}
+                                  </span>
+                                ))}
+                                {quotedPostCategories.length > 3 && (
+                                  <span className="text-xs text-gray-500">+{quotedPostCategories.length - 3} more</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
               {/* Media carousel */}
               {props.post.id && !loadingMedia && mediaUrls.length > 0 && (
                 <div className="mt-3">
                   <MediaCarousel mediaUrls={mediaUrls} />
                 </div>
               )}
-
               {/* Categories */}
               {categories.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
@@ -613,7 +889,6 @@ export default function PostViewer(props: PostViewerProps) {
                   ))}
                 </div>
               )}
-
               {/* Action buttons */}
               <div className={`mt-3 flex max-w-md items-center justify-between ${isMainPost ? "mt-4" : ""}`}>
                 <button
@@ -682,19 +957,94 @@ export default function PostViewer(props: PostViewerProps) {
                       Hide {children.length.toString()} repl{children.length > 1 ? "ies" : "y"}
                     </button>
                   )}
-
                 <button
-                  className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-green-500"
+                  className={`group flex items-center gap-2 transition-colors ${
+                    hasRetweeted
+                      ? "text-green-600 hover:text-green-700"
+                      : retweetCount > 0
+                        ? "cursor-not-allowed text-gray-400"
+                        : "text-gray-500 hover:text-green-500"
+                  }`}
+                  disabled={retweetCount > 0 && !hasRetweeted}
                   onClick={(e) => {
                     e.stopPropagation();
+
+                    // Si le bouton est désactivé, ne rien faire
+                    if (retweetCount > 0 && !hasRetweeted) return;
+
+                    // Wrap async logic to avoid async handlers
+                    void (async () => {
+                      if (hasRetweeted) {
+                        try {
+                          // Déterminer quel post utiliser pour chercher les retweets
+                          let targetPostId = props.post.id;
+                          if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+                            targetPostId = originalPost.id;
+                          }
+                          // Trouver le retweet de l'utilisateur et l'abandonner
+                          const retweets = await queries.posts.getRetweetsOf(targetPostId);
+
+                          // Rechercher le retweet de l'utilisateur actuel
+                          let userRetweetId: string | null = null;
+                          for (const rt of retweets) {
+                            const retweetAuthors = await queries.authors.ofPost(rt.id);
+                            if (retweetAuthors.some((author) => author.id === auth.user?.id)) {
+                              userRetweetId = rt.id;
+                              break;
+                            }
+                          }
+
+                          if (userRetweetId) {
+                            await queries.authors.remove(userRetweetId);
+                          }
+                          // Update state immediately
+                          const updatedRetweets = await queries.posts.getRetweetsOf(targetPostId);
+                          setRetweetCount(updatedRetweets.length);
+                          setHasRetweeted(false);
+
+                          // If this is a simple retweet post, trigger parent update
+                          if (queries.posts.isSimpleRetweet(props.post)) {
+                            // For simple retweets, we need to refresh the parent component
+                            props.onPinUpdate?.();
+                          }
+
+                          console.log(`[DEBUG] Retweet deleted successfully, new count:`, updatedRetweets.length);
+                        } catch (error) {
+                          console.error("Error deleting retweet:", error);
+                          if (error instanceof Error) {
+                            alert(`Error: ${error.message}`);
+                          } else {
+                            alert("Error deleting retweet.");
+                          }
+                        }
+                      } else {
+                        // Ouvrir le dialog pour retweeter
+                        const modal = document.getElementById(`retweet-modal-${props.post.id}`) as HTMLDialogElement;
+                        modal.showModal();
+                      }
+                    })();
                   }}
+                  title={
+                    retweetCount > 0 && !hasRetweeted
+                      ? "This post has already been retweeted"
+                      : hasRetweeted
+                        ? "Delete retweet"
+                        : "Retweet"
+                  }
                 >
-                  <div className="rounded-full p-2 transition-colors group-hover:bg-green-50">
+                  <div
+                    className={`rounded-full p-2 transition-colors ${
+                      hasRetweeted
+                        ? "bg-green-100 group-hover:bg-green-200"
+                        : retweetCount > 0
+                          ? "bg-gray-100"
+                          : "group-hover:bg-green-50"
+                    }`}
+                  >
                     <HiOutlineArrowPath className="h-5 w-5" />
                   </div>
-                  <span className="text-sm">12</span>
+                  <span className="text-sm">{retweetCount}</span>
                 </button>
-
                 <button
                   className={`group flex items-center gap-2 transition-colors ${
                     isLiked ? "text-red-500" : "text-gray-500 hover:text-red-500"
@@ -710,7 +1060,6 @@ export default function PostViewer(props: PostViewerProps) {
                   </div>
                   <span className="text-sm">{likeCount}</span>
                 </button>
-
                 <button
                   className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-blue-500"
                   onClick={(e) => {
@@ -724,7 +1073,6 @@ export default function PostViewer(props: PostViewerProps) {
               </div>
             </div>
           </div>
-
           {/* Reply form */}
           {showReplyForm && auth.isAuthenticated && (
             <div
@@ -741,7 +1089,7 @@ export default function PostViewer(props: PostViewerProps) {
                 isReply={true}
               />
             </div>
-          )}
+          )}{" "}
         </div>
       </div>
 
@@ -838,20 +1186,30 @@ export default function PostViewer(props: PostViewerProps) {
             )}
           </div>
 
-          <div className="modal-action">
-            <form method="dialog">
-              <button className="btn btn-ghost">Cancel</button>
-            </form>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => {
+                const modal = document.getElementById(`abandon-modal-${props.post.id}`) as HTMLDialogElement | null;
+                modal?.close();
+              }}
+              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            >
+              Cancel
+            </button>
             <button
               onClick={() => {
                 void handleAbandonOwnership();
               }}
               disabled={isAbandoning}
-              className={`btn text-white ${isLastAuthor ? "btn-error" : "btn-warning"}`}
+              className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
+                isLastAuthor
+                  ? "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
+                  : "bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400"
+              } disabled:cursor-not-allowed`}
             >
               {isAbandoning ? (
                 <div className="flex items-center gap-2">
-                  <div className="loading loading-spinner loading-sm"></div>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                   {isLastAuthor ? "Deleting..." : "Abandoning..."}
                 </div>
               ) : isLastAuthor ? (
@@ -866,6 +1224,107 @@ export default function PostViewer(props: PostViewerProps) {
           <button>close</button>
         </form>
       </dialog>
+      {/* DaisyUI retweet choice dialog */}
+      <dialog id={`retweet-modal-${props.post.id}`} className="modal">
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Retweet this post</h3>
+
+          <div className="py-4">
+            {" "}
+            <p className="text-gray-700">How would you like to retweet @{mainAuthor?.handle}&apos;s post?</p>
+          </div>
+
+          <div className="modal-action flex-col gap-3">
+            <button
+              onClick={() => {
+                // Async IIFE to handle retweet
+                void (async () => {
+                  // Close the dialog
+                  const modal = document.getElementById(`retweet-modal-${props.post.id}`) as HTMLDialogElement;
+                  modal.close();
+                  try {
+                    // Determine which post to retweet (original for simple retweets)
+                    let targetPostId = props.post.id;
+                    if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+                      targetPostId = originalPost.id;
+                    }
+                    await queries.posts.retweet(targetPostId, "");
+                    // Update retweet counter and hasRetweeted state
+                    const retweets = await queries.posts.getRetweetsOf(targetPostId);
+                    setRetweetCount(retweets.length);
+                    setHasRetweeted(true);
+                    console.log(`[DEBUG] Simple retweet successful, new count:`, retweets.length);
+                  } catch (error) {
+                    console.error("Error during retweet:", error);
+                    if (error instanceof Error) {
+                      alert(`Error: ${error.message}`);
+                    } else {
+                      alert("Error during retweet. Please try again.");
+                    }
+                  }
+                })();
+              }}
+              className="btn btn-success w-full justify-start"
+            >
+              <HiOutlineArrowPath className="h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Retweet</div>
+                <div className="text-sm opacity-70">Share instantly to your profile</div>
+              </div>
+            </button>{" "}
+            <button
+              onClick={() => {
+                // Close the dialog
+                const modal = document.getElementById(`retweet-modal-${props.post.id}`) as HTMLDialogElement;
+                modal.close();
+
+                // Open quote tweet modal
+                const quoteTweetModal = document.getElementById(
+                  `quote-tweet-modal-${props.post.id}`,
+                ) as HTMLDialogElement;
+                quoteTweetModal.showModal();
+              }}
+              className="btn btn-primary w-full justify-start"
+            >
+              <HiOutlineChatBubbleOvalLeft className="h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Quote Tweet</div>
+                <div className="text-sm opacity-70">Add your comment</div>
+              </div>
+            </button>
+            <div className="modal-action">
+              <form method="dialog">
+                <button className="btn">Cancel</button>
+              </form>
+            </div>
+          </div>
+        </div>{" "}
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+      {/* Quote Tweet Modal */}
+      <QuoteTweetModal
+        post={props.post}
+        originalPost={originalPost}
+        modalId={`quote-tweet-modal-${props.post.id}`}
+        onSuccess={() => {
+          // Refresh retweet count after quote tweet
+          void (async () => {
+            try {
+              let targetPostId = props.post.id;
+              if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+                targetPostId = originalPost.id;
+              }
+              const retweets = await queries.posts.getRetweetsOf(targetPostId);
+              setRetweetCount(retweets.length);
+              setHasRetweeted(true);
+            } catch (error) {
+              console.error("Error refreshing retweet count:", error);
+            }
+          })();
+        }}
+      />
     </div>
   );
 }

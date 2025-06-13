@@ -15,6 +15,8 @@ interface PostAddProps {
   editPostId?: string;
   /** Parent post ID if replying to a post */
   parentPostId?: string;
+  /** Post ID if this is a quote tweet/retweet */
+  rtOf?: string;
   /** Callback called after successful submission */
   onSuccess?: (postId: string) => void;
   /** Whether to show the categories chooser */
@@ -30,6 +32,7 @@ interface PostAddProps {
 export default function PostAdd({
   editPostId,
   parentPostId,
+  rtOf,
   onSuccess,
   showCategories = true,
   showFileUpload = true,
@@ -201,7 +204,7 @@ export default function PostAdd({
         }
       } else {
         // Creation mode: create new post
-        const id: string = await queries.posts.new(body, mediaFiles, parentPostId);
+        const id: string = await queries.posts.new(body, mediaFiles, parentPostId, rtOf);
 
         // Add categories only if component supports them
         if (showCategories) {

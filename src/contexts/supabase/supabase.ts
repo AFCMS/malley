@@ -219,11 +219,16 @@ const queries = {
       }
       return req.data;
     },
-
-    new: async function (body: string, media: File[] = [], parent: string | null = null): Promise<string> {
+    new: async function (
+      body: string,
+      media: File[] = [],
+      parent: string | null = null,
+      rtOf: string | null = null,
+    ): Promise<string> {
       const formData = new FormData();
       formData.append("body", body);
       if (parent != null) formData.append("parent", parent);
+      if (rtOf != null) formData.append("rtOf", rtOf);
       media.forEach((file) => {
         formData.append(`media`, file);
       });
@@ -240,6 +245,21 @@ const queries = {
       const result = req.data as { id: string };
       return result.id;
     },
+    retweet: async function (postId: string, body = ""): Promise<string> {
+      // Vérifier d'abord si l'utilisateur a déjà retweeté ce post
+      const user = await getUser();
+      if (!user) {
+        throw new Error("not logged in");
+      }
+
+      const hasAlreadyRetweeted = await queries.posts.hasUserRetweeted(postId, user.id);
+      if (hasAlreadyRetweeted) {
+        throw new Error("Vous avez déjà retweeté ce post");
+      }
+
+      // Retweet avec ou sans contenu
+      return await queries.posts.new(body, [], null, postId);
+    },
 
     edit: async function (id: string, newBody: string): Promise<boolean> {
       const req = await supabase.from("posts").update({ body: newBody }).eq("id", id).select();
@@ -252,6 +272,55 @@ const queries = {
         return false;
       }
       return true;
+    },
+
+    getRetweetsOf: async function (postId: string): Promise<Tables<"posts">[]> {
+      // Récupère tous les retweets d'un post donné
+      const req = await supabase.from("posts").select("*").eq("rt_of", postId);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.data;
+    },
+
+    isRetweet: function (post: Tables<"posts">): boolean {
+      // Vérifie si un post est un retweet
+      return post.rt_of !== null;
+    },
+
+    isQuoteRetweet: function (post: Tables<"posts">): boolean {
+      // Vérifie si un post est un retweet avec commentaire (quote retweet)
+      return post.rt_of !== null && post.body !== null && post.body.trim() !== "";
+    },
+
+    isSimpleRetweet: function (post: Tables<"posts">): boolean {
+      // Vérifie si un post est un retweet simple (sans commentaire)
+      return post.rt_of !== null && (post.body === null || post.body.trim() === "");
+    },
+    getOriginalPost: async function (post: Tables<"posts">): Promise<Tables<"posts"> | null> {
+      // Récupère le post original d'un retweet
+      if (!post.rt_of) return null;
+
+      try {
+        return await queries.posts.get(post.rt_of);
+      } catch {
+        return null;
+      }
+    },
+
+    hasUserRetweeted: async function (postId: string, userId: string): Promise<boolean> {
+      // Vérifie si un utilisateur a déjà retweeté ce post
+      const req = await supabase
+        .from("posts")
+        .select("authors!inner(*)")
+        .eq("rt_of", postId)
+        .eq("authors.profile", userId);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.data.length > 0;
     },
   },
 
@@ -271,7 +340,33 @@ const queries = {
       if (req.error) {
         throw new Error(req.error.message);
       }
-      return req.data.map((e) => e.posts);
+
+      // Filtrer les retweets simples (sans message) et trier par date
+      const posts = req.data.map((e) => e.posts);
+      const filteredPosts = posts.filter((post) => {
+        return !queries.posts.isSimpleRetweet(post);
+      });
+
+      // Trier par date de création (plus récent en premier)
+      return filteredPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    },
+
+    simpleRetweetsOf: async function (id: string): Promise<Tables<"posts">[]> {
+      // Récupère uniquement les retweets simples (sans message) d'un utilisateur
+      const req = await supabase.from("authors").select("posts(*)").eq("profile", id);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+
+      // Filtrer pour ne garder que les retweets simples et trier par date
+      const posts = req.data.map((e) => e.posts);
+      const simpleRetweets = posts.filter((post) => {
+        return queries.posts.isSimpleRetweet(post);
+      });
+
+      // Trier par date de création (plus récent en premier)
+      return simpleRetweets.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
 
     remove: async function (postId: string): Promise<boolean> {

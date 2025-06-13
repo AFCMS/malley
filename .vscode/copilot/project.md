@@ -13,3 +13,7 @@ export default function ClassName(props: ClassNameProps) {
 ```
 
 Interactions with the Supabase backend are handled in the `src/contexts/supabase/supabase.ts`. Authentication status is abstracted again as a React context through the `src/contexts/auth/AuthContext.tsx` file.
+
+The only language used in the app is English, no localization is implemented.
+
+Comments and function names should also be in English, no matter the language of the LLM input.

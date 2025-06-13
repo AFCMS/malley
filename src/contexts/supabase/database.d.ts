@@ -340,13 +340,7 @@ export type Database = {
       }
     }
     Views: {
-      estimated_category_counts: {
-        Row: {
-          category: string | null
-          estimated_total: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       accept_co_authoring: {

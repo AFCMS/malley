@@ -29,6 +29,7 @@ const ProfileViewer = () => {
   const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[]>([]);
   const [mainPosts, setMainPosts] = useState<Tables<"posts">[]>([]);
   const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
+  const [repliesCount, setRepliesCount] = useState<number>(0);
   const [featuredCount, setFeaturedCount] = useState<number>(0);
   const [profileCategories, setProfileCategories] = useState<Tables<"categories">[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -43,6 +44,7 @@ const ProfileViewer = () => {
     setPinnedPosts([]);
     setMainPosts([]);
     setAllPosts([]);
+    setRepliesCount(0);
     setProfileCategories([]);
 
     async function loadProfileData() {
@@ -73,14 +75,33 @@ const ProfileViewer = () => {
             // Filter pinned posts
             const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
-            // Separate main posts (without parent) and all posts
+            // Separate main posts (without parent) and replies (with parent)
             const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
+            const repliesData = filteredPosts.filter((post) => post.parent_post !== null);
 
-            // For the "all" tab, include ALL posts (main and replies)
-            const allPostsData = sortPostsByDateDesc([...filteredPosts]);
+            // For replies, fetch their parent posts to show context
+            const repliesWithParentsData: Tables<"posts">[] = [];
+            const parentPostIds = new Set<string>();
+
+            // Collect all unique parent post IDs
+            repliesData.forEach((reply) => {
+              if (reply.parent_post) {
+                parentPostIds.add(reply.parent_post);
+              }
+            });
+
+            // Fetch all parent posts
+            const parentPostPromises = Array.from(parentPostIds).map((parentId) =>
+              queries.posts.get(parentId).catch(() => null),
+            );
+            const parentPosts = (await Promise.all(parentPostPromises)).filter(Boolean) as Tables<"posts">[];
+
+            // Combine parent posts and replies for the replies tab
+            repliesWithParentsData.push(...parentPosts, ...repliesData);
 
             setMainPosts(mainPostsData);
-            setAllPosts(allPostsData);
+            setAllPosts(sortPostsByDateDesc(repliesWithParentsData));
+            setRepliesCount(repliesData.length);
           } catch {
             // Continue execution even if posts fetching fails
           }
@@ -198,14 +219,33 @@ const ProfileViewer = () => {
       const pinnedPostIds = updatedProfile.pinned_posts ?? [];
       const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
-      // Separate main posts and all posts
+      // Separate main posts and replies
       const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
+      const repliesData = filteredPosts.filter((post) => post.parent_post !== null);
 
-      // For the "all" tab, include ALL posts (main and replies)
-      const allPostsData = sortPostsByDateDesc([...filteredPosts]);
+      // For replies, fetch their parent posts to show context
+      const repliesWithParentsData: Tables<"posts">[] = [];
+      const parentPostIds = new Set<string>();
+
+      // Collect all unique parent post IDs
+      repliesData.forEach((reply) => {
+        if (reply.parent_post) {
+          parentPostIds.add(reply.parent_post);
+        }
+      });
+
+      // Fetch all parent posts
+      const parentPostPromises = Array.from(parentPostIds).map((parentId) =>
+        queries.posts.get(parentId).catch(() => null),
+      );
+      const parentPosts = (await Promise.all(parentPostPromises)).filter(Boolean) as Tables<"posts">[];
+
+      // Combine parent posts and replies for the replies tab
+      repliesWithParentsData.push(...parentPosts, ...repliesData);
 
       setMainPosts(mainPostsData);
-      setAllPosts(allPostsData);
+      setAllPosts(sortPostsByDateDesc(repliesWithParentsData));
+      setRepliesCount(repliesData.length);
     } catch (error) {
       console.error("Error during update:", error);
     }
@@ -365,7 +405,7 @@ const ProfileViewer = () => {
               setActiveTab("all");
             }}
           >
-            All posts ({pinnedPosts.length + allPosts.length})
+            Replies ({repliesCount})
           </button>
         </nav>
       </div>
@@ -412,24 +452,7 @@ const ProfileViewer = () => {
 
       {activeTab === "all" && (
         <div className="">
-          {/* Pinned posts first */}
-          {pinnedPosts.length > 0 && (
-            <div className="pinned-posts mb-4">
-              <div className="border-t border-gray-200">
-                {pinnedPosts.map((post) => (
-                  <PostViewer
-                    key={post.id}
-                    post={post}
-                    isPinned={true}
-                    onPinUpdate={() => {
-                      void handlePinUpdate();
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          {/* All posts with hierarchy */}
+          {/* Replies only - no pinned posts in this tab */}
           {(() => {
             const organizedPosts = organizePostsHierarchically(allPosts);
             return organizedPosts.map((item, index) => {
@@ -517,9 +540,7 @@ const ProfileViewer = () => {
             });
           })()}
           {/* Message if no content */}
-          {pinnedPosts.length === 0 && allPosts.length === 0 && (
-            <div className="px-4 py-8 text-center text-gray-500">No posts found</div>
-          )}
+          {allPosts.length === 0 && <div className="px-4 py-8 text-center text-gray-500">No replies found</div>}
         </div>
       )}
     </div>

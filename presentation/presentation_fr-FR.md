@@ -10,3 +10,5 @@ paginate: true
 # Malley
 
 Une plateforme de réseau social sur le modèle d'X
+
+![w:200 bg right](../public//favicon.svg)

@@ -40,5 +40,5 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // clean the db again
-  await flushAllTables();
+  //await flushAllTables();
 });

@@ -18,7 +18,8 @@ Row Level Security Policies :
   - posts are controlled by users who have authorship, signified by the presence of an entry in the « authors » table referencing the user’s and the post’s uuid.
   - to make a new post, the client calls the createPost edge function. It handles all insersions and logic as service.
   - files are attached with the post-media bucket. The files are in a directory named after the uuid of the post as part of the upload procedure and cannot be changed. For restrictions and security, refer to the [storage]{#Storage} section.
-  - the `parent_post` is a post this refers to. One might call this a reply, and this is the intended use.
+  - the `parent_post` is a reply.
+  - the `rt_of` is analogous to « retweeting », sharing or iterating on another post.
 - authors
   - no user can directly make an insertion
   - upon posting, the user gets attributed authorship of the post by the createPost edge function.
@@ -63,6 +64,7 @@ erDiagram
         text body
         text media
         uuid parent_post
+        uuid rt_of
     }
 
     authors {
@@ -115,6 +117,8 @@ erDiagram
     posts ||--o{ pendingAuthors : "post"
     posts ||--o{ postsCategories : "post"
     posts ||--o{ posts : "parent_post"
+    posts ||--o{ posts : "rt_of"
+
 
     category ||--o{ profilesCategories : "category"
     category ||--o{ postsCategories : "category"

@@ -35,11 +35,15 @@ export default function EmojiPicker(props: EmojiPickerProps) {
       </button>
 
       <div
-        className="dropdown rounded-box bg-base-100 dropdown-end shadow-sm"
+        className="dropdown rounded-box bg-base-100 dropdown-end emoji-picker-popover z-50 overflow-y-auto shadow-sm"
         popover="auto"
         hidden={isMobile}
         id={props.id}
-        style={{ positionAnchor: `--${props.id}` } as React.CSSProperties}
+        style={
+          {
+            positionAnchor: `--${props.id}`,
+          } as React.CSSProperties
+        }
       >
         <Picker
           data={data}

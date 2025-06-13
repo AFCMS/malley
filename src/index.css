@@ -17,3 +17,11 @@ textarea {
 .sidebarlink {
   @apply flex shrink-0 cursor-pointer flex-nowrap items-center justify-start gap-1.5 p-2 align-middle text-xl outline-offset-2 select-none;
 }
+
+.emoji-picker-popover {
+  /* Modern CSS anchor positioning with automatic fallback */
+  position-anchor: var(--anchor);
+  position-try-fallbacks: flip-block, flip-inline;
+  inset-area: block-end span-inline-end;
+  margin-block-start: 0.5rem;
+}

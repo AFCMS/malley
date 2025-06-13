@@ -31,7 +31,7 @@ const ProfileCategories = () => {
         setSelectedCategories(categories);
         setInitialCategories(categories);
       } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
+        console.error("Error loading categories:", error);
       } finally {
         setIsLoading(false);
       }
@@ -45,34 +45,31 @@ const ProfileCategories = () => {
 
     setIsSaving(true);
     try {
-      // Trouver les catégories à ajouter
+      // Find categories to add
       const categoriesToAdd = selectedCategories.filter(
         (selected) => !initialCategories.find((initial) => initial.id === selected.id),
       );
 
-      // Trouver les catégories à supprimer
+      // Find categories to remove
       const categoriesToRemove = initialCategories.filter(
         (initial) => !selectedCategories.find((selected) => selected.id === initial.id),
       );
 
-      // Ajouter les nouvelles catégories
+      // Add new categories
       for (const category of categoriesToAdd) {
         await queries.profilesCategories.add(category.name);
       }
 
-      // Supprimer les catégories désélectionnées
+      // Remove deselected categories
       for (const category of categoriesToRemove) {
         await queries.profilesCategories.remove(category.name);
       }
       // Retourner au profil
-            // Retourner au profil : on déclare d’abord un handle bien typé
-            // on remonte le handle en tant qu’unknown pour le typer ensuite
-            const rawHandle: unknown = (auth.user.user_metadata as Record<string, unknown>).handle;
-      const handle =
-          typeof rawHandle === "string" && rawHandle.length > 0
-            ? rawHandle
-            : auth.user.id;
-        void navigate(`/@${handle}`);
+      // Retourner au profil : on déclare d’abord un handle bien typé
+      // on remonte le handle en tant qu’unknown pour le typer ensuite
+      const rawHandle: unknown = (auth.user.user_metadata as Record<string, unknown>).handle;
+      const handle = typeof rawHandle === "string" && rawHandle.length > 0 ? rawHandle : auth.user.id;
+      void navigate(`/@${handle}`);
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
     } finally {
@@ -85,22 +82,22 @@ const ProfileCategories = () => {
   };
 
   if (isLoading) {
-    return <TopBar title="Chargement..." />;
+    return <TopBar title="Loading..." />;
   }
 
   return (
     <div className="w-full">
-      <TopBar title="Mes catégories" />
+      <TopBar title="My Categories" />
 
       <div className="p-4">
         <CategoriesChooser selectedCategories={selectedCategories} setSelectedCategories={setSelectedCategories} />
 
         <div className="mt-6 flex gap-3">
           <button className="btn btn-primary flex-1" onClick={() => void handleSave()} disabled={isSaving}>
-            {isSaving ? "Sauvegarde..." : "Sauvegarder"}
+            {isSaving ? "Saving..." : "Save"}
           </button>
           <button className="btn btn-secondary flex-1" onClick={handleCancel} disabled={isSaving}>
-            Annuler
+            Cancel
           </button>
         </div>
       </div>

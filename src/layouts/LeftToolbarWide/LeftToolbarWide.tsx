@@ -46,6 +46,10 @@ export default function LeftToolbarWide() {
                 <HiOutlineSquare2Stack className="h-5 opacity-50" />
                 Discover
               </Link>
+              <Link className="sidebarlink" to={auth.isAuthenticated && auth.profile ? `/ask-author` : "/login"}>
+                <HiOutlineUsers className="h-5 opacity-50" />
+                Co-Author
+              </Link>
               <Link
                 className="btn flex shrink-0 flex-nowrap items-center justify-start gap-1.5 p-2 align-middle text-xl font-normal outline-offset-2 select-none"
                 to="/post"

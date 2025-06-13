@@ -1,748 +1,437 @@
-/* eslint-disable @typescript-eslint/no-confusing-void-expression */
-import { useEffect, useState } from "react";
-import { queries, PostSearchQuery, ProfileSearchQuery } from "../../contexts/supabase/supabase";
+import { useState, useEffect } from "react";
 import { Tables } from "../../contexts/supabase/database";
-import { HiXMark, HiMagnifyingGlass } from "react-icons/hi2";
+import { queries } from "../../contexts/supabase/supabase";
+import CategoriesChooser from "../CategoriesChooser/CategoriesChooser";
+import { HiChevronDown, HiMagnifyingGlass } from "react-icons/hi2";
+import { HiXMark } from "react-icons/hi2";
+
+interface PostSearchQuery {
+  has_text?: string[];
+  has_authors?: string[];
+  has_categories?: string[];
+  liked_by?: string[];
+  from_date?: string;
+  to_date?: string;
+  sort_by?: "created_at" | "likes";
+  sort_order?: "asc" | "desc";
+  paging_limit?: number;
+  paging_offset?: number;
+}
+
+interface ProfileSearchQuery {
+  has_handle?: string[];
+  has_bio?: string[];
+  has_categories?: string[];
+  featured_by?: string[];
+  features_user?: string[];
+  likes_posts?: string[];
+  from_date?: string;
+  to_date?: string;
+  sort_by?: "created_at" | "features_count";
+  sort_order?: "asc" | "desc";
+  paging_limit?: number;
+  paging_offset?: number;
+}
 
 type SearchType = "posts" | "profiles";
 
 interface SearchBuilderProps {
-  onSearch: (query: PostSearchQuery | ProfileSearchQuery, type: SearchType) => Promise<void>;
+  onSearch: (type: SearchType, query: PostSearchQuery | ProfileSearchQuery) => void;
   isLoading?: boolean;
 }
 
 export default function SearchBuilder({ onSearch, isLoading = false }: SearchBuilderProps) {
   const [searchType, setSearchType] = useState<SearchType>("posts");
-
-  // Text inputs
-  const [textTerms, setTextTerms] = useState<string[]>([]);
-  const [handleTerms, setHandleTerms] = useState<string[]>([]);
-  const [bioTerms, setBioTerms] = useState<string[]>([]);
-
-  // Categories
+  const [basicSearch, setBasicSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Tables<"categories">[]>([]);
-  const [categoryEntry, setCategoryEntry] = useState("");
-  const [matchingCategories, setMatchingCategories] = useState<Tables<"categories">[]>([]);
 
-  // Authors/Users
-  const [selectedAuthors, setSelectedAuthors] = useState<Tables<"profiles">[]>([]);
-  const [authorEntry, setAuthorEntry] = useState("");
-  const [matchingProfiles, setMatchingProfiles] = useState<Tables<"profiles">[]>([]);
-  const [highlightedAuthorIndex, setHighlightedAuthorIndex] = useState<number | null>(null);
+  // Post-specific fields
+  const [hasAuthors, setHasAuthors] = useState<string[]>([]);
+  const [likedBy, setLikedBy] = useState<string[]>([]);
 
-  // Features Users (for profiles)
-  const [selectedFeaturesUsers, setSelectedFeaturesUsers] = useState<Tables<"profiles">[]>([]);
-  const [featuresUserEntry, setFeaturesUserEntry] = useState("");
-  const [matchingFeaturesProfiles, setMatchingFeaturesProfiles] = useState<Tables<"profiles">[]>([]);
-  const [highlightedFeaturesIndex, setHighlightedFeaturesIndex] = useState<number | null>(null);
+  // Profile-specific fields
+  const [featuredBy, setFeaturedBy] = useState<string[]>([]);
+  const [featuresUser, setFeaturesUser] = useState<string[]>([]);
 
-  // Date range
+  // Common advanced fields
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-
-  // Sorting
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-  // Pagination (hidden from user)
-  const [limit, setLimit] = useState(20);
-  const [offset, setOffset] = useState(0);
-
-  // Current input for arrays
-  const [currentTextInput, setCurrentTextInput] = useState("");
-  const [currentHandleInput, setCurrentHandleInput] = useState("");
-  const [currentBioInput, setCurrentBioInput] = useState("");
-
-  // Category matching effect
-  useEffect(() => {
-    if (categoryEntry.trim() === "") {
-      setMatchingCategories([]);
-      return;
-    }
-
-    queries.categories
-      .match(categoryEntry)
-      .then((newMatching) => {
-        setMatchingCategories(newMatching);
-      })
-      .catch((error: unknown) => {
-        console.error(error);
-      });
-  }, [categoryEntry]);
-
-  // Profile matching effect for authors
-  useEffect(() => {
-    if (authorEntry.trim() === "") {
-      setMatchingProfiles([]);
-      return;
-    }
-
-    queries.profiles
-      .getAll()
-      .then((profiles) => {
-        const filtered = profiles.filter((profile) => profile.handle.toLowerCase().includes(authorEntry.toLowerCase()));
-        setMatchingProfiles(filtered.slice(0, 10));
-      })
-      .catch((error: unknown) => {
-        console.error(error);
-      });
-  }, [authorEntry]);
-
-  // Profile matching effect for features users
-  useEffect(() => {
-    if (featuresUserEntry.trim() === "") {
-      setMatchingFeaturesProfiles([]);
-      return;
-    }
-
-    queries.profiles
-      .getAll()
-      .then((profiles) => {
-        const filtered = profiles.filter((profile) =>
-          profile.handle.toLowerCase().includes(featuresUserEntry.toLowerCase()),
-        );
-        setMatchingFeaturesProfiles(filtered.slice(0, 10));
-      })
-      .catch((error: unknown) => {
-        console.error(error);
-      });
-  }, [featuresUserEntry]);
-
-  const addTextTerm = () => {
-    if (currentTextInput.trim() && !textTerms.includes(currentTextInput.trim())) {
-      setTextTerms([...textTerms, currentTextInput.trim()]);
-      setCurrentTextInput("");
-    }
-  };
-
-  const addHandleTerm = () => {
-    if (currentHandleInput.trim() && !handleTerms.includes(currentHandleInput.trim())) {
-      setHandleTerms([...handleTerms, currentHandleInput.trim()]);
-      setCurrentHandleInput("");
-    }
-  };
-
-  const addBioTerm = () => {
-    if (currentBioInput.trim() && !bioTerms.includes(currentBioInput.trim())) {
-      setBioTerms([...bioTerms, currentBioInput.trim()]);
-      setCurrentBioInput("");
-    }
-  };
-
-  const removeTextTerm = (term: string) => {
-    setTextTerms(textTerms.filter((t) => t !== term));
-  };
-
-  const removeHandleTerm = (term: string) => {
-    setHandleTerms(handleTerms.filter((t) => t !== term));
-  };
-
-  const removeBioTerm = (term: string) => {
-    setBioTerms(bioTerms.filter((t) => t !== term));
-  };
-
-  const handleSelectCategory = (category: Tables<"categories">) => {
-    if (!selectedCategories.find((c) => c.id === category.id)) {
-      setSelectedCategories([...selectedCategories, category].sort((a, b) => a.name.localeCompare(b.name)));
-    }
-    setCategoryEntry("");
-    setMatchingCategories([]);
-  };
-
-  const handleRemoveCategory = (id: string) => {
-    setSelectedCategories(selectedCategories.filter((c) => c.id !== id));
-  };
-
-  const handleSelectAuthor = (profile: Tables<"profiles">) => {
-    if (!selectedAuthors.find((p) => p.id === profile.id)) {
-      setSelectedAuthors([...selectedAuthors, profile].sort((a, b) => a.handle.localeCompare(b.handle)));
-    }
-    setAuthorEntry("");
-    setMatchingProfiles([]);
-    setHighlightedAuthorIndex(null);
-  };
-
-  const handleRemoveAuthor = (id: string) => {
-    setSelectedAuthors(selectedAuthors.filter((p) => p.id !== id));
-  };
-
-  const handleSelectFeaturesUser = (profile: Tables<"profiles">) => {
-    if (!selectedFeaturesUsers.find((p) => p.id === profile.id)) {
-      setSelectedFeaturesUsers([...selectedFeaturesUsers, profile].sort((a, b) => a.handle.localeCompare(b.handle)));
-    }
-    setFeaturesUserEntry("");
-    setMatchingFeaturesProfiles([]);
-    setHighlightedFeaturesIndex(null);
-  };
-
-  const handleRemoveFeaturesUser = (id: string) => {
-    setSelectedFeaturesUsers(selectedFeaturesUsers.filter((p) => p.id !== id));
-  };
-
-  // Keyboard navigation for authors
-  const handleAuthorKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
-      setHighlightedAuthorIndex((prevIndex) =>
-        prevIndex === null || prevIndex === matchingProfiles.length - 1 ? 0 : prevIndex + 1,
-      );
-    } else if (e.key === "ArrowUp") {
-      setHighlightedAuthorIndex((prevIndex) =>
-        prevIndex === null || prevIndex === 0 ? matchingProfiles.length - 1 : prevIndex - 1,
-      );
-    } else if (e.key === "Enter") {
-      if (highlightedAuthorIndex !== null && matchingProfiles[highlightedAuthorIndex]) {
-        handleSelectAuthor(matchingProfiles[highlightedAuthorIndex]);
-      }
-      e.preventDefault();
-    }
-  };
-
-  // Keyboard navigation for features users
-  const handleFeaturesUserKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
-      setHighlightedFeaturesIndex((prevIndex) =>
-        prevIndex === null || prevIndex === matchingFeaturesProfiles.length - 1 ? 0 : prevIndex + 1,
-      );
-    } else if (e.key === "ArrowUp") {
-      setHighlightedFeaturesIndex((prevIndex) =>
-        prevIndex === null || prevIndex === 0 ? matchingFeaturesProfiles.length - 1 : prevIndex - 1,
-      );
-    } else if (e.key === "Enter") {
-      if (highlightedFeaturesIndex !== null && matchingFeaturesProfiles[highlightedFeaturesIndex]) {
-        handleSelectFeaturesUser(matchingFeaturesProfiles[highlightedFeaturesIndex]);
-      }
-      e.preventDefault();
-    }
-  };
-
-  const buildQuery = (): PostSearchQuery | ProfileSearchQuery => {
-    const baseQuery = {
-      has_categories: selectedCategories.length > 0 ? selectedCategories.map((c) => c.id) : undefined,
-      from_date: fromDate || undefined,
-      to_date: toDate || undefined,
-      sort_order: sortOrder,
-      paging_limit: limit,
-      paging_offset: offset,
-    };
-
-    if (searchType === "posts") {
-      return {
-        ...baseQuery,
-        has_text: textTerms.length > 0 ? textTerms : undefined,
-        has_authors: selectedAuthors.length > 0 ? selectedAuthors.map((a) => a.id) : undefined,
-        sort_by: sortBy ? (sortBy as "created_at" | "likes") : undefined,
-      } as PostSearchQuery;
-    } else {
-      return {
-        ...baseQuery,
-        has_handle: handleTerms.length > 0 ? handleTerms : undefined,
-        has_bio: bioTerms.length > 0 ? bioTerms : undefined,
-        featured_by: selectedAuthors.length > 0 ? selectedAuthors.map((a) => a.id) : undefined,
-        features_user: selectedFeaturesUsers.length > 0 ? selectedFeaturesUsers.map((a) => a.id) : undefined,
-        sort_by: sortBy ? (sortBy as "created_at" | "features_count") : undefined,
-      } as ProfileSearchQuery;
-    }
-  };
+  const [pagingLimit, setPagingLimit] = useState(20);
 
   const handleSearch = () => {
-    const query = buildQuery();
-    void onSearch(query, searchType);
+    if (searchType === "posts") {
+      const query: PostSearchQuery = {
+        paging_limit: pagingLimit,
+        sort_order: sortOrder,
+      };
+
+      // Basic search (text)
+      if (basicSearch.trim()) {
+        query.has_text = [basicSearch.trim()];
+      }
+
+      // Categories
+      if (selectedCategories.length > 0) {
+        query.has_categories = selectedCategories.map((cat) => cat.id);
+      }
+
+      // Advanced fields
+      if (hasAuthors.length > 0) query.has_authors = hasAuthors;
+      if (likedBy.length > 0) query.liked_by = likedBy;
+      if (fromDate) query.from_date = fromDate;
+      if (toDate) query.to_date = toDate;
+      if (sortBy) query.sort_by = sortBy as "created_at" | "likes";
+
+      onSearch("posts", query);
+    } else {
+      const query: ProfileSearchQuery = {
+        paging_limit: pagingLimit,
+        sort_order: sortOrder,
+      };
+
+      // Basic search (handle/bio)
+      if (basicSearch.trim()) {
+        query.has_handle = [basicSearch.trim()];
+        query.has_bio = [basicSearch.trim()];
+      }
+
+      // Categories
+      if (selectedCategories.length > 0) {
+        query.has_categories = selectedCategories.map((cat) => cat.id);
+      }
+
+      // Advanced fields
+      if (featuredBy.length > 0) query.featured_by = featuredBy;
+      if (featuresUser.length > 0) query.features_user = featuresUser;
+      if (likesPosts.length > 0) query.likes_posts = likesPosts;
+      if (fromDate) query.from_date = fromDate;
+      if (toDate) query.to_date = toDate;
+      if (sortBy) query.sort_by = sortBy as "created_at" | "features_count";
+
+      onSearch("profiles", query);
+    }
   };
 
-  const resetForm = () => {
-    setTextTerms([]);
-    setHandleTerms([]);
-    setBioTerms([]);
-    setSelectedCategories([]);
-    setSelectedAuthors([]);
-    setSelectedFeaturesUsers([]);
-    setFromDate("");
-    setToDate("");
-    setSortBy("");
-    setSortOrder("desc");
-    setLimit(20);
-    setOffset(0);
-    setCurrentTextInput("");
-    setCurrentHandleInput("");
-    setCurrentBioInput("");
-    setCategoryEntry("");
-    setAuthorEntry("");
-    setFeaturesUserEntry("");
+  const addToStringArray = (value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    if (value.trim()) {
+      setter((prev) => [...prev, value.trim()]);
+    }
   };
 
-  return (
-    <div className="w-full space-y-4">
-      {/* Search Type Selector */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">Search Type</legend>
-        <div className="flex gap-2">
-          <label className="label cursor-pointer">
-            <input
-              type="radio"
-              name="searchType"
-              className="radio"
-              checked={searchType === "posts"}
-              onChange={() => {
-                setSearchType("posts");
-              }}
-            />
-            <span className="label-text ml-2">Posts</span>
-          </label>
-          <label className="label cursor-pointer">
-            <input
-              type="radio"
-              name="searchType"
-              className="radio"
-              checked={searchType === "profiles"}
-              onChange={() => {
-                setSearchType("profiles");
-              }}
-            />
-            <span className="label-text ml-2">Profiles</span>
-          </label>
-        </div>
-      </fieldset>
+  const removeFromStringArray = (index: number, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setter((prev) => prev.filter((_, i) => i !== index));
+  };
 
-      {/* Text Search Fields */}
-      {searchType === "posts" && (
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Text Content</legend>
-          <div className="mb-2 flex flex-wrap gap-2">
-            {textTerms.map((term) => (
-              <div key={term} className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs">
-                {term}
-                <button
-                  className="size-[0.75rem] cursor-pointer"
-                  onClick={() => {
-                    removeTextTerm(term);
-                  }}
-                  aria-label={`Remove ${term}`}
-                >
-                  <HiXMark className="size-[0.75rem]" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search in post content"
-              className="input w-full pr-10"
-              value={currentTextInput}
-              onChange={(e) => {
-                setCurrentTextInput(e.target.value);
-              }}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTextTerm())}
-            />
-            <button
-              className="btn btn-circle absolute top-1/2 right-2 -translate-y-1/2 transform"
-              onClick={addTextTerm}
-              disabled={!currentTextInput.trim()}
-              aria-label="Add Text Term"
-            >
-              +
-            </button>
-          </div>
-        </fieldset>
-      )}
+  const StringArrayInput = ({
+    label,
+    placeholder,
+    values,
+    setter,
+  }: {
+    label: string;
+    placeholder: string;
+    values: string[];
+    setter: React.Dispatch<React.SetStateAction<string[]>>;
+  }) => {
+    const [inputValue, setInputValue] = useState("");
 
-      {searchType === "profiles" && (
-        <>
-          {/* Handle Search */}
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend">Handle</legend>
-            <div className="mb-2 flex flex-wrap gap-2">
-              {handleTerms.map((term) => (
-                <div key={term} className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs">
-                  @{term}
-                  <button
-                    className="size-[0.75rem] cursor-pointer"
-                    onClick={() => {
-                      removeHandleTerm(term);
-                    }}
-                    aria-label={`Remove ${term}`}
-                  >
-                    <HiXMark className="size-[0.75rem]" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search by handle"
-                className="input w-full pr-10"
-                value={currentHandleInput}
-                onChange={(e) => {
-                  setCurrentHandleInput(e.target.value);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addHandleTerm())}
-              />
-              <button
-                className="btn btn-circle absolute top-1/2 right-2 -translate-y-1/2 transform"
-                onClick={addHandleTerm}
-                disabled={!currentHandleInput.trim()}
-                aria-label="Add Handle Term"
-              >
-                +
-              </button>
-            </div>
-          </fieldset>
-
-          {/* Bio Search */}
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend">Bio Content</legend>
-            <div className="mb-2 flex flex-wrap gap-2">
-              {bioTerms.map((term) => (
-                <div key={term} className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs">
-                  {term}
-                  <button
-                    className="size-[0.75rem] cursor-pointer"
-                    onClick={() => {
-                      removeBioTerm(term);
-                    }}
-                    aria-label={`Remove ${term}`}
-                  >
-                    <HiXMark className="size-[0.75rem]" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search in bio"
-                className="input w-full pr-10"
-                value={currentBioInput}
-                onChange={(e) => {
-                  setCurrentBioInput(e.target.value);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addBioTerm())}
-              />
-              <button
-                className="btn btn-circle absolute top-1/2 right-2 -translate-y-1/2 transform"
-                onClick={addBioTerm}
-                disabled={!currentBioInput.trim()}
-                aria-label="Add Bio Term"
-              >
-                +
-              </button>
-            </div>
-          </fieldset>
-        </>
-      )}
-
-      {/* Categories */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">Categories</legend>
+    return (
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">{label}</span>
+        </label>
         <div className="mb-2 flex flex-wrap gap-2">
-          {selectedCategories.map((category) => (
+          {values.map((value, index) => (
+            <div key={index} className="badge badge-neutral gap-1">
+              {value}
+              <button
+                type="button"
+                className="btn btn-circle btn-ghost btn-xs"
+                onClick={() => removeFromStringArray(index, setter)}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="join">
+          <input
+            type="text"
+            placeholder={placeholder}
+            className="input input-bordered join-item flex-1"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addToStringArray(inputValue, setter);
+                setInputValue("");
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="btn join-item"
+            onClick={() => {
+              addToStringArray(inputValue, setter);
+              setInputValue("");
+            }}
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const UserArrayInput = ({
+    label,
+    placeholder,
+    values,
+    setter,
+  }: {
+    label: string;
+    placeholder: string;
+    values: string[];
+    setter: React.Dispatch<React.SetStateAction<string[]>>;
+  }) => {
+    const [entry, setEntry] = useState("");
+    const [matching, setMatching] = useState<Tables<"profiles">[]>([]);
+    const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+
+    useEffect(() => {
+      if (entry.trim() === "") {
+        setMatching([]);
+        return;
+      }
+
+      queries.profiles
+        .getByHandleFuzzy(entry)
+        .then((newMatching) => {
+          setMatching(newMatching);
+        })
+        .catch((error: unknown) => {
+          console.error(error);
+        });
+    }, [entry]);
+
+    const handleSelectUser = (profile: Tables<"profiles">) => {
+      if (!values.includes(profile.handle)) {
+        setter((prev) => [...prev, profile.handle]);
+      }
+      setEntry("");
+      setMatching([]);
+    };
+
+    const handleRemoveUser = (handle: string) => {
+      setter((prev) => prev.filter((u) => u !== handle));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "ArrowDown") {
+        setHighlightedIndex((prevIndex) =>
+          prevIndex === null || prevIndex === matching.length - 1 ? 0 : prevIndex + 1,
+        );
+      } else if (e.key === "ArrowUp") {
+        setHighlightedIndex((prevIndex) =>
+          prevIndex === null || prevIndex === 0 ? matching.length - 1 : prevIndex - 1,
+        );
+      } else if (e.key === "Enter") {
+        if (highlightedIndex !== null && matching[highlightedIndex]) {
+          handleSelectUser(matching[highlightedIndex]);
+        } else if (entry.trim() !== "") {
+          setter((prev) => [...prev, entry.trim()]);
+          setEntry("");
+        }
+        e.preventDefault();
+      }
+    };
+
+    const handleAddEntryAsUser = () => {
+      if (entry.trim() && !values.includes(entry.trim())) {
+        setter((prev) => [...prev, entry.trim()]);
+      }
+      setEntry("");
+    };
+
+    return (
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text">{label}</span>
+        </label>
+        <div className="mb-2 flex flex-wrap gap-2">
+          {values.map((handle) => (
             <div
-              key={category.id}
+              key={handle}
               className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs uppercase select-none"
             >
-              {category.name}
+              @{handle}
               <button
                 className="size-[0.75rem] cursor-pointer"
-                onClick={() => {
-                  handleRemoveCategory(category.id);
-                }}
-                aria-label={`Remove ${category.name}`}
+                onClick={() => handleRemoveUser(handle)}
+                aria-label={`Remove ${handle}`}
               >
                 <HiXMark className="size-[0.75rem]" />
               </button>
             </div>
           ))}
         </div>
-        <div className="dropdown mb-2 w-full">
-          <input
-            type="text"
-            placeholder="Add category"
-            className="input w-full"
-            value={categoryEntry}
-            onChange={(e) => {
-              setCategoryEntry(e.target.value);
-            }}
-          />
-          {matchingCategories.length > 0 && (
-            <ul className="dropdown-content menu bg-base-100 rounded-box z-10 max-h-48 w-52 overflow-y-auto p-2 shadow-sm">
-              {matchingCategories.map((category) => (
-                <li key={category.id}>
-                  <a
-                    onClick={() => {
-                      handleSelectCategory(category);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    {category.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </fieldset>
-
-      {/* Authors (for posts only) */}
-      {searchType === "posts" && (
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Authors</legend>
-          <div className="mb-2 flex flex-wrap gap-2">
-            {selectedAuthors.map((author) => (
-              <div
-                key={author.id}
-                className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs select-none"
-              >
-                @{author.handle}
-                <button
-                  className="size-[0.75rem] cursor-pointer"
-                  onClick={() => {
-                    handleRemoveAuthor(author.id);
-                  }}
-                  aria-label={`Remove ${author.handle}`}
-                >
-                  <HiXMark className="size-[0.75rem]" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="dropdown mb-2 w-full">
+        <div className="dropdown mb-2 w-full items-center">
+          <div className="relative w-full">
             <input
               type="text"
-              placeholder="Add author"
-              className="input w-full"
-              value={authorEntry}
-              onChange={(e) => {
-                setAuthorEntry(e.target.value);
-              }}
-              onKeyDown={handleAuthorKeyDown}
+              placeholder={placeholder}
+              className="input w-full pr-10"
+              value={entry}
+              onChange={(e) => setEntry(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
-            {matchingProfiles.length > 0 && (
-              <ul className="dropdown-content menu bg-base-100 rounded-box z-10 max-h-48 w-52 overflow-y-auto p-2 shadow-sm">
-                {matchingProfiles.map((profile, index) => (
-                  <li key={profile.id} className={highlightedAuthorIndex === index ? "bg-primary text-white" : ""}>
-                    <a
-                      onClick={() => {
-                        handleSelectAuthor(profile);
-                      }}
-                      className="cursor-pointer"
-                    >
-                      @{profile.handle}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+            <button
+              className="btn btn-circle absolute top-1/2 right-2 -translate-y-1/2 transform"
+              onClick={handleAddEntryAsUser}
+              disabled={entry.trim() === ""}
+              aria-label="Add User"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {matching.length > 0 && (
+          <ul
+            tabIndex={0}
+            className="dropdown-content menu bg-base-100 rounded-box z-10 max-h-48 w-52 overflow-y-auto p-2 shadow-sm"
+          >
+            {matching.map((profile, index) => (
+              <li key={profile.id} className={highlightedIndex === index ? "bg-primary text-white" : ""}>
+                <a onClick={() => handleSelectUser(profile)} className="cursor-pointer">
+                  @{profile.handle}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="card bg-base-100 shadow-sm">
+      <div className="card-body">
+        <div className="card-title">
+          <HiMagnifyingGlass className="h-5 w-5" />
+          Search
+        </div>
+
+        {/* Search Type Toggle */}
+        <div className="tabs tabs-boxed w-fit">
+          <a className={`tab ${searchType === "posts" ? "tab-active" : ""}`} onClick={() => setSearchType("posts")}>
+            Posts
+          </a>
+          <a
+            className={`tab ${searchType === "profiles" ? "tab-active" : ""}`}
+            onClick={() => setSearchType("profiles")}
+          >
+            Profiles
+          </a>
+        </div>
+
+        {/* Basic Search */}
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">{searchType === "posts" ? "Search in posts" : "Search handles/bios"}</span>
+          </label>
+          <input
+            type="text"
+            placeholder={searchType === "posts" ? "Search post content..." : "Search usernames or bios..."}
+            className="input input-bordered"
+            value={basicSearch}
+            onChange={(e) => setBasicSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Categories */}
+        <CategoriesChooser selectedCategories={selectedCategories} setSelectedCategories={setSelectedCategories} />
+
+        {/* Advanced Options */}
+        <div className="collapse-arrow border-base-300 bg-base-200 collapse border">
+          <input type="checkbox" className="peer" />
+          <div className="collapse-title flex items-center gap-2 text-lg font-medium">
+            <HiChevronDown className="h-4 w-4" />
+            Advanced Options
+          </div>
+          <div className="collapse-content space-y-4">
+            {/* Post-specific advanced options */}
+            {searchType === "posts" && (
+              <>
+                <UserArrayInput
+                  label="Authors"
+                  placeholder="Author username"
+                  values={hasAuthors}
+                  setter={setHasAuthors}
+                />
+                <UserArrayInput label="Liked by users" placeholder="Username" values={likedBy} setter={setLikedBy} />
+              </>
             )}
-          </div>
-        </fieldset>
-      )}
-      {/* Replace the two separate fieldsets with this single one */}
-      {searchType === "profiles" && (
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">User Relationships</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {/* Featured By */}
-            <div>
-              <label className="label">
-                <span className="label-text">Featured By</span>
-              </label>
-              <div className="mb-2 flex flex-wrap gap-1">
-                {selectedAuthors.map((author) => (
-                  <div
-                    key={author.id}
-                    className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs select-none"
-                  >
-                    @{author.handle}
-                    <button
-                      className="size-[0.75rem] cursor-pointer"
-                      onClick={() => {
-                        handleRemoveAuthor(author.id);
-                      }}
-                      aria-label={`Remove ${author.handle}`}
-                    >
-                      <HiXMark className="size-[0.75rem]" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="dropdown w-full">
-                <input
-                  type="text"
-                  placeholder="Add user who featured"
-                  className="input w-full"
-                  value={authorEntry}
-                  onChange={(e) => {
-                    setAuthorEntry(e.target.value);
-                  }}
-                  onKeyDown={handleAuthorKeyDown}
-                />
-                {matchingProfiles.length > 0 && (
-                  <ul className="dropdown-content menu bg-base-100 rounded-box z-10 max-h-48 w-52 overflow-y-auto p-2 shadow-sm">
-                    {matchingProfiles.map((profile, index) => (
-                      <li key={profile.id} className={highlightedAuthorIndex === index ? "bg-primary text-white" : ""}>
-                        <a
-                          onClick={() => {
-                            handleSelectAuthor(profile);
-                          }}
-                          className="cursor-pointer"
-                        >
-                          @{profile.handle}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
 
-            {/* Features User */}
-            <div>
-              <label className="label">
-                <span className="label-text">Features User</span>
-              </label>
-              <div className="mb-2 flex flex-wrap gap-1">
-                {selectedFeaturesUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="badge badge-neutral flex items-center gap-1 px-2 py-1 text-xs select-none"
-                  >
-                    @{user.handle}
-                    <button
-                      className="size-[0.75rem] cursor-pointer"
-                      onClick={() => {
-                        handleRemoveFeaturesUser(user.id);
-                      }}
-                      aria-label={`Remove ${user.handle}`}
-                    >
-                      <HiXMark className="size-[0.75rem]" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="dropdown w-full">
-                <input
-                  type="text"
-                  placeholder="Add user who features others"
-                  className="input w-full"
-                  value={featuresUserEntry}
-                  onChange={(e) => {
-                    setFeaturesUserEntry(e.target.value);
-                  }}
-                  onKeyDown={handleFeaturesUserKeyDown}
+            {/* Profile-specific advanced options */}
+            {searchType === "profiles" && (
+              <>
+                <UserArrayInput
+                  label="Featured by users"
+                  placeholder="Username"
+                  values={featuredBy}
+                  setter={setFeaturedBy}
                 />
-                {matchingFeaturesProfiles.length > 0 && (
-                  <ul className="dropdown-content menu bg-base-100 rounded-box z-10 max-h-48 w-52 overflow-y-auto p-2 shadow-sm">
-                    {matchingFeaturesProfiles.map((profile, index) => (
-                      <li
-                        key={profile.id}
-                        className={highlightedFeaturesIndex === index ? "bg-primary text-white" : ""}
-                      >
-                        <a
-                          onClick={() => {
-                            handleSelectFeaturesUser(profile);
-                          }}
-                          className="cursor-pointer"
-                        >
-                          @{profile.handle}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <UserArrayInput
+                  label="Features user"
+                  placeholder="Username"
+                  values={featuresUser}
+                  setter={setFeaturesUser}
+                />
+              </>
+            )}
+
+            {/* Date Range */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">From Date</span>
+                </label>
+                <input
+                  type="date"
+                  className="input input-bordered"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">To Date</span>
+                </label>
+                <input
+                  type="date"
+                  className="input input-bordered"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
               </div>
             </div>
           </div>
-        </fieldset>
-      )}
-
-      {/* Date Range */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">Date Range</legend>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="label">
-              <span className="label-text">From</span>
-            </label>
-            <input
-              type="date"
-              className="input w-full"
-              value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value);
-              }}
-            />
-          </div>
-          <div>
-            <label className="label">
-              <span className="label-text">To</span>
-            </label>
-            <input
-              type="date"
-              className="input w-full"
-              value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value);
-              }}
-            />
-          </div>
         </div>
-      </fieldset>
 
-      {/* Sorting */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">Sorting</legend>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="label">
-              <span className="label-text">Sort by</span>
-            </label>
-            <select
-              className="select w-full"
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-              }}
-            >
-              <option value="">Default</option>
-              <option value="created_at">Date Created</option>
-              {searchType === "posts" ? (
-                <option value="likes">Likes</option>
-              ) : (
-                <option value="features_count">Features Count</option>
-              )}
-            </select>
-          </div>
-          <div>
-            <label className="label">
-              <span className="label-text">Order</span>
-            </label>
-            <select
-              className="select w-full"
-              value={sortOrder}
-              onChange={(e) => {
-                setSortOrder(e.target.value as "asc" | "desc");
-              }}
-            >
-              <option value="desc">Newest First</option>
-              <option value="asc">Oldest First</option>
-            </select>
-          </div>
+        {/* Search Button */}
+        <div className="card-actions justify-end">
+          <button
+            className={`btn btn-primary ${isLoading ? "loading" : ""}`}
+            onClick={handleSearch}
+            disabled={isLoading}
+          >
+            {isLoading ? "Searching..." : "Search"}
+          </button>
         </div>
-      </fieldset>
-
-      {/* Action Buttons */}
-      <div className="flex gap-2">
-        <button
-          className={`btn btn-primary flex-1 ${isLoading ? "loading" : ""}`}
-          onClick={handleSearch}
-          disabled={isLoading}
-        >
-          <HiMagnifyingGlass className="size-4" />
-          Search {searchType}
-        </button>
-        <button className="btn btn-ghost" onClick={resetForm} disabled={isLoading}>
-          Reset
-        </button>
       </div>
     </div>
   );

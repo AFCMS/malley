@@ -10,18 +10,10 @@ import TopBar from "../../layouts/TopBar/TopBar";
 import FetchCard from "../../Components/FetchCard/FetchCard";
 import { RejectedProfilesManager } from "../../utils/rejectedProfiles";
 
-const ALL_KNOWN_PROFILE_IDS: string[] = [
-  "09ae7c64-bb08-49f3-8e64-7c90f62fa37c",
-  "ac7c2be0-e885-4905-a245-9ed9c7c1fec5",
-  "d385aa53-59b5-4a83-91a6-9716c0e76dfd",
-  "e332aa67-c716-4edb-934c-dee540618f34",
-  "f5c93267-abf2-43ea-8973-bcc48520bdb7",
-  "d3dedc23-87d9-4b3f-94cc-3d68e7f4c05e",
-];
-
 const BUFFER_SIZE = 3;
-const PRELOAD_THRESHOLD = 1;
+const PRELOAD_THRESHOLD = 2; // Increased from 1 to prevent running out of profiles
 const MAX_SWIPES_PER_DAY = 20;
+const PROFILES_FETCH_LIMIT = 50; // Number of profiles to fetch at once
 
 const DailySwipeManager = {
   STORAGE_KEY: "daily_swipe_data",
@@ -90,8 +82,8 @@ export default function SwipePage() {
   const [isAnimating, setIsAnimating] = useState(false);
   const processedProfileIdsRef = useRef<Set<string>>(new Set());
   const followedProfileIdsRef = useRef<Set<string>>(new Set());
-  const allAvailableProfilesRef = useRef<string[]>([]);
-  const nextIndexToLoadRef = useRef<number>(0);
+  const feedOffsetRef = useRef<number>(0);
+  const hasMoreProfilesRef = useRef<boolean>(true);
   const isInitializedRef = useRef<boolean>(false);
   useEffect(() => {
     const updateSwipeStatus = () => {
@@ -108,32 +100,94 @@ export default function SwipePage() {
       clearInterval(interval);
     };
   }, []);
-  const filterAvailableProfiles = useCallback(
-    async (profileIds: string[]): Promise<string[]> => {
+  const fetchProfilesFeed = useCallback(
+    async (offset = 0, minRequired = 1): Promise<string[]> => {
       if (!auth.user) return [];
 
-      const availableProfiles: string[] = [];
+      const availableProfileIds: string[] = [];
+      let currentOffset = offset;
+      let maxRetries = 10; // Increased retries for better coverage
+      let totalProfilesProcessed = 0;
+      const maxTotalProfiles = 500; // Safety limit to prevent excessive database queries
 
-      for (const profileId of profileIds) {
-        if (profileId === auth.user.id) continue;
-        if (processedProfileIdsRef.current.has(profileId)) continue;
-        if (followedProfileIdsRef.current.has(profileId)) continue;
-        if (RejectedProfilesManager.isProfileRejected(profileId)) continue;
-
+      while (
+        availableProfileIds.length < minRequired &&
+        hasMoreProfilesRef.current &&
+        maxRetries > 0 &&
+        totalProfilesProcessed < maxTotalProfiles
+      ) {
         try {
-          await queries.profiles.get(profileId);
-          const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profileId);
-          if (isFollowing) {
-            followedProfileIdsRef.current.add(profileId);
-          } else {
-            availableProfiles.push(profileId);
+          const profiles = await queries.feed.profiles.get({
+            sort_by: "created_at",
+            sort_order: "desc",
+            paging_limit: PROFILES_FETCH_LIMIT,
+            paging_offset: currentOffset,
+          });
+
+          totalProfilesProcessed += profiles.length;
+
+          // Only set hasMore to false when we get exactly 0 profiles
+          // Don't assume no more profiles just because we got less than the limit
+          if (profiles.length === 0) {
+            hasMoreProfilesRef.current = false;
+            break; // No more profiles available
           }
-        } catch {
-          continue;
+
+          let addedInThisBatch = 0;
+          for (const profile of profiles) {
+            if (profile.id === auth.user.id) continue;
+            if (processedProfileIdsRef.current.has(profile.id)) continue;
+            if (followedProfileIdsRef.current.has(profile.id)) continue;
+            if (RejectedProfilesManager.isProfileRejected(profile.id)) continue;
+
+            try {
+              const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profile.id);
+              if (isFollowing) {
+                followedProfileIdsRef.current.add(profile.id);
+              } else {
+                availableProfileIds.push(profile.id);
+                addedInThisBatch++;
+              }
+            } catch {
+              continue;
+            }
+          }
+
+          currentOffset += PROFILES_FETCH_LIMIT;
+          maxRetries--;
+
+          // Log progress for debugging
+          console.log(
+            `fetchProfilesFeed: batch processed, added ${addedInThisBatch.toString()}/${profiles.length.toString()}, total available: ${availableProfileIds.length.toString()}/${minRequired.toString()}`,
+          );
+
+          // If we processed a full batch but got very few results, be more aggressive
+          if (profiles.length === PROFILES_FETCH_LIMIT && addedInThisBatch === 0 && maxRetries > 5) {
+            maxRetries = Math.min(maxRetries, 5); // Reduce retries if we're not finding anything
+          }
+        } catch (error) {
+          console.error("Error fetching profiles feed:", error);
+          maxRetries--;
         }
       }
 
-      return availableProfiles;
+      // Update the offset reference to where we left off
+      feedOffsetRef.current = currentOffset;
+
+      // Log completion details and update hasMore status if we hit limits
+      if (totalProfilesProcessed >= maxTotalProfiles) {
+        console.log(`fetchProfilesFeed: hit safety limit of ${maxTotalProfiles.toString()} profiles processed`);
+        // Don't set hasMoreProfilesRef.current = false here, as there might still be more profiles
+        // Only set it to false when we actually get 0 profiles from a query
+      }
+      if (maxRetries <= 0) {
+        console.log("fetchProfilesFeed: hit max retries limit");
+      }
+
+      console.log(
+        `fetchProfilesFeed: completed, returning ${availableProfileIds.length.toString()} profiles, processed ${totalProfilesProcessed.toString()} total`,
+      );
+      return availableProfileIds;
     },
     [auth.user],
   );
@@ -143,21 +197,27 @@ export default function SwipePage() {
     isInitializedRef.current = true;
     RejectedProfilesManager.clearExpiredProfiles();
 
-    const availableIds = await filterAvailableProfiles(ALL_KNOWN_PROFILE_IDS);
-    allAvailableProfilesRef.current = availableIds;
-    nextIndexToLoadRef.current = 0;
+    // Reset pagination
+    feedOffsetRef.current = 0;
+    hasMoreProfilesRef.current = true;
+
+    // Get initial batch of profiles - request enough to fill buffer plus some extra
+    const availableIds = await fetchProfilesFeed(0, BUFFER_SIZE + 2);
+
+    console.log(`Initialization: fetched ${availableIds.length.toString()} profiles`);
 
     if (availableIds.length === 0) {
+      console.log("Setting isSwipeFinished=true: initialization found no profiles");
       setIsSwipeFinished(true);
       setProfileIdQueue([]);
       setCurrentIndex(0);
     } else {
       const initialProfiles = availableIds.slice(0, Math.min(BUFFER_SIZE, availableIds.length));
+      console.log(`Initialization: using ${initialProfiles.length.toString()} profiles for initial queue`);
       setProfileIdQueue(initialProfiles);
-      nextIndexToLoadRef.current = initialProfiles.length;
       setIsSwipeFinished(false);
     }
-  }, [auth.user, filterAvailableProfiles]);
+  }, [auth.user, fetchProfilesFeed]);
   useEffect(() => {
     if (auth.user && !isInitializedRef.current) {
       const initialize = async () => {
@@ -183,47 +243,81 @@ export default function SwipePage() {
 
     const doRefill = async () => {
       setIsRefilling(true);
-      const availableProfiles = allAvailableProfilesRef.current;
-      const startIndex = nextIndexToLoadRef.current;
-      const profilesNeeded = BUFFER_SIZE - currentBufferSize;
-      const remainingProfiles = availableProfiles.length - startIndex;
 
-      if (profilesNeeded <= 0 || remainingProfiles <= 0) {
-        if (currentBufferSize === 0 && remainingProfiles <= 0) setIsSwipeFinished(true);
+      if (!hasMoreProfilesRef.current) {
+        if (currentBufferSize === 0) {
+          console.log("Setting isSwipeFinished=true: no more profiles in database and buffer is empty");
+          setIsSwipeFinished(true);
+        }
         setIsRefilling(false);
         return;
       }
 
-      const profilesToAdd = Math.min(profilesNeeded, remainingProfiles);
-      const newProfiles = availableProfiles.slice(startIndex, startIndex + profilesToAdd);
+      try {
+        // Request more profiles to ensure we get enough after filtering
+        // Be more aggressive - request at least 2x what we need due to heavy filtering
+        const minProfilesNeeded = Math.max(5, (BUFFER_SIZE - currentBufferSize + 1) * 2);
+        console.log(
+          `Refilling profiles: need ${minProfilesNeeded.toString()}, current buffer: ${currentBufferSize.toString()}`,
+        );
 
-      setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
-      nextIndexToLoadRef.current = startIndex + profilesToAdd;
-      for (const profileId of newProfiles) {
-        await queries.profiles.get(profileId).catch(() => {
-          // Ignore preload errors
-        });
+        const newProfiles = await fetchProfilesFeed(feedOffsetRef.current, minProfilesNeeded);
+
+        if (newProfiles.length === 0) {
+          // If fetchProfilesFeed returns 0 profiles, it means it couldn't find any more
+          // and it would have set hasMoreProfilesRef.current = false internally
+          if (currentBufferSize === 0) {
+            console.log("Setting isSwipeFinished=true: fetch returned 0 profiles and buffer is empty");
+            setIsSwipeFinished(true);
+          } else {
+            console.log(`Fetch returned 0 profiles but buffer has ${currentBufferSize.toString()} profiles remaining`);
+          }
+        } else {
+          console.log(`Refill successful: got ${newProfiles.length.toString()} new profiles`);
+          setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
+
+          // Preload profile data
+          for (const profileId of newProfiles) {
+            await queries.profiles.get(profileId).catch(() => {
+              // Ignore preload errors
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error refilling profiles:", error);
+        setError("Error loading profiles");
+      } finally {
+        setIsRefilling(false);
       }
-
-      setIsRefilling(false);
     };
 
     doRefill().catch(() => {
       setError("Error loading profiles");
       setIsRefilling(false);
     });
-  }, [currentIndex, profileIdQueue.length, isLoading, isRefilling, isSwipeFinished, dailyLimitReached]);
+  }, [
+    currentIndex,
+    profileIdQueue.length,
+    isLoading,
+    isRefilling,
+    isSwipeFinished,
+    dailyLimitReached,
+    fetchProfilesFeed,
+  ]);
   useEffect(() => {
-    isInitializedRef.current = false;
-    processedProfileIdsRef.current.clear();
-    followedProfileIdsRef.current.clear();
-    allAvailableProfilesRef.current = [];
-    nextIndexToLoadRef.current = 0;
-    setProfileIdQueue([]);
-    setCurrentIndex(0);
-    setIsSwipeFinished(false);
-    setIsLoading(false);
-    setIsRefilling(false);
+    // Only reset when user actually changes (not on page reload)
+    if (auth.user?.id) {
+      isInitializedRef.current = false;
+      processedProfileIdsRef.current.clear();
+      followedProfileIdsRef.current.clear();
+      feedOffsetRef.current = 0;
+      hasMoreProfilesRef.current = true;
+      setProfileIdQueue([]);
+      setCurrentIndex(0);
+      setIsSwipeFinished(false);
+      setIsLoading(false);
+      setIsRefilling(false);
+    }
   }, [auth.user?.id]);
   const advanceToNextProfile = () => {
     const currentProfileId = profileIdQueue[currentIndex];
@@ -231,7 +325,9 @@ export default function SwipePage() {
       processedProfileIdsRef.current.add(currentProfileId);
     }
 
+    // Increment daily counter
     DailySwipeManager.incrementSwipeCount();
+
     const remaining = DailySwipeManager.getRemainingSwipes();
     setRemainingSwipes(remaining);
 
@@ -274,12 +370,41 @@ export default function SwipePage() {
 
   const resetAllCooldowns = () => {
     RejectedProfilesManager.clearAllRejectedProfiles();
+    // Note: We don't reset DailySwipeManager.resetDailyCount() to prevent unlimited swipes
+    processedProfileIdsRef.current.clear();
+    followedProfileIdsRef.current.clear();
+    isInitializedRef.current = false;
+    feedOffsetRef.current = 0;
+    hasMoreProfilesRef.current = true;
+    setProfileIdQueue([]);
+    setCurrentIndex(0);
+    setIsSwipeFinished(false);
+    // Don't reset daily limit: setDailyLimitReached(false);
+    // Don't reset remaining swipes: setRemainingSwipes(MAX_SWIPES_PER_DAY);
+    setIsLoading(true);
+    setIsRefilling(false);
+
+    setTimeout(() => {
+      initializeAvailableProfiles()
+        .then(() => {
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setError("Error during initialization");
+          setIsLoading(false);
+        });
+    }, 100);
+  };
+
+  // Development-only function to reset everything including daily limit
+  const resetEverythingForDev = () => {
+    RejectedProfilesManager.clearAllRejectedProfiles();
     DailySwipeManager.resetDailyCount();
     processedProfileIdsRef.current.clear();
     followedProfileIdsRef.current.clear();
     isInitializedRef.current = false;
-    allAvailableProfilesRef.current = [];
-    nextIndexToLoadRef.current = 0;
+    feedOffsetRef.current = 0;
+    hasMoreProfilesRef.current = true;
     setProfileIdQueue([]);
     setCurrentIndex(0);
     setIsSwipeFinished(false);
@@ -392,7 +517,7 @@ export default function SwipePage() {
                 Back to home
               </Link>
               <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning">
-                <HiOutlineLockOpen className="size-6" /> Reset rejected profiles
+                <HiOutlineLockOpen className="size-6" /> Reset filters & try again
               </button>
             </div>
           </div>
@@ -407,17 +532,17 @@ export default function SwipePage() {
         <TopBar title="Discover" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="max-w-md p-6 text-center">
-            <div className="mb-4 text-6xl">🎉</div>
-            <h2 className="mb-4 text-2xl font-bold">Swipe finished for today!</h2>
+            <div className="mb-4 text-6xl">🔍</div>
+            <h2 className="mb-4 text-2xl font-bold">No more profiles available!</h2>
             <p className="mb-6 text-gray-600">
-              You have reviewed all available profiles. Some profiles will be available again in 72h.
+              You have reviewed all available profiles for now. Try again later as new profiles are added regularly!
             </p>
             <div className="flex flex-col gap-3">
               <Link to="/" className="btn btn-primary">
                 Back to home
               </Link>
               <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning">
-                <HiOutlineLockOpen className="size-6" /> Reset rejected profiles
+                <HiOutlineLockOpen className="size-6" /> Reset filters & try again
               </button>
             </div>
           </div>
@@ -451,6 +576,18 @@ export default function SwipePage() {
   }
   const currentProfileId = profileIdQueue[currentIndex];
   if (!currentProfileId) {
+    // Add debug info for development
+    const debugInfo = {
+      queueLength: profileIdQueue.length,
+      currentIndex,
+      isRefilling,
+      hasMoreProfiles: hasMoreProfilesRef.current,
+      feedOffset: feedOffsetRef.current,
+      isInitialized: isInitializedRef.current,
+      profileQueue: profileIdQueue,
+    };
+    console.log("SwipePage: No current profile ID - showing 'Preparing profiles...'", debugInfo);
+
     return (
       <div className="w-full">
         <TopBar title="Discover profiles" />
@@ -458,6 +595,15 @@ export default function SwipePage() {
           <div className="text-center">
             <div className="loading loading-spinner loading-lg mb-4"></div>
             <p>Preparing profiles...</p>
+            {process.env.NODE_ENV === "development" && (
+              <div className="mt-4 text-xs text-gray-500">
+                Queue: {profileIdQueue.length.toString()}, Index: {currentIndex.toString()}, Refilling:{" "}
+                {isRefilling ? "yes" : "no"}
+                <br />
+                Initialized: {isInitializedRef.current ? "yes" : "no"}, HasMore:{" "}
+                {hasMoreProfilesRef.current ? "yes" : "no"}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -567,9 +713,14 @@ export default function SwipePage() {
         </div>
 
         <div hidden={import.meta.env.PROD} className="mt-5">
-          <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning">
-            <HiOutlineLockOpen className="size-6" /> Reset rejected profiles
-          </button>
+          <div className="flex gap-2">
+            <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning btn-sm">
+              <HiOutlineLockOpen className="size-4" /> Reset filters
+            </button>
+            <button onClick={resetEverythingForDev} disabled={isLoading} className="btn btn-error btn-sm">
+              🔓 DEV: Reset daily limit
+            </button>
+          </div>
         </div>
       </div>
     </div>

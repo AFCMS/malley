@@ -816,7 +816,11 @@ const queries = {
 };
 
 const utils = {
-  getAvatarUrl: (profile: Tables<"profiles">): string => {
+  getAvatarUrl: (profile: Tables<"profiles"> | undefined | null): string => {
+    if (!profile) {
+      return profilePicturePlaceholder;
+    }
+
     if (profile.profile_pic) {
       return supabase.storage.from("profile-pics").getPublicUrl(profile.profile_pic).data.publicUrl;
     }

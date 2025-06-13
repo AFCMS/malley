@@ -522,11 +522,7 @@ export default function PostViewer(props: PostViewerProps) {
             <div className="flex-shrink-0">
               <div className={`overflow-hidden rounded-full ${isMainPost ? "h-14 w-14" : "h-12 w-12"}`}>
                 <img
-                  src={
-                    mainAuthor
-                      ? utils.getAvatarUrl(mainAuthor)
-                      : "https://img.daisyui.com/images/profile/demo/yellingcat@192.webp"
-                  }
+                  src={utils.getAvatarUrl(mainAuthor)}
                   alt={`${mainAuthor?.handle ?? "Unknown"}'s profile`}
                   className="h-full w-full object-cover"
                 />

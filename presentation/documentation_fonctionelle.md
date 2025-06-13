@@ -36,6 +36,12 @@
 - On peut swiper à gauche pour ignorer un profil, ou à droite pour le suivre
 - On a une limite de swipes par jour pour éviter les abus
 
+## Mobile
+
+- L'application est intégrée en temps que PWA (Progressive Web App) pour une utilisation sur mobile
+- L'interface est optimisée pour une expérience similaire à une application native
+- Partager des profils ou des posts se fait via les dialogues de partage natifs de l'appareil
+
 ---
 
 <img align="right" src="../.github/Hexa_Logo_Sign_RVB_Full.svg" width="300px"/>

@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Database, Tables } from "./database";
 
+import profilePicturePlaceholder from "../../assets/profile.png";
 import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -819,7 +820,7 @@ const utils = {
     if (profile.profile_pic) {
       return supabase.storage.from("profile-pics").getPublicUrl(profile.profile_pic).data.publicUrl;
     }
-    return "https://img.daisyui.com/images/profile/demo/yellingcat@192.webp";
+    return profilePicturePlaceholder;
   },
   getBannerUrl: (profile: Tables<"profiles">): string => {
     if (profile.banner) {

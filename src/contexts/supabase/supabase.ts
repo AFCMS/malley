@@ -161,6 +161,15 @@ const queries = {
         return req.data;
       }
     },
+    
+    getByHandleFuzzy: async function (handle: string): Promise<Tables<"profiles">> {
+      const req = await supabase.from("profiles").select("*").ilike("handle", "%" + handle + "%");
+      if (req.error) {
+        throw new Error(req.error.message);
+      } else {
+        return req.data;
+      }
+    },
 
     isNameAvailable: async function (name: string): Promise<boolean> {
       try {

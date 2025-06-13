@@ -10,15 +10,6 @@ import { Tables } from "../../contexts/supabase/database";
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { useAuth } from "../../contexts/auth/AuthContext";
 
-// IDs de profils suggérés (à remplacer par une vraie recherche plus tard)
-const SUGGESTED_PROFILE_IDS = [
-  "09ae7c64-bb08-49f3-8e64-7c90f62fa37c",
-  "ac7c2be0-e885-4905-a245-9ed9c7c1fec5",
-  "d385aa53-59b5-4a83-91a6-9716c0e76dfd",
-  "e332aa67-c716-4edb-934c-dee540618f34",
-  "f5c93267-abf2-43ea-8973-bcc48520bdb7",
-];
-
 interface AuthorAskProps {
   post: Tables<"posts">;
 }
@@ -55,48 +46,49 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
       console.error("Erreur lors du chargement des profils déjà invités:", error);
       return new Set();
     }
-  }, [auth.user, post.id]);
-
-  // Fonction pour charger les profils suggérés (facilite le remplacement futur)
+  }, [auth.user, post.id]); // Fonction pour charger les profils suggérés (featured profiles)
   const loadSuggestedProfiles = useCallback(async (): Promise<Tables<"profiles">[]> => {
-    // TODO: Quand la recherche sera implémentée, on pourra remplacer cette logique
-    // par un appel API pour récupérer des suggestions personnalisées
-    // Exemple : const suggestions = await queries.profiles.getSuggestions(auth.user?.id);
+    if (!auth.user) return [];
 
-    const profiles: Tables<"profiles">[] = [];
-    const alreadyInvited = await loadAlreadyInvitedProfiles();
+    try {
+      // Récupérer les profils featured par l'utilisateur connecté
+      const featuredProfiles = await queries.features.byUser(auth.user.id);
+      const alreadyInvited = await loadAlreadyInvitedProfiles();
 
-    for (const profileId of SUGGESTED_PROFILE_IDS) {
-      try {
-        // Éviter de suggérer l'utilisateur connecté lui-même
-        if (auth.user && profileId === auth.user.id) continue;
+      // Filtrer les profils déjà invités et l'utilisateur lui-même
+      const filteredProfiles = featuredProfiles.filter((profile) => {
+        return profile.id !== auth.user?.id && !alreadyInvited.has(profile.id);
+      });
 
-        // Éviter de suggérer les profils déjà invités
-        if (alreadyInvited.has(profileId)) continue;
-
-        const profile = await queries.profiles.get(profileId);
-        profiles.push(profile);
-      } catch (error) {
-        // Ignorer les profils qui n'existent pas
-        console.warn(`Profil ${profileId} non trouvé:`, error);
-      }
+      return filteredProfiles;
+    } catch (error) {
+      console.error("Erreur lors du chargement des profils featured:", error);
+      return [];
     }
-    return profiles;
-  }, [auth.user, loadAlreadyInvitedProfiles]);
+  }, [auth.user, loadAlreadyInvitedProfiles]); // Fonction pour effectuer une recherche en utilisant getByHandleFuzzy
+  const performSearch = useCallback(
+    async (query: string): Promise<Tables<"profiles">[]> => {
+      if (!auth.user || query.trim().length < 2) return [];
 
-  // Fonction pour effectuer une recherche (placeholder pour future implémentation)
-  const performSearch = useCallback(async (query: string): Promise<Tables<"profiles">[]> => {
-    // TODO: Remplacer par une vraie fonction de recherche
-    // Exemple d'implémentation future :
-    // const results = await queries.profiles.search(query);
-    // return results.filter(profile => profile.id !== auth.user?.id);
+      try {
+        // Utiliser getByHandleFuzzy pour rechercher des profils
+        // Note: getByHandleFuzzy retourne actuellement un seul profil mais devrait retourner un tableau
+        const searchResult = (await queries.profiles.getByHandleFuzzy(query.trim())) as unknown as Tables<"profiles">[];
 
-    console.log("Recherche pour:", query);
+        // Filtrer pour exclure l'utilisateur connecté et les profils déjà invités
+        const alreadyInvited = await loadAlreadyInvitedProfiles();
+        const filteredResults = searchResult.filter((profile: Tables<"profiles">) => {
+          return profile.id !== auth.user?.id && !alreadyInvited.has(profile.id);
+        });
 
-    // Simulation d'une recherche async (à remplacer par la vraie API)
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return [];
-  }, []);
+        return filteredResults;
+      } catch (error) {
+        console.error("Erreur lors de la recherche de profils:", error);
+        return [];
+      }
+    },
+    [auth.user, loadAlreadyInvitedProfiles],
+  );
 
   // Charger les profils déjà invités et les suggestions quand le modal s'ouvre
   useEffect(() => {

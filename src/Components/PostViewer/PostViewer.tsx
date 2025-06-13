@@ -12,6 +12,7 @@ import {
   HiMapPin,
   HiOutlineUserMinus,
   HiOutlineExclamationTriangle,
+  HiOutlineShare,
 } from "react-icons/hi2";
 
 import { queries, supabase, utils } from "../../contexts/supabase/supabase";
@@ -22,6 +23,7 @@ import PostAdd from "../PostAdd/PostAdd";
 // Removed unused import Dropdown
 import { useAuth } from "../../contexts/auth/AuthContext";
 import Dropdown from "../Dropdown/Dropdown";
+import { closePopover } from "../../utils/popover";
 
 // Removed unused import closePopover
 
@@ -484,6 +486,24 @@ export default function PostViewer(props: PostViewerProps) {
                     icon: isPinned ? HiMapPin : HiOutlineMapPin,
                     onClick: () => {
                       void handlePinPost();
+                    },
+                  },
+                  {
+                    title: "Share",
+                    icon: HiOutlineShare,
+                    onClick: () => {
+                      const shareUrl = `${window.location.origin}/post/${props.post.id}`;
+                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                      if (navigator.share) {
+                        void navigator.share({
+                          url: shareUrl,
+                        });
+                      } else {
+                        void navigator.clipboard.writeText(shareUrl).then(() => {
+                          alert("Profile link copied to clipboard!");
+                        });
+                      }
+                      closePopover(`popover-post-${props.post.id}`);
                     },
                   },
                   {

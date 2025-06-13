@@ -800,11 +800,7 @@ export default function PostViewer(props: PostViewerProps) {
                           <div className="flex-shrink-0">
                             <div className="h-8 w-8 overflow-hidden rounded-full">
                               <img
-                                src={
-                                  quotedPostAuthors[0]
-                                    ? utils.getAvatarUrl(quotedPostAuthors[0])
-                                    : "https://img.daisyui.com/images/profile/demo/yellingcat@192.webp"
-                                }
+                                src={utils.getAvatarUrl(quotedPostAuthors[0])}
                                 alt={`${quotedPostAuthors[0]?.handle ?? "Unknown"}'s profile`}
                                 className="h-full w-full object-cover"
                               />
@@ -833,12 +829,12 @@ export default function PostViewer(props: PostViewerProps) {
                             )}
                             {/* Quoted post media carousel - smaller */}
                             {quotedPost.id && !loadingQuotedMedia && quotedPostMediaUrls.length > 0 && (
-                              <div className="relative mt-2">
-                                <div className="max-h-24 overflow-hidden rounded-lg">
+                              <div className="relative mt-2 aspect-video">
+                                <div className="h-full w-full overflow-hidden rounded-lg">
                                   <img
                                     src={quotedPostMediaUrls[0]}
                                     alt="Quoted post media"
-                                    className="h-24 w-full object-cover"
+                                    className="h-full w-full object-cover"
                                   />
                                 </div>
                                 {quotedPostMediaUrls.length > 1 && (

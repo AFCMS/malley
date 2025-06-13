@@ -337,6 +337,17 @@ const queries = {
       return req.data;
     },
 
+    getAproximateRankings: async function (
+      limit: number,
+    ): Promise<{ category: string | null; estimated_total: number | null }[]> {
+      const req = await supabase.from("estimated_categories_usage").select("*").limit(limit);
+
+      if (req.error) {
+        throw new Error(req.error.message);
+      }
+      return req.data;
+    },
+
     match: async function (like: string): Promise<Tables<"categories">[]> {
       const req = await supabase
         .from("categories")

@@ -330,7 +330,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      estimated_categories_usage: {
+        Row: {
+          category: string | null
+          estimated_total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_co_authoring: {

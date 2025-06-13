@@ -5,6 +5,7 @@ import {
   HiOutlinePencil,
   HiOutlineSquare2Stack,
   HiOutlineUser,
+  HiOutlineUsers,
 } from "react-icons/hi2";
 
 import { useAuth } from "../../contexts/auth/AuthContext";
@@ -29,6 +30,14 @@ export default function BottomDock() {
         title="Discover"
       >
         <HiOutlineSquare2Stack className="size-6" />
+      </Link>
+
+      <Link
+        className={location.pathname === "/ask-author" ? "dock-active" : undefined}
+        to={auth.isAuthenticated && auth.profile ? "/ask-author" : "/login"}
+        title="Co-Author"
+      >
+        <HiOutlineUsers className="size-6" />
       </Link>
 
       <Link

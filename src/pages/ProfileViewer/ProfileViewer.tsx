@@ -148,61 +148,6 @@ const ProfileViewer = () => {
     void checkFeaturingStatus();
   }, [profile, auth.user]);
 
-  // Function to organize posts in hierarchical structure with depth
-  const organizePostsHierarchically = (posts: Tables<"posts">[]): { post: Tables<"posts">; depth: number }[] => {
-    const postMap = new Map<string, Tables<"posts">>();
-    const rootPosts: Tables<"posts">[] = [];
-    const childPosts = new Map<string, Tables<"posts">[]>();
-
-    // Create a map of all posts
-    posts.forEach((post) => {
-      postMap.set(post.id, post);
-    });
-
-    // Organize posts by parent
-    posts.forEach((post) => {
-      if (post.parent_post) {
-        // If the parent exists in our posts, it's a child post in a conversation
-        if (postMap.has(post.parent_post)) {
-          if (!childPosts.has(post.parent_post)) {
-            childPosts.set(post.parent_post, []);
-          }
-          const parentChildren = childPosts.get(post.parent_post);
-          if (parentChildren) {
-            parentChildren.push(post);
-          }
-        } else {
-          // If the parent doesn't exist in our posts, treat as root post
-          rootPosts.push(post);
-        }
-      } else {
-        // Post without parent = root post
-        rootPosts.push(post);
-      }
-    });
-
-    // Build ordered list with hierarchy and depth
-    const result: { post: Tables<"posts">; depth: number }[] = [];
-    const addPostWithChildren = (post: Tables<"posts">, depth: number) => {
-      result.push({ post, depth });
-      const children = childPosts.get(post.id) ?? [];
-      // Sort children by date (oldest first)
-      children
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-        .forEach((child) => {
-          addPostWithChildren(child, depth + 1);
-        });
-    };
-
-    // Sort root posts by date (newest first) and add them with their children
-    rootPosts
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .forEach((post) => {
-        addPostWithChildren(post, 0);
-      });
-
-    return result;
-  };
   const handlePinUpdate = async () => {
     if (!profile) return;
 
@@ -458,93 +403,25 @@ const ProfileViewer = () => {
         <div className="">
           {/* Replies only - no pinned posts in this tab */}
           {(() => {
-            const organizedPosts = organizePostsHierarchically(allPosts);
-            return organizedPosts.map((item, index) => {
-              const { post, depth } = item;
-              const nextItem = organizedPosts[index + 1] as typeof item | undefined;
+            // Filter to only show posts that are replies (have a parent_post)
+            const replyPosts = allPosts.filter((post) => post.parent_post !== null);
 
-              return (
-                <div key={post.id} className="relative">
-                  {/* Vertical connection line from parent */}
-                  {depth > 0 && (
-                    <div
-                      className={`absolute top-0 h-6 w-px ${
-                        depth === 1
-                          ? "left-6 bg-blue-300"
-                          : depth === 2
-                            ? "left-20 bg-green-300"
-                            : depth === 3
-                              ? "left-32 bg-orange-300"
-                              : "left-44 bg-gray-300"
-                      }`}
-                    />
-                  )}
-
-                  {/* Continuous vertical line for following children */}
-                  {nextItem && nextItem.post.parent_post === post.id && (
-                    <div
-                      className={`absolute bottom-0 w-px ${
-                        depth === 0
-                          ? "left-6 bg-blue-300"
-                          : depth === 1
-                            ? "left-20 bg-green-300"
-                            : depth === 2
-                              ? "left-32 bg-orange-300"
-                              : "left-44 bg-gray-300"
-                      }`}
-                      style={{ top: "24px" }}
-                    />
-                  )}
-
-                  {/* Horizontal connector */}
-                  {depth > 0 && (
-                    <div
-                      className={`absolute top-6 h-px w-4 ${
-                        depth === 1
-                          ? "left-6 bg-blue-300"
-                          : depth === 2
-                            ? "left-20 bg-green-300"
-                            : depth === 3
-                              ? "left-32 bg-orange-300"
-                              : "left-44 bg-gray-300"
-                      }`}
-                    />
-                  )}
-
-                  {/* Connection point */}
-                  {depth > 0 && (
-                    <div
-                      className={`absolute top-5 h-2 w-2 rounded-full border-2 border-white ${
-                        depth === 1
-                          ? "left-5 bg-blue-500"
-                          : depth === 2
-                            ? "left-19 bg-green-500"
-                            : depth === 3
-                              ? "left-31 bg-orange-500"
-                              : "left-43 bg-gray-500"
-                      }`}
-                    />
-                  )}
-
-                  <div
-                    className={
-                      depth === 0 ? "" : depth === 1 ? "ml-12" : depth === 2 ? "ml-24" : depth === 3 ? "ml-36" : "ml-48"
-                    }
-                  >
-                    <PostViewer
-                      post={post}
-                      isPinned={false}
-                      onPinUpdate={() => {
-                        void handlePinUpdate();
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            });
+            return replyPosts.map((post) => (
+              <PostViewer
+                key={post.id}
+                post={post}
+                isPinned={false}
+                showChildren={false}
+                onPinUpdate={() => {
+                  void handlePinUpdate();
+                }}
+              />
+            ));
           })()}
           {/* Message if no content */}
-          {allPosts.length === 0 && <div className="px-4 py-8 text-center text-gray-500">No replies found</div>}
+          {allPosts.filter((post) => post.parent_post !== null).length === 0 && (
+            <div className="px-4 py-8 text-center text-gray-500">No replies found</div>
+          )}
         </div>
       )}
     </div>

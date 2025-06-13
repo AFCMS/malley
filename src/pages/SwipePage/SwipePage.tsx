@@ -167,7 +167,7 @@ export default function SwipePage() {
         try {
           await initializeAvailableProfiles();
         } catch {
-          setError("Erreur lors du chargement des profils");
+          setError("Error loading profiles");
         } finally {
           setIsLoading(false);
         }
@@ -267,7 +267,7 @@ export default function SwipePage() {
       followedProfileIdsRef.current.add(profileToFollowId);
       advanceToNextProfile();
     } catch (err) {
-      setError(`Échec du suivi du profil : ${err instanceof Error ? err.message : String(err)}`);
+      setError(`Failed to follow profile: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -295,7 +295,7 @@ export default function SwipePage() {
           setIsLoading(false);
         })
         .catch(() => {
-          setError("Erreur lors de l'initialisation");
+          setError("Error during initialization");
           setIsLoading(false);
         });
     }, 100);
@@ -385,9 +385,9 @@ export default function SwipePage() {
         <div className="flex min-h-screen items-center justify-center">
           <div className="max-w-md p-6 text-center">
             <div className="mb-4 text-6xl">⏰</div>
-            <h2 className="mb-4 text-2xl font-bold">Limite quotidienne atteinte !</h2>
-            <p className="mb-4 text-gray-600">Vous avez utilisé vos {MAX_SWIPES_PER_DAY} swipes quotidiens.</p>
-            <p className="mb-6 text-gray-600">Revenez demain pour découvrir de nouveaux profils !</p>
+            <h2 className="mb-4 text-2xl font-bold">Daily limit reached!</h2>
+            <p className="mb-4 text-gray-600">You have used your {MAX_SWIPES_PER_DAY} daily swipes.</p>
+            <p className="mb-6 text-gray-600">Come back tomorrow to discover new profiles!</p>
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => {
@@ -395,10 +395,10 @@ export default function SwipePage() {
                 }}
                 className="btn btn-primary"
               >
-                Retour à l&apos;accueil
+                Back to home
               </button>
               <button onClick={resetAllCooldowns} className="btn btn-warning">
-                🔓 Annuler tous les blockages
+                🔓 Reset all cooldowns
               </button>
             </div>
           </div>
@@ -414,10 +414,9 @@ export default function SwipePage() {
         <div className="flex min-h-screen items-center justify-center">
           <div className="max-w-md p-6 text-center">
             <div className="mb-4 text-6xl">🎉</div>
-            <h2 className="mb-4 text-2xl font-bold">Swipe terminé pour aujourd&apos;hui !</h2>
+            <h2 className="mb-4 text-2xl font-bold">Swipe finished for today!</h2>
             <p className="mb-6 text-gray-600">
-              Vous avez passé en revue tous les profils disponibles. Certains profils seront à nouveau disponibles dans
-              72h.
+              You have reviewed all available profiles. Some profiles will be available again in 72h.
             </p>
             <div className="flex flex-col gap-3">
               <button
@@ -426,10 +425,10 @@ export default function SwipePage() {
                 }}
                 className="btn btn-primary"
               >
-                Retour à l&apos;accueil
+                Back to home
               </button>
               <button onClick={resetAllCooldowns} className="btn btn-warning">
-                🔓 Annuler tous les blockages
+                🔓 Reset all cooldowns
               </button>
             </div>
           </div>
@@ -441,7 +440,7 @@ export default function SwipePage() {
   if (isLoading && profileIdQueue.length === 0) {
     return (
       <div className="w-full">
-        <TopBar title="Découvrir des profils" />
+        <TopBar title="Discover profiles" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="loading loading-spinner loading-lg"></div>
         </div>
@@ -452,7 +451,7 @@ export default function SwipePage() {
   if (error && profileIdQueue.length === 0 && !isLoading) {
     return (
       <div className="w-full">
-        <TopBar title="Découvrir des profils" />
+        <TopBar title="Discover profiles" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="alert alert-error max-w-md">
             <span>{error}</span>
@@ -465,11 +464,11 @@ export default function SwipePage() {
   if (!currentProfileId) {
     return (
       <div className="w-full">
-        <TopBar title="Découvrir des profils" />
+        <TopBar title="Discover profiles" />
         <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
             <div className="loading loading-spinner loading-lg mb-4"></div>
-            <p>Préparation des profils...</p>
+            <p>Preparing profiles...</p>
           </div>
         </div>
       </div>
@@ -492,8 +491,8 @@ export default function SwipePage() {
         <div className="btn btn-outline btn-info mb-4 w-full rounded-lg p-2.5 hover:cursor-auto">
           <p>
             {remainingSwipes > 0
-              ? `🔥 ${remainingSwipes.toString()} swipes restants aujourd'hui`
-              : "❌ Plus de swipes disponibles aujourd'hui"}
+              ? `🔥 ${remainingSwipes.toString()} swipes remaining today`
+              : "❌ No more swipes available today"}
           </p>
         </div>
 

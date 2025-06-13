@@ -41,6 +41,7 @@ export default function PostAdd({
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<Tables<"categories">[]>([]);
+  const [initialCategories, setInitialCategories] = useState<Tables<"categories">[]>([]);
   const [isLoadingPost, setIsLoadingPost] = useState(false);
   const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
   const [loadingExistingMedia, setLoadingExistingMedia] = useState(false);
@@ -90,6 +91,7 @@ export default function PostAdd({
           try {
             const categories = await queries.postsCategories.get(editPostId);
             setSelectedCategories(categories);
+            setInitialCategories(categories);
           } catch (err: unknown) {
             console.error("Error loading categories:", err);
           }
@@ -167,6 +169,29 @@ export default function PostAdd({
 
         if (!success) {
           throw new Error("Failed to edit post");
+        }
+
+        // Update categories only if component supports them
+        if (showCategories) {
+          // Trouver les catégories à ajouter
+          const categoriesToAdd = selectedCategories.filter(
+            (selected) => !initialCategories.find((initial) => initial.id === selected.id),
+          );
+
+          // Trouver les catégories à supprimer
+          const categoriesToRemove = initialCategories.filter(
+            (initial) => !selectedCategories.find((selected) => selected.id === initial.id),
+          );
+
+          // Ajouter les nouvelles catégories
+          for (const category of categoriesToAdd) {
+            await queries.postsCategories.add(editPostId, category.name);
+          }
+
+          // Supprimer les catégories désélectionnées
+          for (const category of categoriesToRemove) {
+            await queries.postsCategories.remove(editPostId, category.name);
+          }
         }
 
         setError(null);

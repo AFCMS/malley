@@ -1,10 +1,12 @@
-# Glossary
+# Database documentation
+
+## Glossary
 - anon
   - a supabase role. Anon applies to everyone which means users that are not logged in and is unpriviledged
 - service
-  - the other default supabase role. It is infinitely priviledged, thus, BE FRICKKING CAREFUL
+  - the other default supabase role. It is infinitely priviledged, thus, BE CAREFUL
 
-# Structure
+## Structure
 
 The database looks a bit weird at first. This is because it was built with rather specific constraints in mind for a few features we really wanted, notably :
 - Co-authoring
@@ -46,6 +48,7 @@ Row Level Security Policies :
 
 Mermaid js schema of the database :
 
+Date:   Fri Jun 13 15:08:27 2025 +0200
 ```mermaid
 erDiagram
     profiles {
@@ -126,7 +129,7 @@ erDiagram
     profiles ||--o{ features : "featurer/featuree"
 ```
 
-# Storage
+## Storage
 
 ### post-media
 
@@ -137,3 +140,17 @@ The bucket contains directories that are named the uuid of the post of which the
 
 Both buckets are readable by any user and authenticated users can upload a file that starts with their uuid (for caching reasons).
 Users can only have one associated file at a time.
+
+## Queries
+
+There are a few special, complex queries.
+The feed algorithms for getting relevant posts and profiles to present to the user. These are the functions `get_posts_feeds` and `get_profiles_feeds`, which have a lot of potential arguments. They also serve as search functions, because a feed is defined by the client, both as part of the wish to be a transparent platform and to give full control to our users if they so wish. All their arguments are optionnal, and they support pagination.
+The `estimated_categories_usage` is a materialized view for performance. It is refreshed every 5 minutes. How it works is actually somewhat complex :
+  - Before refreshing it, we run `ANALYZE` on the postsCategories and profilesCategories
+  - This allows us to use `pg_stat` to estimate the size of the tables with high efficiency
+  - Knowing this, we can take a representative sample of the table. If the table is small, we can afford to read every row, but with bigger tables, we can take a small proportion of the table and make an accurate guess on the actual usage from it.
+  - All this allows for an extremely quick and decently accurate retrieval of usage statistics.
+
+## Cron and automations
+
+As mentionned in queries, we use a Cron job to analyze the tables `postCategories` and `profilesCategories` and refresh the `estimated_categories_usage`.

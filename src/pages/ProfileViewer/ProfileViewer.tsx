@@ -70,13 +70,13 @@ const ProfileViewer = () => {
             const authorPosts = await queries.authors.postsOf(profileData.id);
             const pinnedPostIds = profileData.pinned_posts ?? [];
 
-            // Filtrer les posts épinglés
+            // Filter pinned posts
             const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
-            // Séparer les posts principaux (sans parent) et tous les posts
+            // Separate main posts (without parent) and all posts
             const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
 
-            // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
+            // For the "all" tab, include ALL posts (main and replies)
             const allPostsData = sortPostsByDateDesc([...filteredPosts]);
 
             setMainPosts(mainPostsData);
@@ -122,21 +122,21 @@ const ProfileViewer = () => {
     void checkFeaturingStatus();
   }, [profile, auth.user]);
 
-  // Fonction pour organiser les posts en structure hiérarchique avec profondeur
+  // Function to organize posts in hierarchical structure with depth
   const organizePostsHierarchically = (posts: Tables<"posts">[]): { post: Tables<"posts">; depth: number }[] => {
     const postMap = new Map<string, Tables<"posts">>();
     const rootPosts: Tables<"posts">[] = [];
     const childPosts = new Map<string, Tables<"posts">[]>();
 
-    // Créer une map de tous les posts
+    // Create a map of all posts
     posts.forEach((post) => {
       postMap.set(post.id, post);
     });
 
-    // Organiser les posts par parent
+    // Organize posts by parent
     posts.forEach((post) => {
       if (post.parent_post) {
-        // Si le parent existe dans nos posts, c'est un post enfant dans une conversation
+        // If the parent exists in our posts, it's a child post in a conversation
         if (postMap.has(post.parent_post)) {
           if (!childPosts.has(post.parent_post)) {
             childPosts.set(post.parent_post, []);
@@ -146,16 +146,16 @@ const ProfileViewer = () => {
             parentChildren.push(post);
           }
         } else {
-          // Si le parent n'existe pas dans nos posts, traiter comme post racine
+          // If the parent doesn't exist in our posts, treat as root post
           rootPosts.push(post);
         }
       } else {
-        // Post sans parent = post racine
+        // Post without parent = root post
         rootPosts.push(post);
       }
     });
 
-    // Construire la liste ordonnée avec hiérarchie et profondeur
+    // Build ordered list with hierarchy and depth
     const result: { post: Tables<"posts">; depth: number }[] = [];
 
     const addPostWithChildren = (post: Tables<"posts">, depth: number) => {
@@ -166,7 +166,7 @@ const ProfileViewer = () => {
       });
     };
 
-    // Trier les posts racines par date et les ajouter avec leurs enfants
+    // Sort root posts by date and add them with their children
     sortPostsByDateDesc(rootPosts).forEach((post) => {
       addPostWithChildren(post, 0);
     });
@@ -178,11 +178,11 @@ const ProfileViewer = () => {
     if (!profile) return;
 
     try {
-      // Recharger les données du profil pour obtenir les posts épinglés à jour
+      // Reload profile data to get updated pinned posts
       const updatedProfile = await queries.profiles.getByHandle(profile.handle);
       setProfile(updatedProfile);
 
-      // Recharger les posts épinglés
+      // Reload pinned posts
       if (updatedProfile.pinned_posts && updatedProfile.pinned_posts.length > 0) {
         const pinnedPostPromises = updatedProfile.pinned_posts.map((postId) =>
           queries.posts.get(postId).catch(() => null),
@@ -193,21 +193,21 @@ const ProfileViewer = () => {
         setPinnedPosts(sortedPinnedPosts);
       } else {
         setPinnedPosts([]);
-      } // Recharger tous les posts
+      } // Reload all posts
       const authorPosts = await queries.authors.postsOf(updatedProfile.id);
       const pinnedPostIds = updatedProfile.pinned_posts ?? [];
       const filteredPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
 
-      // Séparer les posts principaux et tous les posts
+      // Separate main posts and all posts
       const mainPostsData = sortPostsByDateDesc(filteredPosts.filter((post) => post.parent_post === null));
 
-      // Pour l'onglet "all", inclure TOUS les posts (principales et réponses)
+      // For the "all" tab, include ALL posts (main and replies)
       const allPostsData = sortPostsByDateDesc([...filteredPosts]);
 
       setMainPosts(mainPostsData);
       setAllPosts(allPostsData);
     } catch (error) {
-      console.error("Erreur lors de la mise à jour:", error);
+      console.error("Error during update:", error);
     }
   };
 
@@ -344,7 +344,7 @@ const ProfileViewer = () => {
 
       <div className="border-t border-gray-200"></div>
 
-      {/* Onglets de navigation */}
+      {/* Navigation tabs */}
       <div className="border-b border-gray-200">
         <nav className="flex">
           <button
@@ -355,7 +355,7 @@ const ProfileViewer = () => {
               setActiveTab("main");
             }}
           >
-            Publications ({pinnedPosts.length + mainPosts.length})
+            Posts ({pinnedPosts.length + mainPosts.length})
           </button>
           <button
             className={`px-6 py-3 text-sm font-medium transition-colors ${
@@ -365,15 +365,15 @@ const ProfileViewer = () => {
               setActiveTab("all");
             }}
           >
-            Toutes les publications ({pinnedPosts.length + allPosts.length})
+            All posts ({pinnedPosts.length + allPosts.length})
           </button>
         </nav>
       </div>
 
-      {/* Contenu des onglets */}
+      {/* Tab content */}
       {activeTab === "main" && (
         <div className="">
-          {/* Posts épinglés en premier */}
+          {/* Pinned posts first */}
           {pinnedPosts.length > 0 && (
             <div className="pinned-posts mb-4">
               <div className="border-t border-gray-200">
@@ -391,7 +391,7 @@ const ProfileViewer = () => {
               </div>
             </div>
           )}
-          {/* Posts principaux */}
+          {/* Main posts */}
           {mainPosts.map((post) => (
             <PostViewer
               key={post.id}
@@ -403,16 +403,16 @@ const ProfileViewer = () => {
               }}
             />
           ))}
-          {/* Message si aucun contenu */}
+          {/* Message if no content */}
           {pinnedPosts.length === 0 && mainPosts.length === 0 && (
-            <div className="px-4 py-8 text-center text-gray-500">Aucune publication principale trouvée</div>
+            <div className="px-4 py-8 text-center text-gray-500">No main posts found</div>
           )}
         </div>
       )}
 
       {activeTab === "all" && (
         <div className="">
-          {/* Posts épinglés en premier */}
+          {/* Pinned posts first */}
           {pinnedPosts.length > 0 && (
             <div className="pinned-posts mb-4">
               <div className="border-t border-gray-200">
@@ -429,7 +429,7 @@ const ProfileViewer = () => {
               </div>
             </div>
           )}
-          {/* Tous les posts avec hiérarchie */}
+          {/* All posts with hierarchy */}
           {(() => {
             const organizedPosts = organizePostsHierarchically(allPosts);
             return organizedPosts.map((item, index) => {
@@ -438,7 +438,7 @@ const ProfileViewer = () => {
 
               return (
                 <div key={post.id} className="relative">
-                  {/* Ligne verticale de connexion depuis le parent */}
+                  {/* Vertical connection line from parent */}
                   {depth > 0 && (
                     <div
                       className={`absolute top-0 h-6 w-px ${
@@ -453,7 +453,7 @@ const ProfileViewer = () => {
                     />
                   )}
 
-                  {/* Ligne verticale continue pour les enfants suivants */}
+                  {/* Continuous vertical line for following children */}
                   {nextItem && nextItem.post.parent_post === post.id && (
                     <div
                       className={`absolute bottom-0 w-px ${
@@ -469,7 +469,7 @@ const ProfileViewer = () => {
                     />
                   )}
 
-                  {/* Connecteur horizontal */}
+                  {/* Horizontal connector */}
                   {depth > 0 && (
                     <div
                       className={`absolute top-6 h-px w-4 ${
@@ -484,7 +484,7 @@ const ProfileViewer = () => {
                     />
                   )}
 
-                  {/* Point de connexion */}
+                  {/* Connection point */}
                   {depth > 0 && (
                     <div
                       className={`absolute top-5 h-2 w-2 rounded-full border-2 border-white ${
@@ -516,9 +516,9 @@ const ProfileViewer = () => {
               );
             });
           })()}
-          {/* Message si aucun contenu */}
+          {/* Message if no content */}
           {pinnedPosts.length === 0 && allPosts.length === 0 && (
-            <div className="px-4 py-8 text-center text-gray-500">Aucune publication trouvée</div>
+            <div className="px-4 py-8 text-center text-gray-500">No posts found</div>
           )}
         </div>
       )}

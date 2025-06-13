@@ -51,7 +51,6 @@ export default function PostViewer(props: PostViewerProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
-  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
 
   const [isLastAuthor, setIsLastAuthor] = useState(false);
 
@@ -71,7 +70,7 @@ export default function PostViewer(props: PostViewerProps) {
         const postAuthors = await queries.authors.ofPost(props.post.id);
         setAuthors(postAuthors);
 
-        // Vérifier si l'utilisateur est le dernier auteur
+        // Check if the user is the last author
         if (auth.user && postAuthors.length === 1 && postAuthors[0]?.id === auth.user.id) {
           setIsLastAuthor(true);
         } else {
@@ -86,7 +85,7 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchAuthors();
   }, [props.post.id, auth.user]);
 
-  // Récupération des catégories
+  // Fetch categories
   useEffect(() => {
     async function fetchCategories() {
       try {
@@ -100,13 +99,13 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchCategories();
   }, [props.post.id]);
 
-  // Récupération des posts enfants avec tri par likes
+  // Fetch child posts with likes sorting
   useEffect(() => {
     async function fetchChildren() {
       try {
         const childPosts = await queries.posts.getChildren(props.post.id);
 
-        // Pour chaque enfant, récupérer le nombre de likes
+        // For each child, get the number of likes
         const childrenWithLikes = await Promise.all(
           childPosts.map(async (child) => {
             try {
@@ -124,13 +123,13 @@ export default function PostViewer(props: PostViewerProps) {
           }),
         );
 
-        // Trier par nombre de likes (décroissant), puis par date de création (plus récent en cas d'égalité)
+        // Sort by number of likes (descending), then by creation date (most recent in case of tie)
         const sortedChildren = childrenWithLikes.sort((a, b) => {
-          // D'abord par nombre de likes (décroissant)
+          // First by number of likes (descending)
           if (b.likeCount !== a.likeCount) {
             return b.likeCount - a.likeCount;
           }
-          // En cas d'égalité, par date de création (plus récent d'abord)
+          // In case of tie, by creation date (most recent first)
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
 
@@ -143,7 +142,7 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchChildren();
   }, [props.post.id]);
 
-  // Récupération des posts parents
+  // Fetch parent posts
   useEffect(() => {
     async function fetchParents() {
       if (!props.showParents || !props.post.parent_post) {
@@ -162,7 +161,7 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchParents();
   }, [props.post.id, props.showParents, props.post.parent_post]);
 
-  // Récupération des médias
+  // Fetch media
   useEffect(() => {
     async function fetchMediaUrls() {
       if (!props.post.id) {
@@ -194,7 +193,7 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchMediaUrls();
   }, [props.post.id]);
 
-  // Récupération des likes
+  // Fetch likes
   useEffect(() => {
     async function fetchLikes() {
       try {
@@ -208,7 +207,7 @@ export default function PostViewer(props: PostViewerProps) {
           setIsLiked(false);
         }
       } catch (error) {
-        console.error("[ERROR] Erreur lors de la récupération des likes:", error);
+        console.error("[ERROR] Error fetching likes:", error);
         setLikeCount(0);
         setIsLiked(false);
       }
@@ -225,7 +224,7 @@ export default function PostViewer(props: PostViewerProps) {
         setChildren(childPosts);
       })
       .catch((error: unknown) => {
-        console.error("Erreur lors du rechargement des réponses:", error);
+        console.error("Error reloading replies:", error);
         setChildren([]);
       });
   };
@@ -238,7 +237,7 @@ export default function PostViewer(props: PostViewerProps) {
       return;
     }
 
-    // Si c'est un post parent/enfant, naviguer avec highlight
+    // If it's a parent/child post, navigate with highlight
     if (props.highlightPostId && !isMainPost) {
       void navigate(`/post/${props.post.id}?highlight=${props.post.id}`);
     } else {
@@ -258,12 +257,12 @@ export default function PostViewer(props: PostViewerProps) {
         await queries.profiles.setPinnedPost(props.post.id);
       }
 
-      // Appeler la callback de mise à jour immédiatement
+      // Call update callback immediately
       props.onPinUpdate?.();
 
-      // Ne pas recharger la page, l'état est déjà mis à jour
+      // Don't reload the page, state is already updated
     } catch (error) {
-      console.error("Erreur lors de l'épinglage:", error);
+      console.error("Error during pinning:", error);
     } finally {
       setIsPinning(false);
     }
@@ -280,14 +279,14 @@ export default function PostViewer(props: PostViewerProps) {
       if (isLiked) {
         console.log(`[DEBUG] Removing like for user ${auth.user.id} on post ${props.post.id}...`);
 
-        // Vérifier avant suppression
+        // Check before removal
         const beforeRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
         console.log(`[DEBUG] Before remove - User likes post:`, beforeRemove);
 
         const result = await queries.like.remove(props.post.id);
         console.log(`[DEBUG] Remove function returned:`, result);
 
-        // Vérifier après suppression
+        // Check after removal
         const afterRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
         console.log(`[DEBUG] After remove - User likes post:`, afterRemove);
 
@@ -307,9 +306,9 @@ export default function PostViewer(props: PostViewerProps) {
         console.log(`[DEBUG] Like added, new state: isLiked=true, count=`, likeCount + 1);
       }
     } catch (error) {
-      console.error("[ERROR] Erreur lors du like/unlike:", error);
-      // En cas d'erreur, on remet l'état d'origine
-      console.log(`[DEBUG] Erreur, remise à l'état original`);
+      console.error("[ERROR] Error during like/unlike:", error);
+      // In case of error, restore original state
+      console.log(`[DEBUG] Error, restoring original state`);
     } finally {
       setIsLiking(false);
     }
@@ -321,55 +320,56 @@ export default function PostViewer(props: PostViewerProps) {
     try {
       setIsAbandoning(true);
 
-      // Abandon de la propriété
+      // Abandon ownership
       await queries.authors.remove(props.post.id);
 
-      // Animation de succès
-      setShowAbandonConfirm(false);
+      // Close modal
+      const modal = document.getElementById(`abandon-modal-${props.post.id}`) as HTMLDialogElement | null;
+      modal?.close();
 
-      // Si c'est un post principal (page ViewPost)
+      // If it's a main post (ViewPost page)
       if (props.isMainPost) {
         if (isLastAuthor) {
-          // Rediriger vers l'accueil avec un message de suppression
+          // Redirect to home with deletion message
           setTimeout(() => {
             void navigate("/", {
               state: {
-                message: "Post supprimé avec succès après abandon de propriété",
+                message: "Post deleted successfully after ownership abandonment",
                 type: "success",
               },
             });
           }, 1000);
         } else {
-          // Rediriger vers l'accueil avec un message d'abandon
+          // Redirect to home with abandonment message
           setTimeout(() => {
             void navigate("/", {
               state: {
-                message: "Propriété du post abandonnée avec succès",
+                message: "Post ownership abandoned successfully",
                 type: "success",
               },
             });
           }, 1000);
         }
       } else {
-        // Si ce n'est pas un post principal, rafraîchir la page pour actualiser visuellement
+        // If it's not a main post, refresh the page to update visually
         if (isLastAuthor) {
-          // Le post sera supprimé, rafraîchir la page
+          // The post will be deleted, refresh the page
           setTimeout(() => {
             window.location.reload();
           }, 1000);
         } else {
-          // Recharger les auteurs et rafraîchir après un délai
+          // Reload authors and refresh after a delay
           setTimeout(() => {
             void (async () => {
               try {
                 const postAuthors = await queries.authors.ofPost(props.post.id);
                 setAuthors(postAuthors);
-                // Rafraîchir la page pour s'assurer que tout est à jour
+                // Refresh the page to ensure everything is up to date
                 setTimeout(() => {
                   window.location.reload();
                 }, 500);
               } catch {
-                // Le post a peut-être été supprimé, rafraîchir la page
+                // The post may have been deleted, refresh the page
                 window.location.reload();
               }
             })();
@@ -377,7 +377,7 @@ export default function PostViewer(props: PostViewerProps) {
         }
       }
     } catch (error) {
-      console.error("Erreur lors de l'abandon de propriété:", error);
+      console.error("Error during ownership abandonment:", error);
     } finally {
       setIsAbandoning(false);
     }
@@ -386,7 +386,7 @@ export default function PostViewer(props: PostViewerProps) {
   const formatPostDate = (date: Date): string => {
     try {
       if (isNaN(date.getTime())) {
-        return "Date invalide";
+        return "Invalid date";
       }
 
       const now = new Date();
@@ -408,14 +408,14 @@ export default function PostViewer(props: PostViewerProps) {
         });
       }
     } catch (error) {
-      console.error("Erreur de formatage de date:", error);
-      return "Date invalide";
+      console.error("Date formatting error:", error);
+      return "Invalid date";
     }
   };
 
   return (
     <div className="w-full">
-      {/* Posts parents */}
+      {/* Parent posts */}
       {props.showParents && parents.length > 0 && (
         <div className="relative">
           {parents
@@ -440,7 +440,7 @@ export default function PostViewer(props: PostViewerProps) {
         </div>
       )}
 
-      {/* Post principal */}
+      {/* Main post */}
       <div className="relative" id={`post-${props.post.id}`}>
         {!isMainPost && depth > 0 && <div className="absolute top-0 left-6 h-full w-1 bg-gray-400"></div>}
 
@@ -458,7 +458,7 @@ export default function PostViewer(props: PostViewerProps) {
           } ${isPinned ? "border-b-4 border-blue-500" : ""}`}
           onClick={handlePostClick}
         >
-          {/* Menu burger pour l'auteur */}
+          {/* Author menu */}
           {isAuthor && (
             <div className="absolute top-3 right-3 z-10">
               <button
@@ -507,7 +507,10 @@ export default function PostViewer(props: PostViewerProps) {
                     title: isAbandoning ? "Abandoning..." : "Abandon ownership",
                     icon: HiOutlineUserMinus,
                     onClick() {
-                      setShowAbandonConfirm(true);
+                      const modal = document.getElementById(
+                        `abandon-modal-${props.post.id}`,
+                      ) as HTMLDialogElement | null;
+                      modal?.showModal();
                     },
                   },
                 ]}
@@ -563,7 +566,7 @@ export default function PostViewer(props: PostViewerProps) {
               {/* Co-authors */}
               {authors.length > 1 && (
                 <div className={`mt-1 ${isMainPost ? "text-sm" : "text-xs"} text-gray-600`}>
-                  <span>co-écrit par </span>
+                  <span>co-written by </span>
                   {authors
                     .filter((author) => author.id !== mainAuthor?.id)
                     .map((coAuthor, index, filteredAuthors) => (
@@ -578,7 +581,7 @@ export default function PostViewer(props: PostViewerProps) {
                           @{coAuthor.handle}
                         </span>
                         {index < filteredAuthors.length - 1 && (
-                          <span>{index === filteredAuthors.length - 2 ? " et " : ", "}</span>
+                          <span>{index === filteredAuthors.length - 2 ? " and " : ", "}</span>
                         )}
                       </span>
                     ))}
@@ -636,7 +639,7 @@ export default function PostViewer(props: PostViewerProps) {
                   <span className="text-sm">{children.length}</span>
                 </button>
 
-                {/* Bouton pour afficher les réponses - uniquement pour les posts enfants sur ViewPost */}
+                {/* Button to show replies - only for child posts on ViewPost */}
                 {(() => {
                   const shouldShow =
                     props.allowExpandChildren &&
@@ -645,7 +648,7 @@ export default function PostViewer(props: PostViewerProps) {
                     !props.showChildren &&
                     children.length > 0;
 
-                  console.log(`Debug bouton réponses - Post ${props.post.id}:`, {
+                  console.log(`Debug replies button - Post ${props.post.id}:`, {
                     allowExpandChildren: props.allowExpandChildren,
                     isMainPost,
                     showChildrenPosts,
@@ -663,13 +666,11 @@ export default function PostViewer(props: PostViewerProps) {
                       setShowChildrenPosts(true);
                     }}
                   >
-                    {children.length === 1
-                      ? "Afficher la réponse"
-                      : `Afficher les ${children.length.toString()} réponses`}
+                    {children.length === 1 ? "Show reply" : `Show ${children.length.toString()} replies`}
                   </button>
                 )}
 
-                {/* Bouton pour masquer les réponses quand elles sont affichées via l'état local */}
+                {/* Button to hide replies when displayed via local state */}
                 {props.allowExpandChildren &&
                   !isMainPost &&
                   showChildrenPosts &&
@@ -682,7 +683,7 @@ export default function PostViewer(props: PostViewerProps) {
                         setShowChildrenPosts(false);
                       }}
                     >
-                      Masquer les {children.length.toString()} réponse{children.length > 1 ? "s" : ""}
+                      Hide {children.length.toString()} repl{children.length > 1 ? "ies" : "y"}
                     </button>
                   )}
 
@@ -748,12 +749,12 @@ export default function PostViewer(props: PostViewerProps) {
         </div>
       </div>
 
-      {/* Posts enfants */}
+      {/* Child posts */}
       {(props.showChildren ?? showChildrenPosts) && children.length > 0 && (
         <div className="relative">
           {children.map((child) => (
             <div key={child.id} className="relative">
-              {/* Ligne de connexion hiérarchique améliorée */}
+              {/* Enhanced hierarchical connection line */}
               <div
                 className={`absolute top-0 left-6 h-full w-px ${
                   depth === 0
@@ -766,7 +767,7 @@ export default function PostViewer(props: PostViewerProps) {
                 }`}
               ></div>
 
-              {/* Connecteur horizontal */}
+              {/* Horizontal connector */}
               <div
                 className={`absolute top-6 left-6 h-px w-4 ${
                   depth === 0
@@ -779,7 +780,7 @@ export default function PostViewer(props: PostViewerProps) {
                 }`}
               ></div>
 
-              {/* Boule de connexion */}
+              {/* Connection ball */}
               <div
                 className={`absolute top-5 left-5 h-2 w-2 rounded-full border-2 border-white ${
                   depth === 0
@@ -808,75 +809,67 @@ export default function PostViewer(props: PostViewerProps) {
         </div>
       )}
 
-      {/* Modal de confirmation d'abandon de propriété */}
-      {showAbandonConfirm && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
-                <HiOutlineExclamationTriangle className="h-6 w-6 text-orange-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Abandonner la propriété</h3>
-                <p className="text-sm text-gray-500">Cette action est irréversible</p>
-              </div>
+      {/* Ownership abandonment confirmation modal */}
+      <dialog id={`abandon-modal-${props.post.id}`} className="modal">
+        <div className="modal-box max-w-md">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+              <HiOutlineExclamationTriangle className="h-6 w-6 text-orange-600" />
             </div>
-
-            <div className="mb-6">
-              {isLastAuthor ? (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                  <div className="flex items-start gap-3">
-                    <HiOutlineExclamationTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
-                    <div>
-                      <p className="text-sm font-medium text-red-800">Attention : Suppression du post</p>
-                      <p className="mt-1 text-sm text-red-700">
-                        Vous êtes le dernier auteur de ce post. L&apos;abandonner entraînera sa suppression définitive.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-700">
-                  Vous abandonnerez la propriété de ce post. Vous ne pourrez plus le modifier ni le supprimer.
-                </p>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowAbandonConfirm(false);
-                }}
-                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => {
-                  void handleAbandonOwnership();
-                }}
-                disabled={isAbandoning}
-                className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
-                  isLastAuthor
-                    ? "bg-red-600 hover:bg-red-700 disabled:bg-red-400"
-                    : "bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400"
-                } disabled:cursor-not-allowed`}
-              >
-                {isAbandoning ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    {isLastAuthor ? "Suppression..." : "Abandon..."}
-                  </div>
-                ) : isLastAuthor ? (
-                  "Supprimer le post"
-                ) : (
-                  "Abandonner"
-                )}
-              </button>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Abandon ownership</h3>
+              <p className="text-sm text-gray-500">This action is irreversible</p>
             </div>
           </div>
+
+          <div className="mb-6">
+            {isLastAuthor ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="flex items-start gap-3">
+                  <HiOutlineExclamationTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">Warning: Post deletion</p>
+                    <p className="mt-1 text-sm text-red-700">
+                      You are the last author of this post. Abandoning it will result in its permanent deletion.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-700">
+                You will abandon ownership of this post. You will no longer be able to modify or delete it.
+              </p>
+            )}
+          </div>
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn btn-ghost">Cancel</button>
+            </form>
+            <button
+              onClick={() => {
+                void handleAbandonOwnership();
+              }}
+              disabled={isAbandoning}
+              className={`btn text-white ${isLastAuthor ? "btn-error" : "btn-warning"}`}
+            >
+              {isAbandoning ? (
+                <div className="flex items-center gap-2">
+                  <div className="loading loading-spinner loading-sm"></div>
+                  {isLastAuthor ? "Deleting..." : "Abandoning..."}
+                </div>
+              ) : isLastAuthor ? (
+                "Delete post"
+              ) : (
+                "Abandon"
+              )}
+            </button>
+          </div>
         </div>
-      )}
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </div>
   );
 }

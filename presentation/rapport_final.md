@@ -1,10 +1,10 @@
-tâches réalisées, difficultés rencontrées, pistes d’amélioration
+# Rapport Final - Malley
 
-# Tâches réalisées
+## Tâches réalisées
 
 ### CI/CD/Environnement
 
-L’environnement de développement a permis une grande productivité pour chacun des membres et a assuré le bon fonctionnement de l’instance de production à tout moment. 
+L’environnement de développement a permis une grande productivité pour chacun des membres et a assuré le bon fonctionnement de l’instance de production à tout moment.
 
 ### Base de données
 
@@ -16,7 +16,7 @@ Des tests permettent de vérifier son bon fonctionnement avant de valider les ch
 Construit en React Typescript, il est moderne, reprend le language visuel de Twitter/X et autres alternatives.
 Les choix de présentation étant arbitraires, il n’y a guère de justifications autres que liberté artistique et fidélité au modèle.
 
-# Difficultés rencontrées
+## Difficultés rencontrées
 
 ### CI/CD/Environnement
 
@@ -35,7 +35,7 @@ La fonctionalité de « swipe à la tinder », centrale au MVP, a été le poi
 Les règles tacites de qualité et d’organisation, ainsi que les exigeances strictes de la CI ont mené à une base de code plus lente à développer, mais bien plus faciles à maintenir et retraivailler.
 Les choix et la permanence du style graphique ne sont jamais faciles, mais ont été unanimes.
 
-# Pistes d’améliorations
+## Pistes d’améliorations
 
 ### CI/CD/Environnement
 
@@ -53,3 +53,15 @@ Toutes les interactions ne sont pas soumises à des tests, et bien qu’il n’y
 Le respect de la charte graphique est approximatif par endroits, notemment dans la visualisation des posts.
 L’expérience utilisateur pourrait être affinée sur certains aspects.
 Pas assez de caching, menant à des performances suboptimales par endroits.
+
+---
+
+<img align="right" src="../.github/Hexa_Logo_Sign_RVB_Full.svg" width="300px"/>
+
+**Fait par :**
+
+- [AFCMS](https://github.com/AFCMS)
+- [Roceann](https://github.com/Roceann)
+- [AKArien0](https://github.com/AKArien0)
+
+[**École Hexagone**](https://www.ecole-hexagone.com) 🇫🇷 - Promotion 2024/2025

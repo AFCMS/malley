@@ -381,15 +381,16 @@ const queries = {
       return req.data;
     },
 
-    getAproximateRankings: async function (
-      limit: number,
-    ): Promise<{ category: string | null; estimated_total: number | null }[]> {
-      const req = await supabase.from("estimated_categories_usage").select("*").limit(limit);
+    getAproximateRankings: async function (limit: number): Promise<{ name: string; estimated_total: number }[]> {
+      const req = await supabase.from("estimated_categories_usage").select("name, estimated_total").limit(limit);
 
       if (req.error) {
         throw new Error(req.error.message);
       }
-      return req.data;
+      return (req.data as { name: string | null; estimated_total: number | null }[]).map((item) => ({
+        name: item.name ?? "",
+        estimated_total: item.estimated_total ?? 0,
+      }));
     },
 
     match: async function (like: string): Promise<Tables<"categories">[]> {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { HiHeart, HiOutlineCheck, HiOutlineLockOpen, HiOutlineXMark, HiXMark } from "react-icons/hi2";
 
 import { queries } from "../../contexts/supabase/supabase";
@@ -76,7 +76,6 @@ const DailySwipeManager = {
 
 export default function SwipePage() {
   const auth = useAuth();
-  const navigate = useNavigate();
   const [profileIdQueue, setProfileIdQueue] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -389,16 +388,11 @@ export default function SwipePage() {
             <p className="mb-4 text-gray-600">You have used your {MAX_SWIPES_PER_DAY} daily swipes.</p>
             <p className="mb-6 text-gray-600">Come back tomorrow to discover new profiles!</p>
             <div className="flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  void navigate("/");
-                }}
-                className="btn btn-primary"
-              >
+              <Link to="/" className="btn btn-primary">
                 Back to home
-              </button>
-              <button onClick={resetAllCooldowns} className="btn btn-warning">
-                🔓 Reset all cooldowns
+              </Link>
+              <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning">
+                <HiOutlineLockOpen className="size-6" /> Reset rejected profiles
               </button>
             </div>
           </div>

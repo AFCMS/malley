@@ -1,13 +1,6 @@
-CREATE MATERIALIZED VIEW estimated_categories_usage AS(
-  /* so this is a bit fucky
-  first, we estimate the size of postsCategory and profilesCategory
-  then, based on their size, we take a bigger or smaller chunk of them as a sample
-  this is because there is ofc more variation in smaller sample sizes
-  here, we have 100% until a thousand
-  with our hopefully representative sample, we can guess the actual number
-  both are added up to get the counts in, if i didn’t fuck up too bad, little time
-  */
-  WITH
+DROP MATERIALIZED VIEW estimated_categories_usage;
+CREATE MATERIALIZED VIEW estimated_categories_usage AS
+WITH
   est_posts AS (
     SELECT reltuples::bigint AS est_rows FROM pg_class WHERE relname = 'postsCategories'
   ),
@@ -70,13 +63,14 @@ CREATE MATERIALIZED VIEW estimated_categories_usage AS(
     UNION ALL
     SELECT category, extrapolated_count FROM extrapolated_profiles
   )
-  SELECT
-    category,
-    SUM(extrapolated_count) AS estimated_total
-  FROM all_extrapolated
-  GROUP BY category
-  ORDER BY estimated_total DESC
-);
+SELECT
+  c.id as id,
+  c.name as name,
+  SUM(ae.extrapolated_count) AS estimated_total
+FROM all_extrapolated ae
+INNER JOIN categories c ON c.id = ae.category
+GROUP BY c.id, c.name
+ORDER BY estimated_total DESC;
 
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 

@@ -260,6 +260,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "postsCategory_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "estimated_categories_usage"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "postsCategory_post_fkey"
             columns: ["post"]
             isOneToOne: false
@@ -320,6 +327,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "profilesCategory_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "estimated_categories_usage"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "profilesCategory_profile_fkey"
             columns: ["profile"]
             isOneToOne: false
@@ -332,8 +346,9 @@ export type Database = {
     Views: {
       estimated_categories_usage: {
         Row: {
-          category: string | null
           estimated_total: number | null
+          id: string | null
+          name: string | null
         }
         Relationships: []
       }

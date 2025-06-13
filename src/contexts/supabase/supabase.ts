@@ -113,6 +113,15 @@ const queries = {
       }
     },
 
+    getAll: async function (): Promise<Tables<"profiles">[]> {
+      const req = await supabase.from("profiles").select("*");
+      if (req.error) {
+        throw new Error(req.error.message);
+      } else {
+        return req.data;
+      }
+    },
+
     updateBio: async function (bio: string) {
       const user = await getUser();
       if (!user) {

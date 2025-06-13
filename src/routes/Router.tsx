@@ -14,6 +14,7 @@ import Search from "../pages/Search/Search";
 import ProfileCategories from "../pages/ProfileCategories/ProfileCategories";
 import ProfileFollowing from "../pages/ProfileFollowing/ProfileFollowing";
 import ProfileFollowed from "../pages/ProfileFollowed/ProfileFollowed";
+import ProfileList from "../pages/ProfileList/ProfileList";
 import AskAuthor from "../pages/AskAuthor/AskAuthor";
 
 export default function Router() {
@@ -33,6 +34,7 @@ export default function Router() {
         <Route path="/profile/categories" element={<ProfileCategories />} />
         <Route path="/profile/following" element={<ProfileFollowing />} />
         <Route path="/profile/followed" element={<ProfileFollowed />} />
+        <Route path="/profile/list" element={<ProfileList />} />
         <Route path="/ask-author" element={<AskAuthor />} />
         <Route path="/swipe" element={<SwipePage />} />
         <Route path="*" element={<div>404</div>} />

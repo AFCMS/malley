@@ -1,4 +1,3 @@
-DROP MATERIALIZED VIEW estimated_categories_usage;
 CREATE MATERIALIZED VIEW estimated_categories_usage AS
 WITH
   est_posts AS (

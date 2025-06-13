@@ -1,4 +1,4 @@
-CREATE OR REPLACE MATERIALIZED VIEW AS
+CREATE MATERIALIZED VIEW estimated_categories_usage AS(
   /* so this is a bit fucky
   first, we estimate the size of postsCategory and profilesCategory
   then, based on their size, we take a bigger or smaller chunk of them as a sample
@@ -76,4 +76,15 @@ CREATE OR REPLACE MATERIALIZED VIEW AS
   FROM all_extrapolated
   GROUP BY category
   ORDER BY estimated_total DESC
-;
+);
+
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+select cron.schedule('update estimated categories usage',
+  '*/5 * * * *',
+  $$
+    ANALYZE "postsCategories";
+    ANALYZE "profilesCategories";
+    REFRESH MATERIALIZED VIEW estimated_categories_usage;
+  $$
+);

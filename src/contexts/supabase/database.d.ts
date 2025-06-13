@@ -215,23 +215,33 @@ export type Database = {
           created_at: string
           id: string
           parent_post: string | null
+          rt_of: string | null
         }
         Insert: {
           body?: string | null
           created_at?: string
           id?: string
           parent_post?: string | null
+          rt_of?: string | null
         }
         Update: {
           body?: string | null
           created_at?: string
           id?: string
           parent_post?: string | null
+          rt_of?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "posts_parent_post_fkey"
             columns: ["parent_post"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_rt_of_fkey"
+            columns: ["rt_of"]
             isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["id"]
@@ -330,7 +340,13 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      estimated_category_counts: {
+        Row: {
+          category: string | null
+          estimated_total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_co_authoring: {
@@ -359,6 +375,7 @@ export type Database = {
           created_at: string
           id: string
           parent_post: string | null
+          rt_of: string | null
         }[]
       }
       get_profiles_feed: {

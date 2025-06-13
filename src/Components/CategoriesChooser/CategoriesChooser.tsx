@@ -63,7 +63,7 @@ export default function CategoriesChooser({ selectedCategories, setSelectedCateg
   };
 
   const handleAddEntryAsCategory = () => {
-    const newCategory = { id: "", name: entry }; // initiate one that has a blank id, aka doesn’t exist yet
+    const newCategory = { id: entry, name: entry }; // initiate one that has a blank id, aka doesn’t exist yet
     if (!selectedCategories.find((c) => c.name === newCategory.name)) {
       setSelectedCategories((prev) => [...prev, newCategory].sort((a, b) => a.name.localeCompare(b.name)));
     }

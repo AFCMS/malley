@@ -835,3 +835,4 @@ const utils = {
 };
 
 export { supabase, queries, utils };
+export type { PostSearchQuery, ProfileSearchQuery, postWithCategories, stdPostInfo };

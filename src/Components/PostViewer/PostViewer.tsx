@@ -52,7 +52,6 @@ export default function PostViewer(props: PostViewerProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
-  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [retweetCount, setRetweetCount] = useState(0);
   const [isLastAuthor, setIsLastAuthor] = useState(false);
   const [hasRetweeted, setHasRetweeted] = useState(false);
@@ -223,7 +222,7 @@ export default function PostViewer(props: PostViewerProps) {
     }
 
     void fetchMediaUrls();
-  }, [props.post.id]);
+  }, [props.post.id, props.post, originalPost]);
 
   // Fetch likes
   useEffect(() => {
@@ -652,7 +651,10 @@ export default function PostViewer(props: PostViewerProps) {
                         title: isAbandoning ? "Abandoning..." : "Abandon retweet",
                         icon: HiOutlineUserMinus,
                         onClick() {
-                          setShowAbandonConfirm(true);
+                          const modal = document.getElementById(
+                            `abandon-modal-${props.post.id}`,
+                          ) as HTMLDialogElement | null;
+                          modal?.showModal();
                         },
                       },
                     ]
@@ -766,7 +768,7 @@ export default function PostViewer(props: PostViewerProps) {
                       </span>
                     ))}
                 </div>
-              )}{" "}
+              )}
               {/* Post content */}
               {queries.posts.isSimpleRetweet(props.post) && originalPost ? (
                 // Display original post for simple retweets
@@ -1011,11 +1013,8 @@ export default function PostViewer(props: PostViewerProps) {
                           console.log(`[DEBUG] Retweet deleted successfully, new count:`, updatedRetweets.length);
                         } catch (error) {
                           console.error("Error deleting retweet:", error);
-                          if (error instanceof Error) {
-                            alert(`Error: ${error.message}`);
-                          } else {
-                            alert("Error deleting retweet.");
-                          }
+                          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+                          alert(`Error: ${errorMessage}`);
                         }
                       } else {
                         // Ouvrir le dialog pour retweeter
@@ -1089,7 +1088,7 @@ export default function PostViewer(props: PostViewerProps) {
                 isReply={true}
               />
             </div>
-          )}{" "}
+          )}
         </div>
       </div>
 
@@ -1256,11 +1255,8 @@ export default function PostViewer(props: PostViewerProps) {
                     console.log(`[DEBUG] Simple retweet successful, new count:`, retweets.length);
                   } catch (error) {
                     console.error("Error during retweet:", error);
-                    if (error instanceof Error) {
-                      alert(`Error: ${error.message}`);
-                    } else {
-                      alert("Error during retweet. Please try again.");
-                    }
+                    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+                    alert(`Error: ${errorMessage}`);
                   }
                 })();
               }}

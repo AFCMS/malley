@@ -105,8 +105,8 @@ const ProfileViewer = () => {
             });
 
             setMainPosts(mainPostsData);
-            setAllPosts(sortPostsByDateDesc(repliesWithParentsData));
-            setRepliesCount(repliesData.length);
+            setAllPosts(allPostsData);
+            setRepliesCount(allPostsData.filter((post) => post.parent_post !== null).length);
           } catch {
             // Continue execution even if posts fetching fails
           }
@@ -248,8 +248,8 @@ const ProfileViewer = () => {
       );
 
       setMainPosts(mainPostsData);
-      setAllPosts(sortPostsByDateDesc(repliesWithParentsData));
-      setRepliesCount(repliesData.length);
+      setAllPosts(allPostsData);
+      setRepliesCount(allPostsData.filter((post) => post.parent_post !== null).length);
     } catch (error) {
       console.error("Error during update:", error);
     }

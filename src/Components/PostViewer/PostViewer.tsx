@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import {
   HiOutlineChatBubbleOvalLeft,
   HiOutlineArrowPath,
-  HiOutlineBookmark,
   HiOutlineHeart,
   HiHeart,
   HiOutlineEllipsisHorizontal,
@@ -888,183 +887,181 @@ export default function PostViewer(props: PostViewerProps) {
                 </div>
               )}
               {/* Action buttons */}
-              <div className={`mt-3 flex max-w-md items-center justify-between ${isMainPost ? "mt-4" : ""}`}>
-                <button
-                  className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-blue-500"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isMainPost || props.showChildren) {
-                      setShowReplyForm(!showReplyForm);
-                    } else if (children.length > 0) {
-                      setShowChildrenPosts(!showChildrenPosts);
-                    } else {
-                      setShowReplyForm(!showReplyForm);
-                    }
-                  }}
-                >
-                  <div className="rounded-full p-2 transition-colors group-hover:bg-blue-50">
-                    <HiOutlineChatBubbleOvalLeft className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm">{children.length}</span>
-                </button>
+              <div className={`mt-3 ${isMainPost ? "mt-4" : ""}`}>
+                {/* Show/Hide replies buttons */}
+                <div className="mb-2 flex items-center gap-2">
+                  {/* Button to show replies - only for child posts on ViewPost */}
+                  {(() => {
+                    const shouldShow =
+                      props.allowExpandChildren &&
+                      !isMainPost &&
+                      !showChildrenPosts &&
+                      !props.showChildren &&
+                      children.length > 0;
 
-                {/* Button to show replies - only for child posts on ViewPost */}
-                {(() => {
-                  const shouldShow =
-                    props.allowExpandChildren &&
-                    !isMainPost &&
-                    !showChildrenPosts &&
-                    !props.showChildren &&
-                    children.length > 0;
+                    console.log(`Debug replies button - Post ${props.post.id}:`, {
+                      allowExpandChildren: props.allowExpandChildren,
+                      isMainPost,
+                      showChildrenPosts,
+                      showChildren: props.showChildren,
+                      childrenLength: children.length,
+                      shouldShow,
+                    });
 
-                  console.log(`Debug replies button - Post ${props.post.id}:`, {
-                    allowExpandChildren: props.allowExpandChildren,
-                    isMainPost,
-                    showChildrenPosts,
-                    showChildren: props.showChildren,
-                    childrenLength: children.length,
-                    shouldShow,
-                  });
-
-                  return shouldShow;
-                })() && (
-                  <button
-                    className="text-xs text-blue-600 underline transition-colors hover:text-blue-800"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowChildrenPosts(true);
-                    }}
-                  >
-                    {children.length === 1 ? "Show reply" : `Show ${children.length.toString()} replies`}
-                  </button>
-                )}
-
-                {/* Button to hide replies when displayed via local state */}
-                {props.allowExpandChildren &&
-                  !isMainPost &&
-                  showChildrenPosts &&
-                  !props.showChildren &&
-                  children.length > 0 && (
+                    return shouldShow;
+                  })() && (
                     <button
-                      className="text-xs text-gray-600 underline transition-colors hover:text-gray-800"
+                      className="text-xs text-blue-600 underline transition-colors hover:text-blue-800"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowChildrenPosts(false);
+                        setShowChildrenPosts(true);
                       }}
                     >
-                      Hide {children.length.toString()} repl{children.length > 1 ? "ies" : "y"}
+                      {children.length === 1 ? "Show reply" : `Show ${children.length.toString()} replies`}
                     </button>
                   )}
-                <button
-                  className={`group flex items-center gap-2 transition-colors ${
-                    hasRetweeted
-                      ? "text-green-600 hover:text-green-700"
-                      : retweetCount > 0
-                        ? "cursor-not-allowed text-gray-400"
-                        : "text-gray-500 hover:text-green-500"
-                  }`}
-                  disabled={retweetCount > 0 && !hasRetweeted}
-                  onClick={(e) => {
-                    e.stopPropagation();
 
-                    // Si le bouton est désactivé, ne rien faire
-                    if (retweetCount > 0 && !hasRetweeted) return;
+                  {/* Button to hide replies when displayed via local state */}
+                  {props.allowExpandChildren &&
+                    !isMainPost &&
+                    showChildrenPosts &&
+                    !props.showChildren &&
+                    children.length > 0 && (
+                      <button
+                        className="text-xs text-gray-600 underline transition-colors hover:text-gray-800"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowChildrenPosts(false);
+                        }}
+                      >
+                        Hide {children.length.toString()} repl{children.length > 1 ? "ies" : "y"}
+                      </button>
+                    )}
+                </div>
 
-                    // Wrap async logic to avoid async handlers
-                    void (async () => {
-                      if (hasRetweeted) {
-                        try {
-                          // Déterminer quel post utiliser pour chercher les retweets
-                          let targetPostId = props.post.id;
-                          if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
-                            targetPostId = originalPost.id;
-                          }
-                          // Trouver le retweet de l'utilisateur et l'abandonner
-                          const retweets = await queries.posts.getRetweetsOf(targetPostId);
-
-                          // Rechercher le retweet de l'utilisateur actuel
-                          let userRetweetId: string | null = null;
-                          for (const rt of retweets) {
-                            const retweetAuthors = await queries.authors.ofPost(rt.id);
-                            if (retweetAuthors.some((author) => author.id === auth.user?.id)) {
-                              userRetweetId = rt.id;
-                              break;
-                            }
-                          }
-
-                          if (userRetweetId) {
-                            await queries.authors.remove(userRetweetId);
-                          }
-                          // Update state immediately
-                          const updatedRetweets = await queries.posts.getRetweetsOf(targetPostId);
-                          setRetweetCount(updatedRetweets.length);
-                          setHasRetweeted(false);
-
-                          // If this is a simple retweet post, trigger parent update
-                          if (queries.posts.isSimpleRetweet(props.post)) {
-                            // For simple retweets, we need to refresh the parent component
-                            props.onPinUpdate?.();
-                          }
-
-                          console.log(`[DEBUG] Retweet deleted successfully, new count:`, updatedRetweets.length);
-                        } catch (error) {
-                          console.error("Error deleting retweet:", error);
-                          const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-                          alert(`Error: ${errorMessage}`);
-                        }
+                {/* Main action buttons - aligned to the right with spacing */}
+                <div className="flex items-center justify-end gap-8">
+                  <button
+                    className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-blue-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isMainPost || props.showChildren) {
+                        setShowReplyForm(!showReplyForm);
+                      } else if (children.length > 0) {
+                        setShowChildrenPosts(!showChildrenPosts);
                       } else {
-                        // Ouvrir le dialog pour retweeter
-                        const modal = document.getElementById(`retweet-modal-${props.post.id}`) as HTMLDialogElement;
-                        modal.showModal();
+                        setShowReplyForm(!showReplyForm);
                       }
-                    })();
-                  }}
-                  title={
-                    retweetCount > 0 && !hasRetweeted
-                      ? "This post has already been retweeted"
-                      : hasRetweeted
-                        ? "Delete retweet"
-                        : "Retweet"
-                  }
-                >
-                  <div
-                    className={`rounded-full p-2 transition-colors ${
-                      hasRetweeted
-                        ? "bg-green-100 group-hover:bg-green-200"
-                        : retweetCount > 0
-                          ? "bg-gray-100"
-                          : "group-hover:bg-green-50"
-                    }`}
+                    }}
                   >
-                    <HiOutlineArrowPath className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm">{retweetCount}</span>
-                </button>
-                <button
-                  className={`group flex items-center gap-2 transition-colors ${
-                    isLiked ? "text-red-500" : "text-gray-500 hover:text-red-500"
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void handleLikeToggle();
-                  }}
-                  disabled={isLiking}
-                >
-                  <div className="rounded-full p-2 transition-colors group-hover:bg-red-50">
-                    {isLiked ? <HiHeart className="h-5 w-5" /> : <HiOutlineHeart className="h-5 w-5" />}
-                  </div>
-                  <span className="text-sm">{likeCount}</span>
-                </button>
-                <button
-                  className="group flex items-center gap-2 text-gray-500 transition-colors hover:text-blue-500"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <div className="rounded-full p-2 transition-colors group-hover:bg-blue-50">
-                    <HiOutlineBookmark className="h-5 w-5" />
-                  </div>
-                </button>
+                    <div className="rounded-full p-2 transition-colors group-hover:bg-blue-50">
+                      <HiOutlineChatBubbleOvalLeft className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm">{children.length}</span>
+                  </button>
+
+                  <button
+                    className={`group flex items-center gap-2 transition-colors ${
+                      hasRetweeted
+                        ? "text-green-600 hover:text-green-700"
+                        : retweetCount > 0
+                          ? "cursor-not-allowed text-gray-400"
+                          : "text-gray-500 hover:text-green-500"
+                    }`}
+                    disabled={retweetCount > 0 && !hasRetweeted}
+                    onClick={(e) => {
+                      e.stopPropagation();
+
+                      // Si le bouton est désactivé, ne rien faire
+                      if (retweetCount > 0 && !hasRetweeted) return;
+
+                      // Wrap async logic to avoid async handlers
+                      void (async () => {
+                        if (hasRetweeted) {
+                          try {
+                            // Déterminer quel post utiliser pour chercher les retweets
+                            let targetPostId = props.post.id;
+                            if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
+                              targetPostId = originalPost.id;
+                            }
+                            // Trouver le retweet de l'utilisateur et l'abandonner
+                            const retweets = await queries.posts.getRetweetsOf(targetPostId);
+
+                            // Rechercher le retweet de l'utilisateur actuel
+                            let userRetweetId: string | null = null;
+                            for (const rt of retweets) {
+                              const retweetAuthors = await queries.authors.ofPost(rt.id);
+                              if (retweetAuthors.some((author) => author.id === auth.user?.id)) {
+                                userRetweetId = rt.id;
+                                break;
+                              }
+                            }
+
+                            if (userRetweetId) {
+                              await queries.authors.remove(userRetweetId);
+                            }
+                            // Update state immediately
+                            const updatedRetweets = await queries.posts.getRetweetsOf(targetPostId);
+                            setRetweetCount(updatedRetweets.length);
+                            setHasRetweeted(false);
+
+                            // If this is a simple retweet post, trigger parent update
+                            if (queries.posts.isSimpleRetweet(props.post)) {
+                              // For simple retweets, we need to refresh the parent component
+                              props.onPinUpdate?.();
+                            }
+
+                            console.log(`[DEBUG] Retweet deleted successfully, new count:`, updatedRetweets.length);
+                          } catch (error) {
+                            console.error("Error deleting retweet:", error);
+                            const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+                            alert(`Error: ${errorMessage}`);
+                          }
+                        } else {
+                          // Ouvrir le dialog pour retweeter
+                          const modal = document.getElementById(`retweet-modal-${props.post.id}`) as HTMLDialogElement;
+                          modal.showModal();
+                        }
+                      })();
+                    }}
+                    title={
+                      retweetCount > 0 && !hasRetweeted
+                        ? "This post has already been retweeted"
+                        : hasRetweeted
+                          ? "Delete retweet"
+                          : "Retweet"
+                    }
+                  >
+                    <div
+                      className={`rounded-full p-2 transition-colors ${
+                        hasRetweeted
+                          ? "bg-green-100 group-hover:bg-green-200"
+                          : retweetCount > 0
+                            ? "bg-gray-100"
+                            : "group-hover:bg-green-50"
+                      }`}
+                    >
+                      <HiOutlineArrowPath className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm">{retweetCount}</span>
+                  </button>
+
+                  <button
+                    className={`group flex items-center gap-2 transition-colors ${
+                      isLiked ? "text-red-500" : "text-gray-500 hover:text-red-500"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleLikeToggle();
+                    }}
+                    disabled={isLiking}
+                  >
+                    <div className="rounded-full p-2 transition-colors group-hover:bg-red-50">
+                      {isLiked ? <HiHeart className="h-5 w-5" /> : <HiOutlineHeart className="h-5 w-5" />}
+                    </div>
+                    <span className="text-sm">{likeCount}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

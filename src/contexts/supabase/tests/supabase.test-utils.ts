@@ -44,7 +44,7 @@ export function randomName(length: number) {
 }
 
 export async function createRandomPost() {
-  const dummyFile = new File(["filedata"], "myfile.txt", { type: "text/plain" });
+  const dummyFile = new File(["filedata"], "myfile.png", { type: "image/png" });
   const body = randomName(64);
   const id = await queries.posts.new(body, [dummyFile]);
   return { id, body };

@@ -72,12 +72,11 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
 
       try {
         // Utiliser getByHandleFuzzy pour rechercher des profils
-        // Note: getByHandleFuzzy retourne actuellement un seul profil mais devrait retourner un tableau
-        const searchResult = (await queries.profiles.getByHandleFuzzy(query.trim())) as unknown as Tables<"profiles">[];
+        const searchResults = await queries.profiles.getByHandleFuzzy(query.trim());
 
         // Filtrer pour exclure l'utilisateur connecté et les profils déjà invités
         const alreadyInvited = await loadAlreadyInvitedProfiles();
-        const filteredResults = searchResult.filter((profile: Tables<"profiles">) => {
+        const filteredResults = searchResults.filter((profile: Tables<"profiles">) => {
           return profile.id !== auth.user?.id && !alreadyInvited.has(profile.id);
         });
 

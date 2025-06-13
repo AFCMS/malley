@@ -38,7 +38,7 @@ jobs:
         run: pnpm install -g @marp-team/marp-cli
 
       - name: Build PDF Slide Deck
-        run: marp --pdf ./presentation/presentation_fr-FR.md
+        run: marp --pdf --allow-local-files ./presentation/presentation_fr-FR.md
 
       - name: Upload PDF Slide Deck
         uses: actions/upload-artifact@v4

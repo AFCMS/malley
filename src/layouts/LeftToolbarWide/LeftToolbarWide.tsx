@@ -27,13 +27,13 @@ export default function LeftToolbarWide() {
               Malley
             </Link>
             <div className="flex flex-col space-y-2">
-              <Link className="sidebarlink" to="/search">
-                <HiOutlineMagnifyingGlass className="h-5 opacity-50" />
-                Search
-              </Link>
               <Link className="sidebarlink" to="/">
                 <HiOutlineHome className="h-5 opacity-50" />
                 Home
+              </Link>
+              <Link className="sidebarlink" to="/search">
+                <HiOutlineMagnifyingGlass className="h-5 opacity-50" />
+                Search
               </Link>
               <Link
                 className="sidebarlink"

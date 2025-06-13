@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { HiHeart, HiOutlineCheck, HiOutlineLockOpen, HiOutlineXMark, HiXMark } from "react-icons/hi2";
 
 import { queries } from "../../contexts/supabase/supabase";
@@ -419,16 +419,11 @@ export default function SwipePage() {
               You have reviewed all available profiles. Some profiles will be available again in 72h.
             </p>
             <div className="flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  void navigate("/");
-                }}
-                className="btn btn-primary"
-              >
+              <Link to="/" className="btn btn-primary">
                 Back to home
-              </button>
-              <button onClick={resetAllCooldowns} className="btn btn-warning">
-                🔓 Reset all cooldowns
+              </Link>
+              <button onClick={resetAllCooldowns} disabled={isLoading} className="btn btn-warning">
+                <HiOutlineLockOpen className="size-6" /> Reset rejected profiles
               </button>
             </div>
           </div>

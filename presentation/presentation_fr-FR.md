@@ -313,3 +313,86 @@ Connexions par centres d'intérêt
 <div class="architecture-description">
   <strong>Moderne, Scalable & développement facile</strong>
 </div>
+
+---
+
+## Technologies
+
+<style scoped>
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin: 1.5rem 0;
+  align-items: center;
+}
+
+.tech-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.tech-icon {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 0.5rem;
+  object-fit: contain;
+}
+
+.tech-item:last-child .tech-icon {
+  width: 80px;
+  height: 60px;
+}
+
+.tech-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.3rem;
+}
+
+.tech-description {
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
+.tech-summary {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: #555;
+}
+</style>
+
+<div class="tech-grid">
+  <div class="tech-item">
+    <img src="./assets/react.svg" alt="React" class="tech-icon">
+    <div class="tech-title">React 19</div>
+    <div class="tech-description">Interface utilisateur moderne</div>
+  </div>
+  
+  <div class="tech-item">
+    <img src="./assets/typescript.svg" alt="TypeScript" class="tech-icon">
+    <div class="tech-title">TypeScript</div>
+    <div class="tech-description">Typage statique & robustesse</div>
+  </div>
+  
+  <div class="tech-item">
+    <img src="./assets/tailwind.svg" alt="TailwindCSS" class="tech-icon">
+    <div class="tech-title">TailwindCSS</div>
+    <div class="tech-description">Avec daisyUI pour un CSS moderne et cohérent</div>
+  </div>
+  
+  <div class="tech-item">
+    <img src="./assets/pwa.svg" alt="PWA" class="tech-icon">
+    <div class="tech-title">PWA</div>
+    <div class="tech-description">Expérience proche d'une application native, pour une fraction de la complexité</div>
+  </div>
+</div>
+
+<div class="tech-summary">
+<strong>Stack moderne pour une expérience utilisateur optimale</strong>
+</div>

@@ -1115,7 +1115,7 @@ export default function PostViewer(props: PostViewerProps) {
           <button>close</button>
         </form>
       </dialog>
-      {/* DaisyUI retweet choice dialog */}
+      {/* daisyUI retweet choice dialog */}
       <dialog id={`retweet-modal-${props.post.id}`} className="modal">
         <div className="modal-box">
           <h3 className="text-lg font-bold">Retweet this post</h3>

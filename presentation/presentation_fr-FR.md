@@ -560,3 +560,33 @@ TODO
 - RLS : Clauses « where » ajoutées à la requête par le serveur
 - Zero trust : par défaut, tout est interdit
 - Les politiques autorisent lecture / édition des données selon des conditions précises
+
+---
+
+## Supabase Cloud
+
+- Authentification et gestion des utilisateurs (OAuth2, mail, etc)
+- Base de données PostgreSQL hébergée
+  - Système de migrations intégré
+  - API RESTful et GraphQL
+  - Accès direct depuis le frontend, sécurisé par des politiques Row Level Security (RLS)
+- Stockage de fichiers médias via buckets S3-compatibles
+- Edge Functions Typescript pour la logique métier
+
+---
+
+## Vercel
+
+- Hébergement des fichiers front statiques
+- Déploiement simple
+- Analytics et monitoring intégrés
+
+![w:600 bg right](./assets/vercel.png)
+
+---
+
+## CI/CD
+
+Depuis le début, un système de CI/CD **GitHub Actions** a été mis en place pour automatiser les tests et le déploiement de l'application.
+
+![w:600 bg right](./assets/ci.png)

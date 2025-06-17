@@ -239,3 +239,77 @@ Connexions par centres d'intérêt
 </div>
 
 ---
+
+## Architecture
+
+<style scoped>
+.architecture-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 3rem 0;
+  gap: 4rem;
+}
+
+.arch-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.arch-icon {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1rem;
+  object-fit: contain;
+}
+
+.arch-title {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.arch-subtitle {
+  font-size: 1rem;
+  color: #666;
+  font-style: italic;
+}
+
+.arrow {
+  font-size: 3rem;
+  color: #0066cc;
+  display: flex;
+  align-items: center;
+  margin: 0 1rem;
+}
+
+.architecture-description {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  color: #555;
+}
+</style>
+
+<div class="architecture-container">
+  <div class="arch-component">
+    <img src="./assets/supabase.svg" alt="Supabase" class="arch-icon">
+    <div class="arch-title">Supabase Cloud</div>
+    <div class="arch-subtitle">Backend-as-a-Service</div>
+  </div>
+  
+  <div class="arrow">↔</div>
+  
+  <div class="arch-component">
+    <img src="./assets/vercel-icon-light.svg" alt="Vercel" class="arch-icon">
+    <div class="arch-title">Vercel</div>
+    <div class="arch-subtitle">Frontend SPA</div>
+  </div>
+</div>
+
+<div class="architecture-description">
+  <strong>Moderne, Scalable & développement facile</strong>
+</div>

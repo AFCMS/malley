@@ -11,23 +11,108 @@ paginate: true
 
 Une plateforme de réseau social sur le modèle d'X
 
-![w:200 bg right](https://via.placeholder.com/200x200/4A90E2/FFFFFF?text=Malley)
+![w:200 bg right](../public/favicon.svg)
 
 ---
 
-# L'équipe Malley
+## L'équipe
 
-### 🎯 **Raphaël** - Directeur Commercial
-![w:80 h:80](raphael.jpg)
-*Vision stratégique, développement business et croissance*
+<style scoped>
+.image-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  margin: 2rem 0;
+  gap: 2rem;
+}
 
-### 💻 **Louis** - Directeur Technique  
-![w:80 h:80](https://via.placeholder.com/80x80/4ECDC4/FFFFFF?text=L)
-*Architecture système, développement et innovation technologique*
+.image-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+}
 
-### ⚙️ **Emilien** - Directeur du Développement
-![w:80 h:80](https://via.placeholder.com/80x80/45B7D1/FFFFFF?text=E)
-*Excellence technique, infrastructure et optimisation*
+.square-image {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
 
-**Trois expertises complémentaires pour une ambition commune :**
-*Créer l'avenir du social media avec Malley*
+.image-text {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.role-text {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.github-link {
+  margin-top: 0.5rem;
+}
+
+.github-link a {
+  color: #333;
+  text-decoration: none;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.github-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.github-link a:hover {
+  color: #0066cc;
+}
+</style>
+
+<div class="image-row">
+  <div class="image-item">
+    <img src="./assets/profiles/AFCMS.png" alt="Posts" class="square-image">
+    <div class="image-text">Louis WALTER</div>
+    <div class="role-text">Infra & Frontend</div>
+    <div class="github-link">
+      <a href="https://github.com/AFCMS" target="_blank">
+        <img src="./assets/simpleicons/github.svg" class="github-icon"/>
+        @AFCMS
+      </a>
+    </div>
+
+  </div>
+  <div class="image-item">
+    <img src="./assets/profiles/emimi.png" alt="Interactions" class="square-image">
+    <div class="image-text">Émilien DESSARPS</div>
+    <div class="role-text">Backend & Optimisation</div>
+    <div class="github-link">
+      <a href="https://github.com/AKArien0" target="_blank">
+        <img src="./assets/simpleicons/github.svg" class="github-icon"/>
+        @AKArien0
+      </a>
+    </div>
+
+  </div>
+  <div class="image-item">
+    <img src="./assets/profiles/raphael.jpg" alt="Profils" class="square-image">
+    <div class="image-text">Raphaël MALET</div>
+    <div class="role-text">Frontend & Business</div>
+    <div class="github-link">
+      <a href="https://github.com/Roceann" target="_blank">
+        <img src="./assets/simpleicons/github.svg" class="github-icon"/>
+        @Roceann
+      </a>
+    </div>
+  </div>
+</div>

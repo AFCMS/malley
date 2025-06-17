@@ -23,7 +23,7 @@ Frontend (Vercel + React) ↔ Backend (Supabase Cloud)
 | **React 19**         | Interface utilisateur                  |
 | **React Router**     | Routage                                |
 | **TailwindCSS**      | Styles CSS                             |
-| **DaisyUI**          | Composants UI                          |
+| **daisyUI**          | Composants UI                          |
 | **PWA**              | Application web installable sur mobile |
 | **Supabase Client**  | Communication avec le Backend          |
 | **Vercel Analytics** | Statistiques utilisateurs              |
@@ -97,13 +97,13 @@ Voir [README](../README.md) pour les instructions d'installation et de configura
 - **Écosystème mature** : Large communauté, documentation extensive, et nombreuses librairies disponibles
 - **Productivité** : Développement rapide grâce aux composants réutilisables et aux hooks
 
-### Choix de TailwindCSS + DaisyUI
+### Choix de TailwindCSS + daisyUI
 
 **Avantages :**
 
 - **Design System** : Le design system de TailwindCSS est très cohérent et permet de ne toucher que rarement au CSS custom.
 - **Maintenance** : Réduction du CSS custom, moins de code à maintenir.
-- **DaisyUI** : Composants préconçus basés sur TailwindCSS accélérant le développement UI pour aller plus vite dans la création de l'interface utilisateur par rapport à l'utilisation directe des classes utilitaires du framework de base.
+- **daisyUI** : Composants préconçus basés sur TailwindCSS accélérant le développement UI pour aller plus vite dans la création de l'interface utilisateur par rapport à l'utilisation directe des classes utilitaires du framework de base.
 
 ### Choix de Vercel pour l'hébergement Frontend
 

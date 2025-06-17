@@ -1,4 +1,4 @@
-The project uses TailwindCSS v4 and DaisyUI for it's styling.
+The project uses TailwindCSS v4 and daisyUI for it's styling.
 
 TSX classes are all in this format:
 

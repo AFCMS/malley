@@ -420,7 +420,7 @@ Connexions par centres d'intérêt
 
 - Auteur : de multiples utilisateurs peuvent être co-signataires d’un post. Ils partagent les droits d’édition
 - Invitations de co-signage : un utilisateur peut en inviter un autre à co-signer son post.
-- Un utilisateur peut abandonner la propriéter d’un post
+- Un utilisateur peut abandonner la propriété d’un post
 - Lorsqu’un post n’a plus d’auteurs, il est supprimé
 
 ---
@@ -436,11 +436,6 @@ TODO
 - Supabase-As-A-Backend
 - Communication directe entre Supabase et le front
 - Restrictions appliquées par Supabase
-
----
-
-## Backend
-
 - Librairie client
 - Typage assuré par Typescript / l’intégration de Typescript de Supabase / la CI
   
@@ -482,6 +477,15 @@ TODO
 - RLS : Clauses « where » ajoutées à la requête par le serveur
 - Zero trust : par défaut, tout est interdit
 - Les politiques autorisent lecture / édition des données selon des conditions précises
+
+---
+
+## Tests
+
+- Tests disponibles pour assurer le bon fonctionnement de la base de données après modifications
+- Cibles séléctionnées par variables d’environnement
+- Tests assurant un fonctionnement minimal est respecté
+- Tests assurant le bon fonctionnement des politiques RLS
 
 ---
 

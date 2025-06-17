@@ -629,36 +629,59 @@ export default function PostViewer(props: PostViewerProps) {
               <span>{retweetedBy.handle} retweeted</span>
             </div>
           )}
-          {/* Menu burger pour l'auteur */}
-          {isAuthor && (
-            <div className="absolute top-3 right-3 z-10">
-              <button
-                className="btn btn-ghost btn-sm btn-circle hover:bg-gray-100"
-                popoverTarget={`popover-post-${props.post.id}`}
-                style={{ anchorName: `--popover-post-${props.post.id}` } as React.CSSProperties}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-              >
-                <HiOutlineEllipsisHorizontal className="h-5 w-5" />
-              </button>{" "}
-              <Dropdown id={`popover-post-${props.post.id}`} placement="bottom-end">
-                {isSimpleRetweet
-                  ? [
-                      // Menu spécial pour les retweets : seulement abandon ownership
-                      {
-                        title: isAbandoning ? "Abandoning..." : "Abandon retweet",
-                        icon: HiOutlineUserMinus,
-                        onClick() {
-                          const modal = document.getElementById(
-                            `abandon-modal-${props.post.id}`,
-                          ) as HTMLDialogElement | null;
-                          modal?.showModal();
-                        },
+          {/* Menu burger */}
+          <div className="absolute top-3 right-3 z-10">
+            <button
+              className="btn btn-ghost btn-sm btn-circle hover:bg-gray-100"
+              popoverTarget={`popover-post-${props.post.id}`}
+              style={{ anchorName: `--popover-post-${props.post.id}` } as React.CSSProperties}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <HiOutlineEllipsisHorizontal className="h-5 w-5" />
+            </button>{" "}
+            <Dropdown id={`popover-post-${props.post.id}`} placement="bottom-end">
+              {(() => {
+                const menuItems = [];
+
+                // Share button - always available
+                menuItems.push({
+                  title: "Share",
+                  icon: HiOutlineShare,
+                  onClick: () => {
+                    const shareUrl = `${window.location.origin}/post/${props.post.id}`;
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    if (navigator.share) {
+                      void navigator.share({
+                        url: shareUrl,
+                      });
+                    } else {
+                      void navigator.clipboard.writeText(shareUrl).then(() => {
+                        alert("Post link copied to clipboard!");
+                      });
+                    }
+                    closePopover(`popover-post-${props.post.id}`);
+                  },
+                });
+
+                // Author-only options
+                if (isAuthor) {
+                  if (isSimpleRetweet) {
+                    // Menu spécial pour les retweets : seulement abandon ownership
+                    menuItems.push({
+                      title: isAbandoning ? "Abandoning..." : "Abandon retweet",
+                      icon: HiOutlineUserMinus,
+                      onClick() {
+                        const modal = document.getElementById(
+                          `abandon-modal-${props.post.id}`,
+                        ) as HTMLDialogElement | null;
+                        modal?.showModal();
                       },
-                    ]
-                  : [
-                      // Menu normal pour les posts originaux
+                    });
+                  } else {
+                    // Menu normal pour les posts originaux
+                    menuItems.push(
                       {
                         title: "Edit",
                         icon: HiOutlinePencil,
@@ -672,24 +695,6 @@ export default function PostViewer(props: PostViewerProps) {
                         },
                       },
                       {
-                        title: "Share",
-                        icon: HiOutlineShare,
-                        onClick: () => {
-                          const shareUrl = `${window.location.origin}/post/${props.post.id}`;
-                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                          if (navigator.share) {
-                            void navigator.share({
-                              url: shareUrl,
-                            });
-                          } else {
-                            void navigator.clipboard.writeText(shareUrl).then(() => {
-                              alert("Profile link copied to clipboard!");
-                            });
-                          }
-                          closePopover(`popover-post-${props.post.id}`);
-                        },
-                      },
-                      {
                         title: isAbandoning ? "Abandoning..." : "Abandon ownership",
                         icon: HiOutlineUserMinus,
                         onClick() {
@@ -699,10 +704,14 @@ export default function PostViewer(props: PostViewerProps) {
                           modal?.showModal();
                         },
                       },
-                    ]}
-              </Dropdown>
-            </div>
-          )}
+                    );
+                  }
+                }
+
+                return menuItems;
+              })()}
+            </Dropdown>
+          </div>
           <div className="flex items-start gap-3">
             {/* Profile picture */}
             <div className="flex-shrink-0">

@@ -1,5 +1,6 @@
 ---
 marp: true
+title: Malley
 author: Équipe Malley
 lang: fr-FR
 theme: default
@@ -455,6 +456,16 @@ Depuis le début, un système de CI/CD **GitHub Actions** a été mis en place p
 
 ---
 
+## PWA
+
+La plateforme est une **PWA** (Progressive Web App), permettant une expérience utilisateur fluide et rapide, similaire à une application native.
+
+Les fonctionalités comme le partage natif sont supportées.
+
+![w:300 bg right](./assets/mobile_share.png)
+
+---
+
 ## Frontend TODO
 
 TODO
@@ -468,7 +479,7 @@ TODO
 - Restrictions appliquées par Supabase
 - Librairie client
 - Typage assuré par Typescript / l’intégration de Typescript de Supabase / la CI
-  
+
 ---
 
 ## Base de données

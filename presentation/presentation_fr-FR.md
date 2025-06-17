@@ -523,16 +523,6 @@ TODO
 
 ---
 
-## Backend
-
-- Supabase-As-A-Backend
-- Communication directe entre Supabase et le front
-- Restrictions appliquées par Supabase
-- Librairie client
-- Typage assuré par Typescript / l’intégration de Typescript de Supabase / la CI
-
----
-
 ## Base de données
 
 ![w:500 bg right](./assets/supabase-schema.png)

@@ -394,21 +394,6 @@ Connexions par centres d'intérêt
 <strong>Stack moderne pour une expérience utilisateur optimale</strong>
 </div>
 
-## Backend
-
-- Supabase-As-A-Backend
-- Communication directe entre Supabase et le front
-- Restrictions appliquées par Supabase
-
----
-
-## Backend
-
-- Librairie client
-- Typage assuré par Typescript / l’intégration de Typescript de Supabase / la CI
-  
----
-
 ## Concepts
 
 - 3 entités : posts, profiles et catégories
@@ -438,6 +423,27 @@ Connexions par centres d'intérêt
 - Un utilisateur peut abandonner la propriéter d’un post
 - Lorsqu’un post n’a plus d’auteurs, il est supprimé
 
+---
+
+## Frontend TODO
+
+TODO
+
+---
+
+## Backend
+
+- Supabase-As-A-Backend
+- Communication directe entre Supabase et le front
+- Restrictions appliquées par Supabase
+
+---
+
+## Backend
+
+- Librairie client
+- Typage assuré par Typescript / l’intégration de Typescript de Supabase / la CI
+  
 ---
 
 ## Base de données

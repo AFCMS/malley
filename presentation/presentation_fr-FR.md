@@ -18,7 +18,7 @@ Une plateforme de réseau social sur le modèle d'X
 # L'équipe Malley
 
 ### 🎯 **Raphaël** - Directeur Commercial
-![w:80 h:80](https://via.placeholder.com/80x80/FF6B6B/FFFFFF?text=R)
+![w:80 h:80](raphael.jpg)
 *Vision stratégique, développement business et croissance*
 
 ### 💻 **Louis** - Directeur Technique  

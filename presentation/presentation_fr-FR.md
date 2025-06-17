@@ -165,11 +165,13 @@ Une plateforme de réseau social sur le modèle d'X
   </div>
   <div class="feature-item">
     <div class="feature-icon">⭐</div>
-    <div class="feature-text">Utilisateurs vedettes</div>
+    <div class="feature-text">mise en avant</div>
   </div>
   <div class="feature-item">
     <div class="feature-icon">👆</div>
-    <div class="feature-text">Système de glissement</div>
+    <div class="feature-text"
+    >Système de swipe
+    </div>
   </div>
   <div class="feature-item">
     <div class="feature-icon">🤝</div>
@@ -179,61 +181,110 @@ Une plateforme de réseau social sur le modèle d'X
 
 <div class="mission-text">
 Connexions par centres d'intérêt
+</div>
+
+---
 
 <style scoped>
 .commercial-grid {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
   margin: 2rem 0;
+  align-items: start;
 }
 
-.commercial-section {
-  text-align: center;
-  max-width: 500px;
+.value-section {
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-icon {
+  font-size: 2.5rem;
 }
 
 .section-title {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: bold;
   color: #333;
 }
 
-.item-list {
+.value-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
-.item-list li {
+.value-list li {
   font-size: 1.1rem;
-  margin: 1rem 0;
+  margin: 0.8rem 0;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
 }
 
-.unique-value {
-  font-size: 2rem;
+.value-list li:before {
+  content: "✓";
+  color: #4A90E2;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.unique-proposition {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(74, 144, 226, 0.25));
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border-left: 4px solid #4A90E2;
+  margin-top: 2rem;
+  grid-column: 1 / -1;
+}
+
+.unique-text {
+  font-size: 1.4rem;
   font-weight: bold;
   color: #4A90E2;
   text-align: center;
-  margin: 2rem 0;
+  margin: 0;
 }
 </style>
 
-# 💼 Valeur commerciale
+## Valeur commerciale
 
 <div class="commercial-grid">
-  <div class="commercial-section">
-    <div class="section-title">✨ Différenciation</div>
-    <ul class="item-list">
-      <li>Découverte intelligente</li>
-      <li>Catégorisation des contenus</li>
-      <li>Co-création de contenu</li>
-      <li>Interactions personnalisées</li>
+  <div class="value-section">
+    <div class="section-header">
+      <div class="section-icon">🎯</div>
+      <div class="section-title">Différenciation</div>
+    </div>
+    <ul class="value-list">
+      <li>Relations follow/feature</li>
+      <li>Catégorisation intelligente</li>
+      <li>Co-création collaborative</li>
     </ul>
   </div>
-</div>
-
-<div class="unique-value">
-🔗 Écosystème d'interactions uniques
+  
+  <div class="value-section">
+    <div class="section-header">
+      <div class="section-icon">🚀</div>
+      <div class="section-title">Innovation</div>
+    </div>
+    <ul class="value-list">
+      <li>Gestion multi-auteurs</li>
+      <li>Système d'invitations</li>
+      <li>Architecture cloud native</li>
+    </ul>
+  </div>
+  
+  <div class="unique-proposition">
+    <p class="unique-text">🔗 Écosystème d'interactions uniques</p>
+  </div>
 </div>
 
 ---

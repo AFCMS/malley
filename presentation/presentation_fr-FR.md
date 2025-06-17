@@ -527,3 +527,11 @@ TODO
 - Cibles séléctionnées par variables d’environnement
 - Tests assurant un fonctionnement minimal est respecté
 - Tests assurant le bon fonctionnement des politiques RLS
+
+---
+
+## Pistes d'amélioration
+
+- Support de la traduction de la plateforme ([Lingui](https://lingui.dev) or [i18next](https://i18next.com))
+- Algos de recommendation/recherche avancés (IA et [Supabase Vector](https://supabase.com/modules/vector))
+- Plus d'intégration native pour la PWA

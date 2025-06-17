@@ -178,9 +178,6 @@ Une plateforme de réseau social sur le modèle d'X
 
 <div class="mission-text">
 Connexions par centres d'intérêt
-</div>
-
----
 
 <style scoped>
 .commercial-grid {
@@ -396,3 +393,164 @@ Connexions par centres d'intérêt
 <div class="tech-summary">
 <strong>Stack moderne pour une expérience utilisateur optimale</strong>
 </div>
+
+## Backend
+
+- Supabase-As-A-Backend
+- Communication directe entre Supabase et le front
+- Restrictions appliquées par Supabase
+
+---
+
+## Backend
+
+- Librairie client
+- Typage assuré par Typescript / l’intégration de Typescript de Supabase / la CI
+  
+---
+
+## Concepts
+
+- 3 entités : posts, profiles et catégories
+- Multiples auteurs par post
+- Posts et profils sont rattachés aux mêmes catégories
+
+---
+
+## Concepts - relations posts-posts
+
+- Post parent : permet de faire des réponses
+- Partage : analogue aux « Retweets », marque un post de référence
+
+---
+
+## Concepts - relations profils-profils
+
+- Follow : une relation secrète, seul l’utilisateur qui la formule la connaît. Devrait être utilisée pour les feeds des utilisateurs.
+- Feature : une relation affichée. Est montrée sur le profil public, et les relations réciproques sont soulignées.
+
+---
+
+## Concepts - auteurs et co-signage
+
+- Auteur : de multiples utilisateurs peuvent être co-signataires d’un post. Ils partagent les droits d’édition
+- Invitations de co-signage : un utilisateur peut en inviter un autre à co-signer son post.
+- Un utilisateur peut abandonner la propriéter d’un post
+- Lorsqu’un post n’a plus d’auteurs, il est supprimé
+
+---
+
+## Base de données
+
+- 3 entités : posts, profils et catégories
+- Catégorisation
+- Relations entre posts et profils
+
+---
+
+## Base de données 
+
+<div class="mermaid">
+  erDiagram
+  profiles {
+      uuid id
+      varchar handle
+      timestamptz created_at
+      text bio
+      text profile_pic
+      text banner
+      uuid pinned_posts
+  }
+
+  posts {
+      uuid id
+      timestamptz created_at
+      text body
+      text media
+      uuid parent_post
+      uuid rt_of
+  }
+
+  authors {
+      uuid profile
+      uuid post
+  }
+
+  pendingAuthors {
+      uuid from_profile
+      uuid to_profile
+      uuid post
+  }
+
+  category {
+      uuid id
+      varchar name
+  }
+
+  follows {
+      uuid follower
+      uuid followee
+  }
+
+  features {
+      uuid featurer
+      uuid featuree
+  }
+
+  profilesCategories {
+      uuid profile
+      uuid category
+  }
+
+  postsCategories {
+      uuid post
+      uuid categories
+  }
+
+  auth-users {
+      uuid id
+  }
+
+  profiles ||--o| auth-users : "id"
+  profiles ||--o{ follows : "follower/followee"
+  profiles ||--o{ authors : "profile"
+  profiles ||--o{ pendingAuthors : "from_profile/to_profile"
+  profiles ||--o{ profilesCategories : "profile"
+
+  posts ||--o{ authors : "post"
+  posts ||--o{ pendingAuthors : "post"
+  posts ||--o{ postsCategories : "post"
+  posts ||--o{ posts : "parent_post"
+  posts ||--o{ posts : "rt_of"
+
+
+  category ||--o{ profilesCategories : "category"
+  category ||--o{ postsCategories : "category"
+
+  profiles ||--o{ features : "featurer/featuree"
+</div>
+
+---
+
+## Représentation des concepts
+
+- Co-auteurs : requiert le stockage des auteurs dans une table
+- Stockage des invitations dans une autre table
+- Catégories : une table de stockage des catégories, deux tables de relations
+- Les autres concepts sont représentés par une table
+
+---
+
+## Automatismes et programmations
+
+- Programation Cron est utilisée pour rafraîchir la vue matérialisée (estimations d’usage de catégories)
+- Divers triggers et fonctions sont utilisées pour assurer un respect de contraintes complexes.
+
+---
+
+## Sécurité : RLS
+
+- Sécurité et intégrité des données assurée par des Row Level Security Policies
+- RLS : Clauses « where » ajoutées à la requête par le serveur
+- Zero trust : par défaut, tout est interdit
+- Les politiques autorisent lecture / édition des données selon des conditions précises

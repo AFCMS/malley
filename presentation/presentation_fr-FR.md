@@ -484,6 +484,8 @@ TODO
 
 ## Base de données
 
+![w:500 bg right](./assets/supabase-schema.png)
+
 - 3 entités : posts, profils et catégories
 - Catégorisation
 - Relations entre posts et profils
@@ -494,9 +496,7 @@ TODO
 
 ![w:500 bg right](./assets/supabase-schema.png)
 
----
-
-## Représentation des concepts
+### Représentation des concepts
 
 - Co-auteurs : requiert le stockage des auteurs dans une table
 - Stockage des invitations dans une autre table

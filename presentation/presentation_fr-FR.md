@@ -184,14 +184,14 @@ Connexions par centres d'intérêt
 
 <style scoped>
 .commercial-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  display: flex;
+  justify-content: center;
   margin: 2rem 0;
 }
 
 .commercial-section {
   text-align: center;
+  max-width: 500px;
 }
 
 .section-title {
@@ -227,20 +227,15 @@ Connexions par centres d'intérêt
     <div class="section-title">✨ Différenciation</div>
     <ul class="item-list">
       <li>Découverte intelligente</li>
-      <li>Communautés thématiques</li>
-    </ul>
-  </div>
-  <div class="commercial-section">
-    <div class="section-title">📈 Monétisation</div>
-    <ul class="item-list">
-      <li>Parrainage de profils</li>
-      <li>Publicités ciblées</li>
+      <li>Catégorisation des contenus</li>
+      <li>Co-création de contenu</li>
+      <li>Interactions personnalisées</li>
     </ul>
   </div>
 </div>
 
 <div class="unique-value">
-🔗 Écosystème d'interactions
+🔗 Écosystème d'interactions uniques
 </div>
 
 ---

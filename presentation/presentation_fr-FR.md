@@ -116,3 +116,131 @@ Une plateforme de réseau social sur le modèle d'X
     </div>
   </div>
 </div>
+
+---
+
+<style scoped>
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin: 2rem 0;
+  align-items: center;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.feature-text {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.mission-text {
+  font-size: 1.5rem;
+  font-style: italic;
+  color: #4A90E2;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+</style>
+
+# 🌟 Malley
+
+<div class="features-grid">
+  <div class="feature-item">
+    <div class="feature-icon">📱</div>
+    <div class="feature-text">Feed personnalisé</div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon">⭐</div>
+    <div class="feature-text">Utilisateurs vedettes</div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon">👆</div>
+    <div class="feature-text">Système de glissement</div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon">🤝</div>
+    <div class="feature-text">Co-auteurs</div>
+  </div>
+</div>
+
+<div class="mission-text">
+Connexions par centres d'intérêt
+</div>
+
+---
+
+<style scoped>
+.commercial-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin: 2rem 0;
+}
+
+.commercial-section {
+  text-align: center;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.item-list {
+  list-style: none;
+  padding: 0;
+}
+
+.item-list li {
+  font-size: 1.1rem;
+  margin: 1rem 0;
+  color: #666;
+}
+
+.unique-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4A90E2;
+  text-align: center;
+  margin: 2rem 0;
+}
+</style>
+
+# 💼 Valeur commerciale
+
+<div class="commercial-grid">
+  <div class="commercial-section">
+    <div class="section-title">✨ Différenciation</div>
+    <ul class="item-list">
+      <li>Découverte intelligente</li>
+      <li>Communautés thématiques</li>
+    </ul>
+  </div>
+  <div class="commercial-section">
+    <div class="section-title">📈 Monétisation</div>
+    <ul class="item-list">
+      <li>Parrainage de profils</li>
+      <li>Publicités ciblées</li>
+    </ul>
+  </div>
+</div>
+
+<div class="unique-value">
+🔗 Écosystème d'interactions
+</div>
+
+---

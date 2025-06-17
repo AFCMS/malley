@@ -30,7 +30,7 @@ export default function SearchBuilder({
       paging_limit: 20,
       ...(selectedCategories.length > 0 && {
         has_categories: selectedCategories.map((cat) => {
-          return cat.id;
+          return cat.name;
         }),
       }),
     };

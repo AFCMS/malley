@@ -1,6 +1,7 @@
 import { queries } from "../../contexts/supabase/supabase";
 import { useEffect, useState } from "react";
 import CategoryBadge from "../../Components/CategoryBadge/CategoryBadge";
+import { Link } from "react-router";
 
 export default function RightToolbarWide() {
   const [trendingTags, setTrendingTags] = useState<{ name: string; estimated_total: number }[]>([]);
@@ -10,10 +11,8 @@ export default function RightToolbarWide() {
     let isMounted = true;
     async function fetchTrendingTags() {
       try {
-        // use your new function here
         setTrendingTags(await queries.categories.getAproximateRankings(10));
       } catch (e) {
-        // you might want to handle this differently
         setTrendingTags([]);
         console.log(e);
       } finally {
@@ -40,7 +39,15 @@ export default function RightToolbarWide() {
               ) : (
                 trendingTags.map((tag) => (
                   <div key={tag.name} className="flex w-full items-center justify-between p-1">
-                    <CategoryBadge name={tag.name} />
+                    <Link
+                      to={{
+                        pathname: "/search",
+                        search: `?type=posts&categories=${tag.name}`,
+                      }}
+                    >
+                      <CategoryBadge name={tag.name} />
+                    </Link>
+
                     <span className="text-xs text-gray-500">{tag.estimated_total} posts</span>
                   </div>
                 ))

@@ -24,18 +24,26 @@ export default function Search() {
   // Parse URL parameters for initial search
   const urlType = searchParams.get("type") as SearchType | null;
   const urlQuery = searchParams.get("q") ?? "";
-  const urlCategories = searchParams.get("categories");
+  const urlCategories = searchParams.get("categories") ?? "";
+
   useEffect(() => {
     // Auto-search if URL parameters are present
-    if (urlType && (urlQuery || urlCategories)) {
+    if (urlType && (urlQuery || urlCategories.length != 0)) {
       const performAutoSearch = async () => {
         setIsLoading(true);
         setLastSearchType(urlType);
 
         const baseQuery = {
           paging_limit: 20,
-          ...(urlCategories && {
-            has_categories: urlCategories.split(",").filter(Boolean),
+          ...(urlCategories.length != 0 && {
+            has_categories: (
+              await Promise.all(
+                urlCategories
+                  .split(",")
+                  .filter(Boolean)
+                  .map((name) => queries.categories.getIdByName(name)),
+              )
+            ).filter((id): id is string => id !== null),
           }),
         };
 
@@ -209,7 +217,13 @@ export default function Search() {
           isLoading={isLoading}
           initialType={urlType ?? "posts"}
           initialQuery={urlQuery}
-          initialCategories={[]} // TODO: Load categories from URL
+          initialCategories={urlCategories
+            .split(",")
+            .filter(Boolean)
+            .map((name) => ({
+              id: "",
+              name: name,
+            }))}
         />
         {lastSearchType && (
           <div className="card bg-base-100 shadow-sm">

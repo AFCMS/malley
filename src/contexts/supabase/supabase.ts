@@ -511,6 +511,18 @@ const queries = {
       return req.data;
     },
 
+    getIdByName: async function (name: string): Promise<string | null> {
+      const req = await supabase.from("categories").select("id").eq("name", name).single();
+      if (req.error) {
+        if (req.error.code === "PGRST116") {
+          // row not found
+          return null;
+        }
+        throw new Error(req.error.message);
+      }
+      return req.data.id;
+    },
+
     getEnsuredId: async function (name: string): Promise<string> {
       const req = await supabase.rpc("id_of_ensured_category", { request: name });
 

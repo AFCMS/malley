@@ -70,7 +70,7 @@ export default function ViewPost() {
   return (
     <div className="w-full">
       <TopBar title="Publication" />
-      <div className="view-post relative">
+      <div className="view-post relative mb-10">
         <PostViewer
           post={post}
           showParents={true}

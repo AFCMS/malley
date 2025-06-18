@@ -518,7 +518,8 @@ Les fonctionalités comme le partage natif sont supportées.
 ## Automatismes et programmations
 
 - Programation Cron utilisée pour rafraîchir la vue matérialisée (estimations d’usage de catégories)
-- Divers triggers et fonctions sont utilisées pour assurer un respect de contraintes complexes.
+- Fonctions de DB et edge functions
+- Divers triggers sont utilisées pour assurer un respect de contraintes complexes
 
 ---
 

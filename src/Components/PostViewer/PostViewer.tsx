@@ -70,58 +70,65 @@ export default function PostViewer(props: PostViewerProps) {
   const mainAuthor = authors.length > 0 ? authors[0] : null;
   const isAuthor = auth.user && authors.some((author) => author.id === auth.user?.id);
   const isSimpleRetweet = queries.posts.isSimpleRetweet(props.post);
-  // Fetch post authors
+
+  // Fetch post info (authors, categories, likes, retweets) in one request
   useEffect(() => {
-    async function fetchAuthors() {
+    async function fetchPostInfo() {
       try {
-        // Si c'est un retweet simple, on récupère les auteurs du post original
+        // Si c'est un retweet simple, on récupère les infos du post original
         if (queries.posts.isSimpleRetweet(props.post)) {
           const originalPost = await queries.posts.getOriginalPost(props.post);
           if (originalPost) {
-            const originalAuthors = await queries.authors.ofPost(originalPost.id);
-            setAuthors(originalAuthors);
+            // Set the original post state for use in other effects
+            setOriginalPost(originalPost);
+
+            const originalPostInfo = await queries.views.standardPostInfo(originalPost.id);
+            setAuthors(originalPostInfo.profiles);
+            setCategories(originalPostInfo.categories);
+            setLikeCount(originalPostInfo.likesCount);
+            setRetweetCount(originalPostInfo.rtCount);
+
+            // Récupérer l'auteur du retweet
+            const retweetAuthors = await queries.authors.ofPost(props.post.id);
+            setRetweetedBy(retweetAuthors[0] || null);
 
             // Pour un retweet simple, l'utilisateur n'est jamais le dernier auteur du post original
             setIsLastAuthor(false);
             return;
+          } else {
+            setOriginalPost(null);
+            setRetweetedBy(null);
           }
+        } else {
+          setOriginalPost(null);
+          setRetweetedBy(null);
         }
 
         // Pour les posts normaux ou les quote retweets
-        const postAuthors = await queries.authors.ofPost(props.post.id);
-        setAuthors(postAuthors);
+        const postInfo = await queries.views.standardPostInfo(props.post.id);
+        setAuthors(postInfo.profiles);
+        setCategories(postInfo.categories);
+        setLikeCount(postInfo.likesCount);
+        setRetweetCount(postInfo.rtCount);
 
         // Check if the user is the last author
-        if (auth.user && postAuthors.length === 1 && postAuthors[0]?.id === auth.user.id) {
+        if (auth.user && postInfo.profiles.length === 1 && postInfo.profiles[0]?.id === auth.user.id) {
           setIsLastAuthor(true);
         } else {
           setIsLastAuthor(false);
         }
       } catch {
         setAuthors([]);
-        setIsLastAuthor(false);
-      }
-    }
-    void fetchAuthors();
-  }, [props.post.id, props.post, auth.user]);
-  // Fetch categories
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        // Si c'est un retweet simple, récupérer les catégories du post original
-        let postIdToUse = props.post.id;
-        if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
-          postIdToUse = originalPost.id;
-        }
-
-        const postCategories = await queries.postsCategories.get(postIdToUse);
-        setCategories(postCategories);
-      } catch {
         setCategories([]);
+        setLikeCount(0);
+        setRetweetCount(0);
+        setIsLastAuthor(false);
+        setOriginalPost(null);
+        setRetweetedBy(null);
       }
     }
-    void fetchCategories();
-  }, [props.post.id, props.post, originalPost]);
+    void fetchPostInfo();
+  }, [props.post.id, props.post, auth.user]);
 
   // Fetch child posts with likes sorting
   useEffect(() => {
@@ -129,14 +136,14 @@ export default function PostViewer(props: PostViewerProps) {
       try {
         const childPosts = await queries.posts.getChildren(props.post.id);
 
-        // For each child, get the number of likes
+        // For each child, get the number of likes using standardPostInfo
         const childrenWithLikes = await Promise.all(
           childPosts.map(async (child) => {
             try {
-              const likes = await queries.like.byWho(child.id);
+              const childInfo = await queries.views.standardPostInfo(child.id);
               return {
                 ...child,
-                likeCount: likes.length,
+                likeCount: childInfo.likesCount,
               };
             } catch {
               return {
@@ -223,52 +230,11 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchMediaUrls();
   }, [props.post.id, props.post, originalPost]);
 
-  // Fetch likes
+  // Check if user liked the post and if user has retweeted
   useEffect(() => {
-    async function fetchLikes() {
-      try {
-        // Si c'est un retweet simple, on récupère les likes du post original
-        let targetPostId = props.post.id;
-        if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
-          targetPostId = originalPost.id;
-        }
-
-        const likedByUsers = await queries.like.byWho(targetPostId);
-        setLikeCount(likedByUsers.length);
-
-        if (auth.user) {
-          const userLikesPost = await queries.like.doesUserLikePost(auth.user.id, targetPostId);
-          setIsLiked(userLikesPost);
-        } else {
-          setIsLiked(false);
-        }
-      } catch {
-        setLikeCount(0);
-        setIsLiked(false);
-      }
-    }
-    void fetchLikes();
-  }, [props.post.id, props.post, auth.user, originalPost]); // Récupération des retweets
-  useEffect(() => {
-    async function fetchRetweets() {
-      try {
-        // Pour les retweets simples, compter les retweets du post original
-        let targetPostId = props.post.id;
-        if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
-          targetPostId = originalPost.id;
-        }
-
-        const retweets = await queries.posts.getRetweetsOf(targetPostId);
-        setRetweetCount(retweets.length);
-      } catch {
-        setRetweetCount(0);
-      }
-    }
-    void fetchRetweets();
-  }, [props.post.id, props.post, originalPost]); // Vérifier si l'utilisateur a déjà retweeté ce post
-  useEffect(() => {
-    async function checkUserRetweet() {
+    async function checkUserActions() {
       if (!auth.user) {
+        setIsLiked(false);
         setHasRetweeted(false);
         return;
       }
@@ -280,39 +246,23 @@ export default function PostViewer(props: PostViewerProps) {
           targetPostId = originalPost.id;
         }
 
-        const hasUserRetweeted = await queries.posts.hasUserRetweeted(targetPostId, auth.user.id);
+        const [userLikesPost, hasUserRetweeted] = await Promise.all([
+          queries.like.doesUserLikePost(auth.user.id, targetPostId),
+          queries.posts.hasUserRetweeted(targetPostId, auth.user.id),
+        ]);
+
+        setIsLiked(userLikesPost);
         setHasRetweeted(hasUserRetweeted);
-      } catch {
+      } catch (error) {
+        console.error("[ERROR] Error checking user actions:", error);
+        setIsLiked(false);
         setHasRetweeted(false);
       }
     }
 
-    void checkUserRetweet();
+    void checkUserActions();
   }, [props.post.id, props.post, auth.user, originalPost]);
 
-  // Récupérer le post original si c'est un retweet simple
-  useEffect(() => {
-    async function fetchOriginalPost() {
-      if (queries.posts.isSimpleRetweet(props.post)) {
-        try {
-          const original = await queries.posts.getOriginalPost(props.post);
-          setOriginalPost(original);
-
-          // Récupérer l'auteur du retweet
-          const retweetAuthors = await queries.authors.ofPost(props.post.id);
-          setRetweetedBy(retweetAuthors[0] || null);
-        } catch {
-          setOriginalPost(null);
-          setRetweetedBy(null);
-        }
-      } else {
-        setOriginalPost(null);
-        setRetweetedBy(null);
-      }
-    }
-
-    void fetchOriginalPost();
-  }, [props.post]);
   // Récupérer le post cité si c'est un quote tweet
   useEffect(() => {
     async function fetchQuotedPost() {
@@ -322,12 +272,10 @@ export default function PostViewer(props: PostViewerProps) {
           setQuotedPost(quoted);
 
           if (quoted) {
-            const quotedAuthors = await queries.authors.ofPost(quoted.id);
-            setQuotedPostAuthors(quotedAuthors);
-
-            // Récupérer les catégories du post cité
-            const quotedCategories = await queries.postsCategories.get(quoted.id);
-            setQuotedPostCategories(quotedCategories);
+            // Use standardPostInfo for quoted post data
+            const quotedPostInfo = await queries.views.standardPostInfo(quoted.id);
+            setQuotedPostAuthors(quotedPostInfo.profiles);
+            setQuotedPostCategories(quotedPostInfo.categories);
 
             // Récupérer les médias du post cité
             try {
@@ -436,7 +384,7 @@ export default function PostViewer(props: PostViewerProps) {
         await queries.like.remove(targetPostId);
 
         // Check after removal
-        const afterRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
+        const afterRemove = await queries.like.doesUserLikePost(auth.user.id, targetPostId);
 
         if (!afterRemove) {
           setLikeCount((prev) => prev - 1);
@@ -502,8 +450,8 @@ export default function PostViewer(props: PostViewerProps) {
           setTimeout(() => {
             void (async () => {
               try {
-                const postAuthors = await queries.authors.ofPost(props.post.id);
-                setAuthors(postAuthors);
+                const postInfo = await queries.views.standardPostInfo(props.post.id);
+                setAuthors(postInfo.profiles);
                 // Refresh the page to ensure everything is up to date
                 setTimeout(() => {
                   window.location.reload();

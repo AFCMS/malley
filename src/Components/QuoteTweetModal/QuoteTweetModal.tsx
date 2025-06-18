@@ -24,12 +24,12 @@ export default function QuoteTweetModal({ post, originalPost, modalId, onSuccess
 
       setLoading(true);
       try {
-        const [authorsResult, { data: mediaFiles }] = await Promise.all([
-          queries.authors.ofPost(postToQuote.id),
+        const [postInfoResult, { data: mediaFiles }] = await Promise.all([
+          queries.views.standardPostInfo(postToQuote.id),
           supabase.storage.from("post-media").list(postToQuote.id, { limit: 1 }),
         ]);
 
-        setAuthor(authorsResult[0] || null);
+        setAuthor(postInfoResult.profiles[0] || null);
 
         if (mediaFiles?.length) {
           const url = supabase.storage.from("post-media").getPublicUrl(`${postToQuote.id}/${mediaFiles[0].name}`)

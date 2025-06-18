@@ -57,7 +57,6 @@ export default function Home() {
       currentOffset.current = feedPosts.length; // Use actual count of fetched posts
       setHasMore(feedPosts.length === PAGE_SIZE); // Check if we got full page from DB
     } catch (err) {
-      console.error("Error loading feed:", err);
       setError(err instanceof Error ? err.message : "Failed to load feed");
     } finally {
       setLoading(false);
@@ -70,20 +69,12 @@ export default function Home() {
     const currentLoadingMore = loadingMoreRef.current;
     const currentHasMore = hasMoreRef.current;
     
-    console.log('[INFINITE SCROLL] loadMorePosts called:', {
-      loadingMore: currentLoadingMore,
-      hasMore: currentHasMore,
-      currentOffset: currentOffset.current
-    });
-    
     if (currentLoadingMore || !currentHasMore) {
-      console.log('[INFINITE SCROLL] Skipping load - loadingMore:', currentLoadingMore, 'hasMore:', currentHasMore);
       return;
     }
 
     try {
       setLoadingMore(true);
-      console.log('[INFINITE SCROLL] Fetching posts with offset:', currentOffset.current);
 
       // Get more posts with the current offset
       const morePosts = await queries.feed.posts.get({
@@ -93,46 +84,32 @@ export default function Home() {
         paging_offset: currentOffset.current,
       });
 
-      console.log('[INFINITE SCROLL] Received posts:', {
-        totalPosts: morePosts.length,
-        postIds: morePosts.map(p => p.id)
-      });
-
       // Filter out replies
       const newMainPosts = morePosts.filter((post) => post.parent_post === null);
-      
-      console.log('[INFINITE SCROLL] After filtering:', {
-        mainPosts: newMainPosts.length,
-        mainPostIds: newMainPosts.map(p => p.id)
-      });
 
       if (newMainPosts.length > 0) {
         setPosts((prev) => {
           const newPosts = [...prev, ...newMainPosts];
-          console.log('[INFINITE SCROLL] Updated posts count:', newPosts.length);
           return newPosts;
         });
         // Only increment offset by the number of total posts fetched, not filtered posts
         currentOffset.current += morePosts.length;
         // Continue if we got a full page from the database
         setHasMore(morePosts.length === PAGE_SIZE);
-        console.log('[INFINITE SCROLL] New offset:', currentOffset.current, 'hasMore:', morePosts.length === PAGE_SIZE);
       } else if (morePosts.length > 0 && morePosts.length === PAGE_SIZE) {
         // If we got posts but none were main posts (all were replies),
         // and we got a full page, try to get more posts
         currentOffset.current += morePosts.length;
         setHasMore(true);
-        console.log('[INFINITE SCROLL] Page full of replies, continuing with offset:', currentOffset.current);
         // Recursively load more if we only got replies
         setTimeout(() => {
           void loadMorePosts();
         }, 100);
       } else {
         setHasMore(false);
-        console.log('[INFINITE SCROLL] End of feed reached');
       }
-    } catch (err) {
-      console.error("Error loading more posts:", err);
+    } catch {
+      // Error handling without logging
     } finally {
       setLoadingMore(false);
     }
@@ -146,16 +123,7 @@ export default function Home() {
         const currentHasMore = hasMoreRef.current;
         const currentLoadingMore = loadingMoreRef.current;
         
-        console.log('[INFINITE SCROLL] Observer triggered:', {
-          isIntersecting,
-          hasMore: currentHasMore,
-          loadingMore: currentLoadingMore,
-          currentOffset: currentOffset.current,
-          postsCount: posts.length
-        });
-        
         if (isIntersecting && currentHasMore && !currentLoadingMore) {
-          console.log('[INFINITE SCROLL] Loading more posts...');
           void loadMorePosts();
         }
       },
@@ -163,10 +131,7 @@ export default function Home() {
     );
 
     if (observerRef.current) {
-      console.log('[INFINITE SCROLL] Observing element:', observerRef.current);
       observer.observe(observerRef.current);
-    } else {
-      console.log('[INFINITE SCROLL] No observer target found');
     }
 
     return () => {

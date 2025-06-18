@@ -31,48 +31,29 @@ export default function Home() {
       setLoading(true);
       setError(null);
 
-      if (!auth.isAuthenticated) {
-        // For non-authenticated users, show a general feed
-        const feedPosts = await queries.feed.posts.get({
-          sort_by: "created_at",
-          sort_order: "desc",
-          paging_limit: PAGE_SIZE,
-          paging_offset: 0,
-        });
+      // Get initial posts, excluding replies by filtering at the database level
+      // We'll make the query more specific rather than filtering client-side
+      const feedPosts = await queries.feed.posts.get({
+        sort_by: "created_at",
+        sort_order: "desc",
+        paging_limit: PAGE_SIZE,
+        paging_offset: 0,
+      });
 
-        // Filter out replies
-        const mainPosts = feedPosts.filter((post) => post.parent_post === null);
+      // Filter out replies (parent_post !== null) - temporarily keep this filter
+      // until we can modify the database function to exclude replies directly
+      const mainPosts = feedPosts.filter((post) => post.parent_post === null);
 
-        setPosts(mainPosts);
-        currentOffset.current = PAGE_SIZE;
-        setHasMore(mainPosts.length === PAGE_SIZE);
-      } else {
-        // Generate personalized feed parameters for authenticated users
-        // const feedParams = await queries.feed.posts.generateParams(); // Temporarily disabled
-
-        // Get initial posts, excluding replies (parent_post = null)
-        const feedPosts = await queries.feed.posts.get({
-          // ...feedParams, // Temporarily disabled - using general feed for now
-          sort_by: "created_at",
-          sort_order: "desc",
-          paging_limit: PAGE_SIZE,
-          paging_offset: 0,
-        });
-
-        // Filter out replies
-        const mainPosts = feedPosts.filter((post) => post.parent_post === null);
-
-        setPosts(mainPosts);
-        currentOffset.current = PAGE_SIZE;
-        setHasMore(mainPosts.length === PAGE_SIZE);
-      }
+      setPosts(mainPosts);
+      currentOffset.current = feedPosts.length; // Use actual count of fetched posts
+      setHasMore(feedPosts.length === PAGE_SIZE); // Check if we got full page from DB
     } catch (err) {
       console.error("Error loading feed:", err);
       setError(err instanceof Error ? err.message : "Failed to load feed");
     } finally {
       setLoading(false);
     }
-  }, [auth.isAuthenticated]);
+  }, []);
 
   // Load more posts for infinite scroll
   const loadMorePosts = useCallback(async () => {
@@ -81,55 +62,38 @@ export default function Home() {
     try {
       setLoadingMore(true);
 
-      if (!auth.isAuthenticated) {
-        // For non-authenticated users, show a general feed
-        const morePosts = await queries.feed.posts.get({
-          sort_by: "created_at",
-          sort_order: "desc",
-          paging_limit: PAGE_SIZE,
-          paging_offset: currentOffset.current,
-        });
+      // Get more posts with the current offset
+      const morePosts = await queries.feed.posts.get({
+        sort_by: "created_at",
+        sort_order: "desc",
+        paging_limit: PAGE_SIZE,
+        paging_offset: currentOffset.current,
+      });
 
-        // Filter out replies
-        const newMainPosts = morePosts.filter((post) => post.parent_post === null);
+      // Filter out replies
+      const newMainPosts = morePosts.filter((post) => post.parent_post === null);
 
-        if (newMainPosts.length > 0) {
-          setPosts((prev) => [...prev, ...newMainPosts]);
-          currentOffset.current += PAGE_SIZE;
-          setHasMore(newMainPosts.length === PAGE_SIZE);
-        } else {
-          setHasMore(false);
-        }
+      if (newMainPosts.length > 0) {
+        setPosts((prev) => [...prev, ...newMainPosts]);
+        // Only increment offset by the number of total posts fetched, not filtered posts
+        currentOffset.current += morePosts.length;
+        // Continue if we got a full page from the database
+        setHasMore(morePosts.length === PAGE_SIZE);
+      } else if (morePosts.length > 0 && morePosts.length === PAGE_SIZE) {
+        // If we got posts but none were main posts (all were replies),
+        // and we got a full page, try to get more posts
+        currentOffset.current += morePosts.length;
+        setHasMore(true);
+        // The intersection observer will trigger another load
       } else {
-        // Generate personalized feed parameters for authenticated users
-        // const feedParams = await queries.feed.posts.generateParams(); // Temporarily disabled
-
-        // Get more posts
-        const morePosts = await queries.feed.posts.get({
-          // ...feedParams, // Temporarily disabled - using general feed for now
-          sort_by: "created_at",
-          sort_order: "desc",
-          paging_limit: PAGE_SIZE,
-          paging_offset: currentOffset.current,
-        });
-
-        // Filter out replies
-        const newMainPosts = morePosts.filter((post) => post.parent_post === null);
-
-        if (newMainPosts.length > 0) {
-          setPosts((prev) => [...prev, ...newMainPosts]);
-          currentOffset.current += PAGE_SIZE;
-          setHasMore(newMainPosts.length === PAGE_SIZE);
-        } else {
-          setHasMore(false);
-        }
+        setHasMore(false);
       }
     } catch (err) {
       console.error("Error loading more posts:", err);
     } finally {
       setLoadingMore(false);
     }
-  }, [auth.isAuthenticated, loadingMore, hasMore]);
+  }, [loadingMore, hasMore]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -187,7 +151,7 @@ export default function Home() {
   }, [location.state]);
 
   return (
-    <div className="flex w-full flex-col">
+    <div className="mb-10 flex w-full flex-col">
       <TopBarRoot title="Recent Posts" />
       {/* Message de notification */}
       {showMessage && (

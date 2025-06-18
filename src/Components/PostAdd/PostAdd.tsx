@@ -75,14 +75,13 @@ export default function PostAdd({
       try {
         setIsLoadingPost(true);
 
-        // Charger le post
-        const post = await queries.posts.get(editPostId);
-        setBody(post.body ?? "");
+        // Load post info including authors
+        const postInfo = await queries.views.standardPostInfo(editPostId);
+        setBody(postInfo.post.body ?? "");
 
         // Check that the user is the author of the post
-        const authors = await queries.authors.ofPost(editPostId);
         const currentUserId = auth.user.id;
-        const isAuthor = authors.some((author) => author.id === currentUserId);
+        const isAuthor = postInfo.profiles.some((author) => author.id === currentUserId);
 
         if (!isAuthor) {
           setError("You are not allowed to edit this post.");

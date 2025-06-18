@@ -130,10 +130,10 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
 
       setLoadingParentAuthor(true);
       try {
-        // Get authors of the parent post
-        const parentAuthors = await queries.authors.ofPost(post.parent_post);
-        if (parentAuthors.length > 0) {
-          setParentPostAuthor(parentAuthors[0]); // Take the first author
+        // Get authors of the parent post using standardPostInfo
+        const parentPostInfo = await queries.views.standardPostInfo(post.parent_post);
+        if (parentPostInfo.profiles.length > 0) {
+          setParentPostAuthor(parentPostInfo.profiles[0]); // Take the first author
         } else {
           setParentPostAuthor(null);
         }
@@ -152,11 +152,11 @@ export default function AuthorAsk({ post }: AuthorAskProps) {
   useEffect(() => {
     async function fetchAuthors() {
       try {
-        const postAuthors = await queries.authors.ofPost(post.id);
-        setAuthors(postAuthors);
+        const postInfo = await queries.views.standardPostInfo(post.id);
+        setAuthors(postInfo.profiles);
 
         // Check if the user is the last author
-        if (auth.user && postAuthors.length === 1 && postAuthors[0]?.id === auth.user.id) {
+        if (auth.user && postInfo.profiles.length === 1 && postInfo.profiles[0]?.id === auth.user.id) {
           setIsLastAuthor(true);
         } else {
           setIsLastAuthor(false);

@@ -35,7 +35,7 @@ export default function EmojiPicker(props: EmojiPickerProps) {
       </button>
 
       <div
-        className="dropdown rounded-box bg-base-100 dropdown-end emoji-picker-popover z-50 overflow-y-auto shadow-sm"
+        className="dropdown rounded-box bg-base-100 dropdown-end emoji-picker-popover z-[100] overflow-y-auto shadow-sm"
         popover="auto"
         hidden={isMobile}
         id={props.id}

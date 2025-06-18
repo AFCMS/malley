@@ -967,22 +967,13 @@ export default function PostViewer(props: PostViewerProps) {
                       <HiOutlineChatBubbleOvalLeft className="h-5 w-5" />
                     </div>
                     <span className="text-sm">{children.length}</span>
-                  </button>
-
+                  </button>{" "}
                   <button
                     className={`group flex items-center gap-2 transition-colors ${
-                      hasRetweeted
-                        ? "text-green-600 hover:text-green-700"
-                        : retweetCount > 0
-                          ? "cursor-not-allowed text-gray-400"
-                          : "text-gray-500 hover:text-green-500"
+                      hasRetweeted ? "text-green-600 hover:text-green-700" : "text-gray-500 hover:text-green-500"
                     }`}
-                    disabled={retweetCount > 0 && !hasRetweeted}
                     onClick={(e) => {
                       e.stopPropagation();
-
-                      // Si le bouton est désactivé, ne rien faire
-                      if (retweetCount > 0 && !hasRetweeted) return;
 
                       // Wrap async logic to avoid async handlers
                       void (async () => {
@@ -1033,28 +1024,18 @@ export default function PostViewer(props: PostViewerProps) {
                         }
                       })();
                     }}
-                    title={
-                      retweetCount > 0 && !hasRetweeted
-                        ? "This post has already been retweeted"
-                        : hasRetweeted
-                          ? "Delete retweet"
-                          : "Retweet"
-                    }
+                    title={hasRetweeted ? "Delete retweet" : "Retweet"}
                   >
+                    {" "}
                     <div
                       className={`rounded-full p-2 transition-colors ${
-                        hasRetweeted
-                          ? "bg-green-100 group-hover:bg-green-200"
-                          : retweetCount > 0
-                            ? "bg-gray-100"
-                            : "group-hover:bg-green-50"
+                        hasRetweeted ? "bg-green-100 group-hover:bg-green-200" : "group-hover:bg-green-50"
                       }`}
                     >
                       <HiOutlineArrowPath className="h-5 w-5" />
                     </div>
                     <span className="text-sm">{retweetCount}</span>
                   </button>
-
                   <button
                     className={`group flex items-center gap-2 transition-colors ${
                       isLiked ? "text-red-500" : "text-gray-500 hover:text-red-500"

@@ -17,6 +17,8 @@ interface stdPostInfo {
   post: Tables<"posts">;
   categories: Tables<"categories">[];
   profiles: Tables<"profiles">[];
+  likesCount: number;
+  rtCount: number;
 }
 
 interface PostSearchQuery {
@@ -864,7 +866,9 @@ const queries = {
           ),
           authors:authors(
             profiles:profiles(*)
-          )
+          ),
+          likes:likes(count),
+          rt_of:posts!rt_of(count)
         `,
         )
         .eq("id", id)
@@ -880,6 +884,8 @@ const queries = {
         post: req.data as Tables<"posts">,
         categories,
         profiles,
+        likesCount: req.data.likes[0]?.count ?? 0,
+        rtCount: req.data.rt_of?.count ?? 0,
       };
     },
   },

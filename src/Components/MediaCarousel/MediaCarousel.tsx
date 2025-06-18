@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
+import { HiChevronLeft, HiChevronRight, HiOutlineXMark } from "react-icons/hi2";
 
 interface MediaCarouselProps {
   mediaUrls: string[];
@@ -7,6 +7,10 @@ interface MediaCarouselProps {
 
 export default function MediaCarousel({ mediaUrls }: MediaCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+
+  // Create a unique ID for this carousel instance
+  const carouselId = useState(() => Math.random().toString(36).substring(2, 15))[0];
 
   if (mediaUrls.length === 0) {
     return null;
@@ -22,6 +26,19 @@ export default function MediaCarousel({ mediaUrls }: MediaCarouselProps) {
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
+  };
+  const openModal = (imageIndex: number) => {
+    setModalImageIndex(imageIndex);
+    const modal = document.getElementById(`image-modal-${carouselId}`) as HTMLDialogElement;
+    modal.showModal();
+  };
+
+  const nextModalImage = () => {
+    setModalImageIndex((prev) => (prev + 1) % mediaUrls.length);
+  };
+
+  const prevModalImage = () => {
+    setModalImageIndex((prev) => (prev - 1 + mediaUrls.length) % mediaUrls.length);
   };
 
   return (
@@ -46,8 +63,7 @@ export default function MediaCarousel({ mediaUrls }: MediaCarouselProps) {
               <HiChevronRight className="h-5 w-5" />
             </button>
           </>
-        )}
-
+        )}{" "}
         {/* Media content */}
         <div className="relative aspect-video w-full">
           {mediaUrls.map((url, index) => (
@@ -55,7 +71,10 @@ export default function MediaCarousel({ mediaUrls }: MediaCarouselProps) {
               <img
                 src={url}
                 alt={`Image ${(index + 1).toString()}`}
-                className="h-full w-full object-cover"
+                className="h-full w-full cursor-pointer object-cover transition-transform hover:scale-105"
+                onClick={() => {
+                  openModal(index);
+                }}
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
                 }}
@@ -64,7 +83,6 @@ export default function MediaCarousel({ mediaUrls }: MediaCarouselProps) {
           ))}
         </div>
       </div>
-
       {/* Dots indicator */}
       {mediaUrls.length > 1 && (
         <div className="mt-3 flex justify-center gap-2">
@@ -80,7 +98,59 @@ export default function MediaCarousel({ mediaUrls }: MediaCarouselProps) {
             />
           ))}
         </div>
-      )}
+      )}{" "}
+      {/* Image Modal */}
+      <dialog id={`image-modal-${carouselId}`} className="modal">
+        <div className="modal-box h-full max-h-screen w-full max-w-7xl bg-black p-0">
+          {/* Close button */}
+          <div className="absolute top-4 right-4 z-20">
+            <form method="dialog">
+              <button className="btn btn-ghost btn-sm btn-circle text-white hover:bg-white/20">
+                <HiOutlineXMark className="h-6 w-6" />
+              </button>
+            </form>
+          </div>
+
+          {/* Navigation buttons for multiple images */}
+          {mediaUrls.length > 1 && (
+            <>
+              <button
+                onClick={prevModalImage}
+                className="absolute top-1/2 left-4 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-black/80"
+              >
+                <HiChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={nextModalImage}
+                className="absolute top-1/2 right-4 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-black/80"
+              >
+                <HiChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          {/* Full-size image */}
+          <div className="flex h-full w-full items-center justify-center p-4">
+            <img
+              src={mediaUrls[modalImageIndex]}
+              alt={`Image ${(modalImageIndex + 1).toString()} full size`}
+              className="max-h-full max-w-full object-contain"
+            />
+          </div>
+
+          {/* Image counter */}
+          {mediaUrls.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+              <div className="rounded-full bg-black/60 px-3 py-1 text-sm text-white">
+                {modalImageIndex + 1} / {mediaUrls.length}
+              </div>
+            </div>
+          )}
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </div>
   );
 }

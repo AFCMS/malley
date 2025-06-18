@@ -156,7 +156,7 @@ Une plateforme de réseau social sur le modèle d'X
 }
 </style>
 
-# 🌟 Malley
+## Présentation du produit
 
 <div class="features-grid">
   <div class="feature-item">
@@ -165,7 +165,7 @@ Une plateforme de réseau social sur le modèle d'X
   </div>
   <div class="feature-item">
     <div class="feature-icon">⭐</div>
-    <div class="feature-text">mise en avant</div>
+    <div class="feature-text">Mise en avant</div>
   </div>
   <div class="feature-item">
     <div class="feature-icon">👆</div>

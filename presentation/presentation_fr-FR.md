@@ -289,37 +289,6 @@ Connexions par centres d'intérêt
 
 ---
 
-## Concepts
-
-- 3 entités : posts, profiles et catégories
-- Multiples auteurs par post
-- Posts et profils sont rattachés aux mêmes catégories
-
----
-
-## Concepts - relations posts-posts
-
-- Post parent : permet de faire des réponses
-- Partage : analogue aux « Retweets », marque un post de référence
-
----
-
-## Concepts - relations profils-profils
-
-- Follow : une relation secrète, seul l’utilisateur qui la formule la connaît. Devrait être utilisée pour les feeds des utilisateurs.
-- Feature : une relation affichée. Est montrée sur le profil public, et les relations réciproques sont soulignées.
-
----
-
-## Concepts - auteurs et co-signage
-
-- Auteur : de multiples utilisateurs peuvent être co-signataires d’un post. Ils partagent les droits d’édition
-- Invitations de co-signage : un utilisateur peut en inviter un autre à co-signer son post.
-- Un utilisateur peut abandonner la propriété d’un post
-- Lorsqu’un post n’a plus d’auteurs, il est supprimé
-
----
-
 ## Architecture
 
 <style scoped>
@@ -548,7 +517,7 @@ Les fonctionalités comme le partage natif sont supportées.
 
 ## Automatismes et programmations
 
-- Programation Cron est utilisée pour rafraîchir la vue matérialisée (estimations d’usage de catégories)
+- Programation Cron utilisée pour rafraîchir la vue matérialisée (estimations d’usage de catégories)
 - Divers triggers et fonctions sont utilisées pour assurer un respect de contraintes complexes.
 
 ---

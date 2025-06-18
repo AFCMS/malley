@@ -12,9 +12,8 @@ export default function RightToolbarWide() {
     async function fetchTrendingTags() {
       try {
         setTrendingTags(await queries.categories.getAproximateRankings(10));
-      } catch (e) {
+      } catch {
         setTrendingTags([]);
-        console.log(e);
       } finally {
         if (isMounted) setLoading(false);
       }

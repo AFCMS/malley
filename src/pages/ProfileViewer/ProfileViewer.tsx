@@ -74,12 +74,6 @@ const ProfileViewer = () => {
             const authorPosts = await queries.authors.postsOf(profileData.id);
             const simpleRetweets = await queries.authors.simpleRetweetsOf(profileData.id);
 
-            console.log(`[DEBUG ProfileViewer] Posts récupérés:`, {
-              authorPosts: authorPosts.length,
-              simpleRetweets: simpleRetweets.length,
-              profileId: profileData.id,
-            });
-
             const pinnedPostIds = profileData.pinned_posts ?? [];
 
             // Pour l'onglet "Posts" (main) : combine posts normaux et retweets simples
@@ -98,11 +92,6 @@ const ProfileViewer = () => {
             const allPostsData = filteredAllPosts.sort(
               (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
             );
-
-            console.log(`[DEBUG ProfileViewer] Posts finaux:`, {
-              mainPosts: mainPostsData.length,
-              allPosts: allPostsData.length,
-            });
 
             setMainPosts(mainPostsData);
             setAllPosts(allPostsData);
@@ -191,12 +180,11 @@ const ProfileViewer = () => {
       const allPostsData = filteredAllPosts.sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
-
       setMainPosts(mainPostsData);
       setAllPosts(allPostsData);
       setRepliesCount(allPostsData.filter((post) => post.parent_post !== null).length);
-    } catch (error) {
-      console.error("Error during update:", error);
+    } catch {
+      // Error handling without logging
     }
   };
 

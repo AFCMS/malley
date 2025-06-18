@@ -152,41 +152,19 @@ export default function SwipePage() {
               continue;
             }
           }
-
           currentOffset += PROFILES_FETCH_LIMIT;
           maxRetries--;
-
-          // Log progress for debugging
-          console.log(
-            `fetchProfilesFeed: batch processed, added ${addedInThisBatch.toString()}/${profiles.length.toString()}, total available: ${availableProfileIds.length.toString()}/${minRequired.toString()}`,
-          );
 
           // If we processed a full batch but got very few results, be more aggressive
           if (profiles.length === PROFILES_FETCH_LIMIT && addedInThisBatch === 0 && maxRetries > 5) {
             maxRetries = Math.min(maxRetries, 5); // Reduce retries if we're not finding anything
           }
-        } catch (error) {
-          console.error("Error fetching profiles feed:", error);
+        } catch {
           maxRetries--;
         }
-      }
-
-      // Update the offset reference to where we left off
+      } // Update the offset reference to where we left off
       feedOffsetRef.current = currentOffset;
 
-      // Log completion details and update hasMore status if we hit limits
-      if (totalProfilesProcessed >= maxTotalProfiles) {
-        console.log(`fetchProfilesFeed: hit safety limit of ${maxTotalProfiles.toString()} profiles processed`);
-        // Don't set hasMoreProfilesRef.current = false here, as there might still be more profiles
-        // Only set it to false when we actually get 0 profiles from a query
-      }
-      if (maxRetries <= 0) {
-        console.log("fetchProfilesFeed: hit max retries limit");
-      }
-
-      console.log(
-        `fetchProfilesFeed: completed, returning ${availableProfileIds.length.toString()} profiles, processed ${totalProfilesProcessed.toString()} total`,
-      );
       return availableProfileIds;
     },
     [auth.user],
@@ -199,21 +177,15 @@ export default function SwipePage() {
 
     // Reset pagination
     feedOffsetRef.current = 0;
-    hasMoreProfilesRef.current = true;
-
-    // Get initial batch of profiles - request enough to fill buffer plus some extra
+    hasMoreProfilesRef.current = true; // Get initial batch of profiles - request enough to fill buffer plus some extra
     const availableIds = await fetchProfilesFeed(0, BUFFER_SIZE + 2);
 
-    console.log(`Initialization: fetched ${availableIds.length.toString()} profiles`);
-
     if (availableIds.length === 0) {
-      console.log("Setting isSwipeFinished=true: initialization found no profiles");
       setIsSwipeFinished(true);
       setProfileIdQueue([]);
       setCurrentIndex(0);
     } else {
       const initialProfiles = availableIds.slice(0, Math.min(BUFFER_SIZE, availableIds.length));
-      console.log(`Initialization: using ${initialProfiles.length.toString()} profiles for initial queue`);
       setProfileIdQueue(initialProfiles);
       setIsSwipeFinished(false);
     }
@@ -243,10 +215,8 @@ export default function SwipePage() {
 
     const doRefill = async () => {
       setIsRefilling(true);
-
       if (!hasMoreProfilesRef.current) {
         if (currentBufferSize === 0) {
-          console.log("Setting isSwipeFinished=true: no more profiles in database and buffer is empty");
           setIsSwipeFinished(true);
         }
         setIsRefilling(false);
@@ -257,9 +227,6 @@ export default function SwipePage() {
         // Request more profiles to ensure we get enough after filtering
         // Be more aggressive - request at least 2x what we need due to heavy filtering
         const minProfilesNeeded = Math.max(5, (BUFFER_SIZE - currentBufferSize + 1) * 2);
-        console.log(
-          `Refilling profiles: need ${minProfilesNeeded.toString()}, current buffer: ${currentBufferSize.toString()}`,
-        );
 
         const newProfiles = await fetchProfilesFeed(feedOffsetRef.current, minProfilesNeeded);
 
@@ -267,13 +234,9 @@ export default function SwipePage() {
           // If fetchProfilesFeed returns 0 profiles, it means it couldn't find any more
           // and it would have set hasMoreProfilesRef.current = false internally
           if (currentBufferSize === 0) {
-            console.log("Setting isSwipeFinished=true: fetch returned 0 profiles and buffer is empty");
             setIsSwipeFinished(true);
-          } else {
-            console.log(`Fetch returned 0 profiles but buffer has ${currentBufferSize.toString()} profiles remaining`);
           }
         } else {
-          console.log(`Refill successful: got ${newProfiles.length.toString()} new profiles`);
           setProfileIdQueue((prevQueue) => [...prevQueue, ...newProfiles]);
 
           // Preload profile data

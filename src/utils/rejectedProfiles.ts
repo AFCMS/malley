@@ -54,10 +54,8 @@ export function getRejectedProfiles(): RejectedProfile[] {
 
     // Sauvegarder la liste nettoyée
     localStorage.setItem(REJECTED_PROFILES_KEY, JSON.stringify(activeProfiles));
-
     return activeProfiles;
-  } catch (error) {
-    console.error("Erreur lors de la lecture des profils refusés:", error);
+  } catch {
     return [];
   }
 }

@@ -242,8 +242,7 @@ export default function PostViewer(props: PostViewerProps) {
         } else {
           setIsLiked(false);
         }
-      } catch (error) {
-        console.error("[ERROR] Error fetching likes:", error);
+      } catch {
         setLikeCount(0);
         setIsLiked(false);
       }
@@ -261,8 +260,7 @@ export default function PostViewer(props: PostViewerProps) {
 
         const retweets = await queries.posts.getRetweetsOf(targetPostId);
         setRetweetCount(retweets.length);
-      } catch (error) {
-        console.error("[ERROR] Error fetching retweets:", error);
+      } catch {
         setRetweetCount(0);
       }
     }
@@ -284,8 +282,7 @@ export default function PostViewer(props: PostViewerProps) {
 
         const hasUserRetweeted = await queries.posts.hasUserRetweeted(targetPostId, auth.user.id);
         setHasRetweeted(hasUserRetweeted);
-      } catch (error) {
-        console.error("[ERROR] Error checking retweet:", error);
+      } catch {
         setHasRetweeted(false);
       }
     }
@@ -304,8 +301,7 @@ export default function PostViewer(props: PostViewerProps) {
           // Récupérer l'auteur du retweet
           const retweetAuthors = await queries.authors.ofPost(props.post.id);
           setRetweetedBy(retweetAuthors[0] || null);
-        } catch (error) {
-          console.error("[ERROR] Error fetching original post:", error);
+        } catch {
           setOriginalPost(null);
           setRetweetedBy(null);
         }
@@ -357,8 +353,7 @@ export default function PostViewer(props: PostViewerProps) {
               setLoadingQuotedMedia(false);
             }
           }
-        } catch (error) {
-          console.error("[ERROR] Error fetching quoted post:", error);
+        } catch {
           setQuotedPost(null);
           setQuotedPostAuthors([]);
           setQuotedPostCategories([]);
@@ -382,8 +377,7 @@ export default function PostViewer(props: PostViewerProps) {
       .then((childPosts) => {
         setChildren(childPosts);
       })
-      .catch((error: unknown) => {
-        console.error("Error reloading replies:", error);
+      .catch(() => {
         setChildren([]);
       });
   };
@@ -420,8 +414,8 @@ export default function PostViewer(props: PostViewerProps) {
       props.onPinUpdate?.();
 
       // Don't reload the page, state is already updated
-    } catch (error) {
-      console.error("Error during pinning:", error);
+    } catch {
+      // Error handling without logging
     } finally {
       setIsPinning(false);
     }
@@ -438,43 +432,23 @@ export default function PostViewer(props: PostViewerProps) {
         targetPostId = originalPost.id;
       }
 
-      console.log(
-        `[DEBUG] Like toggle - Post: ${targetPostId}, Current isLiked: ${String(isLiked)}, User: ${auth.user.id}`,
-      );
-
       if (isLiked) {
-        console.log(`[DEBUG] Removing like for user ${auth.user.id} on post ${targetPostId}...`);
-
-        // Check before removal
-        const beforeRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
-        console.log(`[DEBUG] Before remove - User likes post:`, beforeRemove);
-
-        const result = await queries.like.remove(targetPostId);
-        console.log(`[DEBUG] Remove function returned:`, result);
+        await queries.like.remove(targetPostId);
 
         // Check after removal
         const afterRemove = await queries.like.doesUserLikePost(auth.user.id, props.post.id);
-        console.log(`[DEBUG] After remove - User likes post:`, afterRemove);
 
         if (!afterRemove) {
           setLikeCount((prev) => prev - 1);
           setIsLiked(false);
-          console.log(`[DEBUG] Like successfully removed from database`);
-        } else {
-          console.error(`[ERROR] Like was not removed from database!`);
         }
       } else {
-        console.log(`[DEBUG] Adding like for user ${auth.user.id} on post ${targetPostId}...`);
-        const result = await queries.like.add(targetPostId);
-        console.log(`[DEBUG] Add result:`, result);
+        await queries.like.add(targetPostId);
         setLikeCount((prev) => prev + 1);
         setIsLiked(true);
-        console.log(`[DEBUG] Like added, new state: isLiked=true, count=`, likeCount + 1);
       }
-    } catch (error) {
-      console.error("[ERROR] Error during like/unlike:", error);
+    } catch {
       // In case of error, restore original state
-      console.log(`[DEBUG] Error, restoring original state`);
     } finally {
       setIsLiking(false);
     }
@@ -542,8 +516,8 @@ export default function PostViewer(props: PostViewerProps) {
           }, 500);
         }
       }
-    } catch (error) {
-      console.error("Error during ownership abandonment:", error);
+    } catch {
+      // Error handling without logging
     } finally {
       setIsAbandoning(false);
     }
@@ -572,8 +546,7 @@ export default function PostViewer(props: PostViewerProps) {
           year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
         });
       }
-    } catch (error) {
-      console.error("Date formatting error:", error);
+    } catch {
       return "Invalid date";
     }
   };
@@ -908,15 +881,6 @@ export default function PostViewer(props: PostViewerProps) {
                       !props.showChildren &&
                       children.length > 0;
 
-                    console.log(`Debug replies button - Post ${props.post.id}:`, {
-                      allowExpandChildren: props.allowExpandChildren,
-                      isMainPost,
-                      showChildrenPosts,
-                      showChildren: props.showChildren,
-                      childrenLength: children.length,
-                      shouldShow,
-                    });
-
                     return shouldShow;
                   })() && (
                     <button
@@ -1010,11 +974,8 @@ export default function PostViewer(props: PostViewerProps) {
                               // For simple retweets, we need to refresh the parent component
                               props.onPinUpdate?.();
                             }
-
-                            console.log(`[DEBUG] Retweet deleted successfully, new count:`, updatedRetweets.length);
-                          } catch (error) {
-                            console.error("Error deleting retweet:", error);
-                            const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+                          } catch {
+                            const errorMessage = "Unknown error occurred";
                             alert(`Error: ${errorMessage}`);
                           }
                         } else {
@@ -1235,10 +1196,8 @@ export default function PostViewer(props: PostViewerProps) {
                     const retweets = await queries.posts.getRetweetsOf(targetPostId);
                     setRetweetCount(retweets.length);
                     setHasRetweeted(true);
-                    console.log(`[DEBUG] Simple retweet successful, new count:`, retweets.length);
-                  } catch (error) {
-                    console.error("Error during retweet:", error);
-                    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+                  } catch {
+                    const errorMessage = "Unknown error occurred";
                     alert(`Error: ${errorMessage}`);
                   }
                 })();
@@ -1298,8 +1257,8 @@ export default function PostViewer(props: PostViewerProps) {
               const retweets = await queries.posts.getRetweetsOf(targetPostId);
               setRetweetCount(retweets.length);
               setHasRetweeted(true);
-            } catch (error) {
-              console.error("Error refreshing retweet count:", error);
+            } catch {
+              // Error handling without logging
             }
           })();
         }}

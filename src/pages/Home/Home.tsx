@@ -23,7 +23,18 @@ export default function Home() {
   const location = useLocation();
   const observerRef = useRef<HTMLDivElement>(null);
   const currentOffset = useRef(0);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(true);
   const PAGE_SIZE = 10;
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    loadingMoreRef.current = loadingMore;
+  }, [loadingMore]);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
 
   // Load initial feed
   const loadInitialFeed = useCallback(async () => {
@@ -31,8 +42,7 @@ export default function Home() {
       setLoading(true);
       setError(null);
 
-      // Get initial posts, excluding replies by filtering at the database level
-      // We'll make the query more specific rather than filtering client-side
+      // Get initial posts
       const feedPosts = await queries.feed.posts.get({
         sort_by: "created_at",
         sort_order: "desc",
@@ -40,8 +50,7 @@ export default function Home() {
         paging_offset: 0,
       });
 
-      // Filter out replies (parent_post !== null) - temporarily keep this filter
-      // until we can modify the database function to exclude replies directly
+      // Filter out replies (parent_post !== null) - client-side filtering for now
       const mainPosts = feedPosts.filter((post) => post.parent_post === null);
 
       setPosts(mainPosts);
@@ -57,10 +66,24 @@ export default function Home() {
 
   // Load more posts for infinite scroll
   const loadMorePosts = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    // Use refs to check current state values to avoid stale closures
+    const currentLoadingMore = loadingMoreRef.current;
+    const currentHasMore = hasMoreRef.current;
+    
+    console.log('[INFINITE SCROLL] loadMorePosts called:', {
+      loadingMore: currentLoadingMore,
+      hasMore: currentHasMore,
+      currentOffset: currentOffset.current
+    });
+    
+    if (currentLoadingMore || !currentHasMore) {
+      console.log('[INFINITE SCROLL] Skipping load - loadingMore:', currentLoadingMore, 'hasMore:', currentHasMore);
+      return;
+    }
 
     try {
       setLoadingMore(true);
+      console.log('[INFINITE SCROLL] Fetching posts with offset:', currentOffset.current);
 
       // Get more posts with the current offset
       const morePosts = await queries.feed.posts.get({
@@ -70,36 +93,69 @@ export default function Home() {
         paging_offset: currentOffset.current,
       });
 
+      console.log('[INFINITE SCROLL] Received posts:', {
+        totalPosts: morePosts.length,
+        postIds: morePosts.map(p => p.id)
+      });
+
       // Filter out replies
       const newMainPosts = morePosts.filter((post) => post.parent_post === null);
+      
+      console.log('[INFINITE SCROLL] After filtering:', {
+        mainPosts: newMainPosts.length,
+        mainPostIds: newMainPosts.map(p => p.id)
+      });
 
       if (newMainPosts.length > 0) {
-        setPosts((prev) => [...prev, ...newMainPosts]);
+        setPosts((prev) => {
+          const newPosts = [...prev, ...newMainPosts];
+          console.log('[INFINITE SCROLL] Updated posts count:', newPosts.length);
+          return newPosts;
+        });
         // Only increment offset by the number of total posts fetched, not filtered posts
         currentOffset.current += morePosts.length;
         // Continue if we got a full page from the database
         setHasMore(morePosts.length === PAGE_SIZE);
+        console.log('[INFINITE SCROLL] New offset:', currentOffset.current, 'hasMore:', morePosts.length === PAGE_SIZE);
       } else if (morePosts.length > 0 && morePosts.length === PAGE_SIZE) {
         // If we got posts but none were main posts (all were replies),
         // and we got a full page, try to get more posts
         currentOffset.current += morePosts.length;
         setHasMore(true);
-        // The intersection observer will trigger another load
+        console.log('[INFINITE SCROLL] Page full of replies, continuing with offset:', currentOffset.current);
+        // Recursively load more if we only got replies
+        setTimeout(() => {
+          void loadMorePosts();
+        }, 100);
       } else {
         setHasMore(false);
+        console.log('[INFINITE SCROLL] End of feed reached');
       }
     } catch (err) {
       console.error("Error loading more posts:", err);
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore]);
+  }, []); // Empty dependency array to prevent recreation
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
+        const isIntersecting = entries[0]?.isIntersecting;
+        const currentHasMore = hasMoreRef.current;
+        const currentLoadingMore = loadingMoreRef.current;
+        
+        console.log('[INFINITE SCROLL] Observer triggered:', {
+          isIntersecting,
+          hasMore: currentHasMore,
+          loadingMore: currentLoadingMore,
+          currentOffset: currentOffset.current,
+          postsCount: posts.length
+        });
+        
+        if (isIntersecting && currentHasMore && !currentLoadingMore) {
+          console.log('[INFINITE SCROLL] Loading more posts...');
           void loadMorePosts();
         }
       },
@@ -107,13 +163,16 @@ export default function Home() {
     );
 
     if (observerRef.current) {
+      console.log('[INFINITE SCROLL] Observing element:', observerRef.current);
       observer.observe(observerRef.current);
+    } else {
+      console.log('[INFINITE SCROLL] No observer target found');
     }
 
     return () => {
       observer.disconnect();
     };
-  }, [loadMorePosts, hasMore, loadingMore]);
+  }, [loadMorePosts, posts.length]); // Remove hasMore and loadingMore from dependencies
 
   // Load initial feed when auth changes
   useEffect(() => {

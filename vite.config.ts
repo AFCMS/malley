@@ -62,4 +62,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), VitePWA(pwaOptions)],
+  experimental: {
+    enableNativePlugin: true,
+  },
 });

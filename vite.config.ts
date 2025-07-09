@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react-oxc";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA, VitePWAOptions } from "vite-plugin-pwa";
 
@@ -62,4 +62,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), VitePWA(pwaOptions)],
+  experimental: {
+    enableNativePlugin: true,
+  },
 });

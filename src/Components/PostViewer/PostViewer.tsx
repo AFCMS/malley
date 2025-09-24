@@ -17,6 +17,7 @@ import {
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries, supabase, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
+import { formatDatePost } from "../../utils/date";
 
 import MediaCarousel from "../MediaCarousel/MediaCarousel";
 import PostAdd from "../PostAdd/PostAdd";
@@ -75,7 +76,7 @@ export default function PostViewer(props: PostViewerProps) {
   useEffect(() => {
     async function fetchPostInfo() {
       try {
-        // Si c'est un retweet simple, on récupère les infos du post original
+        // If it's a simple retweet, fetch info from the original post
         if (queries.posts.isSimpleRetweet(props.post)) {
           const originalPost = await queries.posts.getOriginalPost(props.post);
           if (originalPost) {
@@ -88,11 +89,11 @@ export default function PostViewer(props: PostViewerProps) {
             setLikeCount(originalPostInfo.likesCount);
             setRetweetCount(originalPostInfo.rtCount);
 
-            // Récupérer l'auteur du retweet
+            // Get the retweet author
             const retweetAuthors = await queries.authors.ofPost(props.post.id);
             setRetweetedBy(retweetAuthors[0] || null);
 
-            // Pour un retweet simple, l'utilisateur n'est jamais le dernier auteur du post original
+            // For simple retweets, the user is never the last author of the original post
             setIsLastAuthor(false);
             return;
           } else {
@@ -104,7 +105,7 @@ export default function PostViewer(props: PostViewerProps) {
           setRetweetedBy(null);
         }
 
-        // Pour les posts normaux ou les quote retweets
+        // For normal posts or quote retweets
         const postInfo = await queries.views.standardPostInfo(props.post.id);
         setAuthors(postInfo.profiles);
         setCategories(postInfo.categories);
@@ -195,7 +196,7 @@ export default function PostViewer(props: PostViewerProps) {
   // Fetch media
   useEffect(() => {
     async function fetchMediaUrls() {
-      // Si c'est un retweet simple, utiliser l'ID du post original
+      // If it's a simple retweet, use the original post ID
       let postIdToUse = props.post.id;
       if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
         postIdToUse = originalPost.id;
@@ -240,7 +241,7 @@ export default function PostViewer(props: PostViewerProps) {
       }
 
       try {
-        // Pour les retweets simples, vérifier sur le post original
+        // For simple retweets, check on the original post
         let targetPostId = props.post.id;
         if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
           targetPostId = originalPost.id;
@@ -263,24 +264,24 @@ export default function PostViewer(props: PostViewerProps) {
     void checkUserActions();
   }, [props.post.id, props.post, auth.user, originalPost]);
 
-  // Récupérer le post cité si c'est un quote tweet
+  // Fetch quoted post if this is a quote tweet
   useEffect(() => {
     async function fetchQuotedPost() {
       if (queries.posts.isQuoteRetweet(props.post)) {
         try {
-          const quoted = await queries.posts.getOriginalPost(props.post);
-          setQuotedPost(quoted);
+          const quotedPostData = await queries.posts.getOriginalPost(props.post);
+          setQuotedPost(quotedPostData);
 
-          if (quoted) {
+          if (quotedPostData) {
             // Use standardPostInfo for quoted post data
-            const quotedPostInfo = await queries.views.standardPostInfo(quoted.id);
+            const quotedPostInfo = await queries.views.standardPostInfo(quotedPostData.id);
             setQuotedPostAuthors(quotedPostInfo.profiles);
             setQuotedPostCategories(quotedPostInfo.categories);
 
-            // Récupérer les médias du post cité
+            // Fetch quoted post media
             try {
               setLoadingQuotedMedia(true);
-              const { data, error } = await supabase.storage.from("post-media").list(quoted.id, {
+              const { data, error } = await supabase.storage.from("post-media").list(quotedPostData.id, {
                 limit: 10,
                 offset: 0,
                 sortBy: { column: "name", order: "asc" },
@@ -289,7 +290,7 @@ export default function PostViewer(props: PostViewerProps) {
               if (!error && data.length > 0) {
                 const urls = data.map(
                   (file) =>
-                    supabase.storage.from("post-media").getPublicUrl(`${quoted.id}/${file.name}`).data.publicUrl,
+                    supabase.storage.from("post-media").getPublicUrl(`${quotedPostData.id}/${file.name}`).data.publicUrl,
                 );
                 setQuotedPostMediaUrls(urls);
               } else {
@@ -374,7 +375,7 @@ export default function PostViewer(props: PostViewerProps) {
     try {
       setIsLiking(true);
 
-      // Déterminer quel post liker (original pour les retweets simples)
+      // Determine which post to like (original for simple retweets)
       let targetPostId = props.post.id;
       if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
         targetPostId = originalPost.id;
@@ -470,35 +471,6 @@ export default function PostViewer(props: PostViewerProps) {
       setIsAbandoning(false);
     }
   };
-  const formatPostDate = (date: Date): string => {
-    try {
-      if (isNaN(date.getTime())) {
-        return "Invalid date";
-      }
-
-      const now = new Date();
-      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-
-      if (diffInHours < 1) {
-        const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-        return diffInMinutes < 1 ? "now" : `${diffInMinutes.toString()}m`;
-      } else if (diffInHours < 24) {
-        return `${diffInHours.toString()}h`;
-      } else if (diffInHours < 24 * 7) {
-        const diffInDays = Math.floor(diffInHours / 24);
-        return `${diffInDays.toString()}d`;
-      } else {
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-        });
-      }
-    } catch {
-      return "Invalid date";
-    }
-  };
-
   return (
     <div className="w-full">
       {/* Parent posts */}
@@ -543,14 +515,14 @@ export default function PostViewer(props: PostViewerProps) {
           onClick={handlePostClick}
         >
           {" "}
-          {/* Indicateur de retweet simple */}
+          {/* Simple retweet indicator */}
           {queries.posts.isSimpleRetweet(props.post) && retweetedBy && (
             <div className="mb-2 flex items-center gap-1 text-sm text-gray-500">
               <HiOutlineArrowPath className="h-4 w-4" />
               <span>{retweetedBy.handle} retweeted</span>
             </div>
           )}
-          {/* Menu burger */}
+          {/* Dropdown menu */}
           <div className="absolute top-3 right-3 z-10">
             <button
               className="btn btn-ghost btn-sm btn-circle hover:bg-gray-100"
@@ -589,7 +561,7 @@ export default function PostViewer(props: PostViewerProps) {
                 // Author-only options
                 if (isAuthor) {
                   if (isSimpleRetweet) {
-                    // Menu spécial pour les retweets : seulement abandon ownership
+                    // Special menu for retweets: only abandon ownership
                     menuItems.push({
                       title: isAbandoning ? "Abandoning..." : "Abandon retweet",
                       icon: HiOutlineUserMinus,
@@ -601,7 +573,7 @@ export default function PostViewer(props: PostViewerProps) {
                       },
                     });
                   } else {
-                    // Menu normal pour les posts originaux
+                    // Normal menu for original posts
                     menuItems.push(
                       {
                         title: "Edit",
@@ -662,7 +634,7 @@ export default function PostViewer(props: PostViewerProps) {
                 </span>
                 <span className="text-gray-500">·</span>
                 <span className="text-gray-500" title={dateCreation.toLocaleDateString()}>
-                  {formatPostDate(dateCreation)}
+                  {formatDatePost(dateCreation)}
                 </span>
                 {isPinned && (
                   <>
@@ -749,7 +721,7 @@ export default function PostViewer(props: PostViewerProps) {
                                 @{quotedPostAuthors[0]?.handle ?? "Unknown"}
                               </span>
                               <span className="text-gray-500">·</span>
-                              <span className="text-gray-500">{formatPostDate(new Date(quotedPost.created_at))}</span>
+                              <span className="text-gray-500">{formatDatePost(new Date(quotedPost.created_at))}</span>
                             </div>
                             {quotedPost.body && (
                               <div className="mt-1 line-clamp-3 text-sm break-words whitespace-pre-wrap text-gray-700">
@@ -891,15 +863,15 @@ export default function PostViewer(props: PostViewerProps) {
                       void (async () => {
                         if (hasRetweeted) {
                           try {
-                            // Déterminer quel post utiliser pour chercher les retweets
+                            // Determine which post to use for finding retweets
                             let targetPostId = props.post.id;
                             if (queries.posts.isSimpleRetweet(props.post) && originalPost) {
                               targetPostId = originalPost.id;
                             }
-                            // Trouver le retweet de l'utilisateur et l'abandonner
+                            // Find the user's retweet and abandon it
                             const retweets = await queries.posts.getRetweetsOf(targetPostId);
 
-                            // Rechercher le retweet de l'utilisateur actuel
+                            // Search for the current user's retweet
                             let userRetweetId: string | null = null;
                             for (const rt of retweets) {
                               const retweetAuthors = await queries.authors.ofPost(rt.id);
@@ -927,7 +899,7 @@ export default function PostViewer(props: PostViewerProps) {
                             alert(`Error: ${errorMessage}`);
                           }
                         } else {
-                          // Ouvrir le dialog pour retweeter
+                          // Open the retweet dialog
                           const modal = document.getElementById(`retweet-modal-${props.post.id}`) as HTMLDialogElement;
                           modal.showModal();
                         }

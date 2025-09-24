@@ -319,16 +319,43 @@ export default function PostViewer(props: PostViewerProps) {
     void fetchQuotedPost();
   }, [props.post]);
 
-  const handleReplySuccess = () => {
+  const handleReplySuccess = async () => {
     setShowReplyForm(false);
-    queries.posts
-      .getChildren(props.post.id)
-      .then((childPosts) => {
-        setChildren(childPosts);
-      })
-      .catch(() => {
-        setChildren([]);
+    try {
+      const childPosts = await queries.posts.getChildren(props.post.id);
+
+      // Apply the same logic as fetchChildren for consistency
+      const childrenWithLikes = await Promise.all(
+        childPosts.map(async (child) => {
+          try {
+            const childInfo = await queries.views.standardPostInfo(child.id);
+            return {
+              ...child,
+              likeCount: childInfo.likesCount,
+            };
+          } catch {
+            return {
+              ...child,
+              likeCount: 0,
+            };
+          }
+        }),
+      );
+
+      // Sort by number of likes (descending), then by creation date (most recent in case of tie)
+      const sortedChildren = childrenWithLikes.sort((a, b) => {
+        // First by number of likes (descending)
+        if (b.likeCount !== a.likeCount) {
+          return b.likeCount - a.likeCount;
+        }
+        // In case of tie, by creation date (most recent first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
+
+      setChildren(sortedChildren);
+    } catch {
+      setChildren([]);
+    }
   };
 
   const handlePostClick = (e: React.MouseEvent) => {

@@ -21,6 +21,16 @@ interface stdPostInfo {
   rtCount: number;
 }
 
+interface stdProfileInfo {
+  profile: Tables<"profiles">;
+  categories: Tables<"categories">[];
+  pinnedPosts: Tables<"posts">[];
+  mainPosts: Tables<"posts">[];
+  allPosts: Tables<"posts">[];
+  featuredCount: number;
+  repliesCount: number;
+}
+
 interface PostSearchQuery {
   has_text?: string[];
   has_authors?: string[];
@@ -888,6 +898,65 @@ const queries = {
         rtCount: req.data.rt_of?.count ?? 0,
       };
     },
+
+    standardProfileInfo: async function (handle: string): Promise<stdProfileInfo> {
+      try {
+        // First, get the profile
+        const profile = await queries.profiles.getByHandle(handle);
+        
+        // Then get all related data in parallel
+        const [
+          categoriesResult,
+          pinnedPostsResult,
+          allPostsResult,
+          simpleRetweetsResult,
+          featuredCountResult
+        ] = await Promise.allSettled([
+          queries.profilesCategories.get(profile.id),
+          profile.pinned_posts?.length 
+            ? Promise.all(profile.pinned_posts.map(postId => queries.posts.get(postId).catch(() => null)))
+            : Promise.resolve([]),
+          queries.authors.postsOf(profile.id),
+          queries.authors.simpleRetweetsOf(profile.id), 
+          queries.features.byUserCount(profile.id)
+        ]);
+
+        const categories = categoriesResult.status === "fulfilled" ? categoriesResult.value : [];
+        const pinnedPosts = (pinnedPostsResult.status === "fulfilled" ? pinnedPostsResult.value : [])
+          .filter(Boolean) as Tables<"posts">[];
+        const allPosts = allPostsResult.status === "fulfilled" ? allPostsResult.value : [];
+        const simpleRetweets = simpleRetweetsResult.status === "fulfilled" ? simpleRetweetsResult.value : [];
+        const featuredCount = featuredCountResult.status === "fulfilled" ? featuredCountResult.value : 0;
+
+        const pinnedPostIds = profile.pinned_posts ?? [];
+        
+        // Combine regular posts with simple retweets for main posts display
+        const mainPostsCombined = [...allPosts, ...simpleRetweets];
+        const mainPosts = mainPostsCombined
+          .filter(post => !pinnedPostIds.includes(post.id))
+          .filter(post => post.parent_post === null)
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        // All posts exclude pinned posts but include replies
+        const filteredAllPosts = allPosts
+          .filter(post => !pinnedPostIds.includes(post.id))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        const repliesCount = filteredAllPosts.filter(post => post.parent_post !== null).length;
+
+        return {
+          profile,
+          categories,
+          pinnedPosts: pinnedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+          mainPosts,
+          allPosts: filteredAllPosts,
+          featuredCount,
+          repliesCount
+        };
+      } catch (error) {
+        throw new Error(`Failed to load profile info: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    },
   },
 
   feed: {
@@ -959,4 +1028,4 @@ const utils = {
 };
 
 export { supabase, queries, utils };
-export type { PostSearchQuery, ProfileSearchQuery, postWithCategories, stdPostInfo };
+export type { PostSearchQuery, ProfileSearchQuery, postWithCategories, stdPostInfo, stdProfileInfo };

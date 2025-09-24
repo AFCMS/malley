@@ -21,6 +21,10 @@ interface stdPostInfo {
   rtCount: number;
 }
 
+interface batchPostInfo {
+  postsInfo: Record<string, stdPostInfo>;
+}
+
 interface stdProfileInfo {
   profile: Tables<"profiles">;
   categories: Tables<"categories">[];
@@ -957,6 +961,53 @@ const queries = {
         throw new Error(`Failed to load profile info: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
+
+    batchPostInfo: async function (postIds: string[]): Promise<batchPostInfo> {
+      try {
+        if (postIds.length === 0) {
+          return { postsInfo: {} };
+        }
+
+        // Fetch all posts with related data in a single query using IN clause
+        const req = await supabase
+          .from("posts")
+          .select(
+            `
+            *,
+            postsCategories:postsCategories(
+              categories:categories(*)
+            ),
+            authors:authors(
+              profiles:profiles(*)
+            ),
+            likes:likes(count),
+            rt_of:posts!rt_of(count)
+          `,
+          )
+          .in("id", postIds);
+
+        if (req.error) throw new Error(req.error.message);
+
+        const postsInfo: Record<string, stdPostInfo> = {};
+
+        for (const postData of req.data) {
+          const categories = postData.postsCategories.map((pc) => pc.categories as Tables<"categories">);
+          const profiles = postData.authors.map((pc) => pc.profiles as Tables<"profiles">);
+
+          postsInfo[postData.id] = {
+            post: postData as Tables<"posts">,
+            categories,
+            profiles,
+            likesCount: postData.likes[0]?.count ?? 0,
+            rtCount: postData.rt_of?.count ?? 0,
+          };
+        }
+
+        return { postsInfo };
+      } catch (error) {
+        throw new Error(`Failed to batch load post info: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    },
   },
 
   feed: {
@@ -1028,4 +1079,4 @@ const utils = {
 };
 
 export { supabase, queries, utils };
-export type { PostSearchQuery, ProfileSearchQuery, postWithCategories, stdPostInfo, stdProfileInfo };
+export type { PostSearchQuery, ProfileSearchQuery, postWithCategories, stdPostInfo, stdProfileInfo, batchPostInfo };

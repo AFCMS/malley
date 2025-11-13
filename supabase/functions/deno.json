@@ -5,7 +5,9 @@
     "lint-functions": "deno lint */*.ts",
     "test-functions": "deno test */*.test.ts"
   },
-  "imports": {},
+  "imports": {
+    "@supabase/supabase-js": "jsr:@supabase/supabase-js@2"
+  },
   "unstable": ["net", "http"],
   "nodeModulesDir": "auto"
 }

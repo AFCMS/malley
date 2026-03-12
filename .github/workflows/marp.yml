@@ -41,7 +41,7 @@ jobs:
         run: marp --pdf --allow-local-files ./presentation/presentation_fr-FR.md
 
       - name: Upload PDF Slide Deck
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: presentation_fr-FR
           path: ./presentation/presentation_fr-FR.pdf

@@ -20,7 +20,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@vercel/analytics": "^1.5.0",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^1.2.0",
     "@vite-pwa/assets-generator": "^1.0.0",
     "@vitejs/plugin-react": "^6.0.0",

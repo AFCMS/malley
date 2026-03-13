@@ -17,7 +17,7 @@
     "@emoji-mart/react": "^1.1.1",
     "@eslint/js": "^9.30.1",
     "@supabase/supabase-js": "^2.50.4",
-    "@tailwindcss/vite": "^4.1.11",
+    "@tailwindcss/vite": "^4.2.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vercel/analytics": "^2.0.1",

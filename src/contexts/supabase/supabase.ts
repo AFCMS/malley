@@ -4,8 +4,10 @@ import { Database, Tables } from "./database";
 import profilePicturePlaceholder from "../../assets/profile.png";
 import profileBannerPlaceholder from "../../assets/background-6228032_1280.jpg";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Fallbacks allow the module to be imported during tests that don't have a Supabase instance.
+// In production and in the supabase_tests CI job the env vars are always present.
+const supabaseUrl: string = import.meta.env.VITE_SUPABASE_URL || "http://localhost:54321";
+const supabaseKey: string = import.meta.env.VITE_SUPABASE_ANON_KEY || "placeholder";
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 interface postWithCategories {

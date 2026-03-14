@@ -17,10 +17,10 @@ export type Database = {
     Functions: {
       graphql: {
         Args: {
+          extensions?: Json
           operationName?: string
           query?: string
           variables?: Json
-          extensions?: Json
         }
         Returns: Json
       }
@@ -364,26 +364,23 @@ export type Database = {
       }
     }
     Functions: {
-      accept_co_authoring: {
-        Args: { post_id: string }
-        Returns: boolean
-      }
+      accept_co_authoring: { Args: { post_id: string }; Returns: boolean }
       extreme_danger_truncate_all_tables_yes_i_am_sure: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: undefined
       }
       get_posts_feed: {
         Args: {
-          has_text?: string[]
+          from_date?: string
           has_authors?: string[]
           has_categories?: string[]
+          has_text?: string[]
           liked_by?: string[]
-          from_date?: string
-          to_date?: string
-          sort_by?: string
-          sort_order?: string
           paging_limit?: number
           paging_offset?: number
+          sort_by?: string
+          sort_order?: string
+          to_date?: string
         }
         Returns: {
           body: string | null
@@ -392,6 +389,12 @@ export type Database = {
           parent_post: string | null
           rt_of: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_profiles_feed: {
         Args: {

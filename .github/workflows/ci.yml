@@ -124,27 +124,34 @@ jobs:
 
       - name: Start Supabase
         run: |
-          pnpm run supabase start > supabase_output.txt 2>&1
+          pnpm run supabase start
           echo "Supabase started successfully"
           pnpm run supabase migration up
           echo "Supabase migrations applied successfully"
 
       - name: Create Environment File
         run: |
-          # Extract anon key and service key from Supabase output
-          # Handle the exact format with leading spaces for anon key
-          ANON_KEY=$(grep -E '^\s+anon key:' supabase_output.txt | sed 's/.*anon key: //')
-          SERVICE_KEY=$(grep -E '^service_role key:' supabase_output.txt | sed 's/.*service_role key: //')
+          # Extract anon key and service key from supabase status output
+          SUPABASE_STATUS=$(pnpm run --silent supabase status 2>&1)
+
+          ANON_KEY=$(echo "$SUPABASE_STATUS" | grep 'anon key:' | sed 's/.*anon key: //' | head -1)
+          SERVICE_KEY=$(echo "$SUPABASE_STATUS" | grep 'service_role key:' | sed 's/.*service_role key: //' | head -1)
 
           # Fallback: extract JWT tokens directly if the above fails
           if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then
             echo "Primary extraction failed, trying JWT pattern matching..."
             # Extract all JWT tokens and assign them based on position
-            TOKENS=($(grep -oE 'eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*' supabase_output.txt))
+            TOKENS=($(echo "$SUPABASE_STATUS" | grep -oE 'eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*' || true))
             if [ ${#TOKENS[@]} -ge 2 ]; then
               ANON_KEY=${TOKENS[0]}
               SERVICE_KEY=${TOKENS[1]}
             fi
+          fi
+
+          if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then
+            echo "Failed to extract Supabase keys. Supabase status output:"
+            echo "$SUPABASE_STATUS"
+            exit 1
           fi
 
           echo "VITE_SUPABASE_URL=http://localhost:54321" > .env.local

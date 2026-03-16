@@ -22,7 +22,7 @@
     "@types/react-dom": "^19.1.6",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^1.2.0",
-    "@vite-pwa/assets-generator": "^1.0.0",
+    "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-react": "^6.0.0",
     "daisyui": "5.0.46",
     "emoji-mart": "^5.6.0",

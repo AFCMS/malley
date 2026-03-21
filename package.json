@@ -55,5 +55,8 @@
       "sharp",
       "supabase"
     ]
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0"
   }
 }

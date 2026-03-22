@@ -132,9 +132,8 @@ jobs:
       - name: Create Environment File
         run: |
           # Extract anon key and service key from Supabase output
-          # Handle the exact format with leading spaces for anon key
-          ANON_KEY=$(grep -E '^\s+anon key:' supabase_output.txt | sed 's/.*anon key: //')
-          SERVICE_KEY=$(grep -E '^service_role key:' supabase_output.txt | sed 's/.*service_role key: //')
+          ANON_KEY=$(grep "sb_publishable_" supabase_output.txt | awk '{print $4}')
+          SERVICE_KEY=$(grep "sb_secret_" supabase_output.txt | awk '{print $4}')          
 
           # Fallback: extract JWT tokens directly if the above fails
           if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then

@@ -4,7 +4,7 @@ import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
-import { defineConfig } from "vite";
+import { defineConfig } from "eslint/config";
 
 export default defineConfig(
   { ignores: ["dist", "src/contexts/supabase/database.d.ts"] },

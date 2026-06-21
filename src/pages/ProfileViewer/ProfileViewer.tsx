@@ -11,6 +11,7 @@ import {
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
+import type { stdProfileInfo } from "../../contexts/supabase/supabase";
 
 import TopBar from "../../layouts/TopBar/TopBar";
 import PostViewer from "../../Components/PostViewer/PostViewer";
@@ -25,13 +26,7 @@ const ProfileViewer = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
-  const [pinnedPosts, setPinnedPosts] = useState<Tables<"posts">[]>([]);
-  const [mainPosts, setMainPosts] = useState<Tables<"posts">[]>([]);
-  const [allPosts, setAllPosts] = useState<Tables<"posts">[]>([]);
-  const [repliesCount, setRepliesCount] = useState<number>(0);
-  const [featuredCount, setFeaturedCount] = useState<number>(0);
-  const [profileCategories, setProfileCategories] = useState<Tables<"categories">[]>([]);
+  const [profileInfo, setProfileInfo] = useState<stdProfileInfo | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFeaturing, setIsFeaturing] = useState(false);
   const [activeTab, setActiveTab] = useState<"main" | "all">("main");
@@ -40,12 +35,7 @@ const ProfileViewer = () => {
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    setProfile(null);
-    setPinnedPosts([]);
-    setMainPosts([]);
-    setAllPosts([]);
-    setRepliesCount(0);
-    setProfileCategories([]);
+    setProfileInfo(null);
 
     async function loadProfileData() {
       if (!handle) {
@@ -53,136 +43,46 @@ const ProfileViewer = () => {
         setIsLoading(false);
         return;
       }
+      
       try {
-        const profileData = await queries.profiles.getByHandle(handle);
-        setProfile(profileData); // Step 2: If profile has pinned posts, fetch them
-        if (profileData.pinned_posts && profileData.pinned_posts.length > 0) {
-          const pinnedPostPromises = profileData.pinned_posts.map((postId) =>
-            queries.posts.get(postId).catch(() => null),
-          );
-          const pinnedPostsData = await Promise.all(pinnedPostPromises);
-          const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
-          // Tri par date directement ici
-          const sortedPinnedPosts = filteredPinnedPosts.sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-          );
-          setPinnedPosts(sortedPinnedPosts);
-        }
-        if (profileData.id) {
-          try {
-            // Pour l'onglet "main" : récupère les posts normaux ET les retweets simples
-            const authorPosts = await queries.authors.postsOf(profileData.id);
-            const simpleRetweets = await queries.authors.simpleRetweetsOf(profileData.id);
-
-            const pinnedPostIds = profileData.pinned_posts ?? [];
-
-            // Pour l'onglet "Posts" (main) : combine posts normaux et retweets simples
-            const mainPostsCombined = [...authorPosts, ...simpleRetweets];
-            const filteredMainPosts = mainPostsCombined.filter((post) => !pinnedPostIds.includes(post.id));
-
-            // Pour l'onglet "All posts" : utilise seulement les posts normaux (avec conversations)
-            const filteredAllPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
-
-            // Separate main posts (without parent) from main posts combined and sort by date
-            const mainPostsData = filteredMainPosts
-              .filter((post) => post.parent_post === null)
-              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-            // For the "all" tab, keep all posts (including replies) and sort by date
-            const allPostsData = filteredAllPosts.sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-            );
-
-            setMainPosts(mainPostsData);
-            setAllPosts(allPostsData);
-            setRepliesCount(allPostsData.filter((post) => post.parent_post !== null).length);
-          } catch {
-            // Continue execution even if posts fetching fails
-          }
-        }
-
-        const featuredCount = await queries.features.byUserCount(profileData.id);
-        setFeaturedCount(featuredCount);
-
-        try {
-          const categories = await queries.profilesCategories.get(profileData.id);
-          setProfileCategories(categories);
-        } catch {
-          setProfileCategories([]);
-        }
+        // Use the new optimized function that gets all data efficiently
+        const profileData = await queries.views.standardProfileInfo(handle);
+        setProfileInfo(profileData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load profile");
       } finally {
         setIsLoading(false);
       }
     }
+    
     void loadProfileData();
   }, [handle]);
 
   useEffect(() => {
     async function checkFollowingStatus() {
-      if (!profile || !auth.user) return;
-      const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profile.id);
+      if (!profileInfo?.profile || !auth.user) return;
+      const isFollowing = await queries.follows.doesXFollowY(auth.user.id, profileInfo.profile.id);
       setIsFollowing(isFollowing);
     }
     void checkFollowingStatus();
-  }, [profile, auth.user]);
+  }, [profileInfo?.profile, auth.user]);
 
   useEffect(() => {
     async function checkFeaturingStatus() {
-      if (!profile || !auth.user) return;
-      const isFeaturing = await queries.features.doesXfeatureY(auth.user.id, profile.id);
+      if (!profileInfo?.profile || !auth.user) return;
+      const isFeaturing = await queries.features.doesXfeatureY(auth.user.id, profileInfo.profile.id);
       setIsFeaturing(isFeaturing);
     }
     void checkFeaturingStatus();
-  }, [profile, auth.user]);
+  }, [profileInfo?.profile, auth.user]);
 
   const handlePinUpdate = async () => {
-    if (!profile) return;
+    if (!profileInfo?.profile) return;
 
     try {
-      // Reload profile data to get updated pinned posts
-      const updatedProfile = await queries.profiles.getByHandle(profile.handle);
-      setProfile(updatedProfile);
-
-      // Reload pinned posts
-      if (updatedProfile.pinned_posts && updatedProfile.pinned_posts.length > 0) {
-        const pinnedPostPromises = updatedProfile.pinned_posts.map((postId) =>
-          queries.posts.get(postId).catch(() => null),
-        );
-        const pinnedPostsData = await Promise.all(pinnedPostPromises);
-        const filteredPinnedPosts = pinnedPostsData.filter(Boolean) as Tables<"posts">[];
-        // Tri par date directement ici
-        const sortedPinnedPosts = filteredPinnedPosts.sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-        setPinnedPosts(sortedPinnedPosts);
-      } else {
-        setPinnedPosts([]);
-      } // Reload all posts using the new approach
-      const authorPosts = await queries.authors.postsOf(updatedProfile.id);
-      const simpleRetweets = await queries.authors.simpleRetweetsOf(updatedProfile.id);
-      const pinnedPostIds = updatedProfile.pinned_posts ?? [];
-
-      // For main tab: combine regular posts and simple retweets
-      const mainPostsCombined = [...authorPosts, ...simpleRetweets];
-      const filteredMainPosts = mainPostsCombined.filter((post) => !pinnedPostIds.includes(post.id));
-
-      // For all tab: only regular posts (with conversations)
-      const filteredAllPosts = authorPosts.filter((post) => !pinnedPostIds.includes(post.id));
-
-      // Main posts: filter main posts only and sort by date
-      const mainPostsData = filteredMainPosts
-        .filter((post) => post.parent_post === null)
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      // All posts: keep all posts (including replies) and sort by date
-      const allPostsData = filteredAllPosts.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
-      setMainPosts(mainPostsData);
-      setAllPosts(allPostsData);
-      setRepliesCount(allPostsData.filter((post) => post.parent_post !== null).length);
+      // Reload profile data efficiently using our optimized function
+      const updatedProfileInfo = await queries.views.standardProfileInfo(profileInfo.profile.handle);
+      setProfileInfo(updatedProfileInfo);
     } catch {
       // Error handling without logging
     }
@@ -190,8 +90,9 @@ const ProfileViewer = () => {
 
   if (isLoading) return <TopBar title="Loading profile..." />;
   if (error) return <div>Error: {error}</div>;
-  if (!profile) return <div>Profile not found</div>;
+  if (!profileInfo) return <div>Profile not found</div>;
 
+  const { profile, pinnedPosts, mainPosts, allPosts, featuredCount, repliesCount, categories: profileCategories } = profileInfo;
   const profileCreationDate = new Date(profile.created_at);
 
   return (

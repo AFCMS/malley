@@ -80,7 +80,7 @@ export default function LeftToolbarWide() {
               <button
                 className="btn btn-ghost btn-sm btn-circle"
                 popoverTarget="popover-left-toolbar-profile"
-                style={{ anchorName: "--popover-left-toolbar-profile" } as React.CSSProperties}
+                style={{ anchorName: "--popover-left-toolbar-profile" }}
               >
                 <HiOutlineEllipsisHorizontal className="h-5 w-5" />
               </button>

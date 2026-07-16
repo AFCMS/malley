@@ -29,7 +29,7 @@ export default function EmojiPicker(props: EmojiPickerProps) {
         className="btn btn-sm btn-square text-base"
         title="Add an emoji"
         popoverTarget={props.id}
-        style={{ anchorName: `--${props.id}` } as React.CSSProperties}
+        style={{ anchorName: `--${props.id}` }}
       >
         😀
       </button>
@@ -42,7 +42,7 @@ export default function EmojiPicker(props: EmojiPickerProps) {
         style={
           {
             positionAnchor: `--${props.id}`,
-          } as React.CSSProperties
+          }
         }
       >
         <Picker

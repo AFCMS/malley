@@ -555,7 +555,7 @@ export default function PostViewer(props: PostViewerProps) {
             <button
               className="btn btn-ghost btn-sm btn-circle hover:bg-gray-100"
               popoverTarget={`popover-post-${props.post.id}`}
-              style={{ anchorName: `--popover-post-${props.post.id}` } as React.CSSProperties}
+              style={{ anchorName: `--popover-post-${props.post.id}` }}
               onClick={(e) => {
                 e.stopPropagation();
               }}

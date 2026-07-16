@@ -4,13 +4,12 @@ const serviceKey = import.meta.env.DANGER_SUPABASE_SERVICE_KEY;
 
 import { queries, supabase } from "../supabase";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 
 export async function flushAllTables(): Promise<number> {
   // try calling it as anon and a regular user. refer to warning in supabase.tests.ts for details.
-  const anonClient: SupabaseClient = createClient(supabaseUrl, anonKey);
+  const anonClient = createClient(supabaseUrl, anonKey);
 
   const { error: errorAnon } = await anonClient.rpc("extreme_danger_truncate_all_tables_yes_i_am_sure");
   if (!errorAnon) {

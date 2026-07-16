@@ -212,7 +212,7 @@ const ProfileViewer = () => {
             <button
               className="btn btn-ghost btn-sm btn-circle"
               popoverTarget="popover-profile"
-              style={{ anchorName: "--popover-profile" } as React.CSSProperties}
+              style={{ anchorName: "--popover-profile" }}
             >
               <HiOutlineEllipsisHorizontal className="h-5 w-5" />
             </button>

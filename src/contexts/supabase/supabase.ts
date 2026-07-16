@@ -78,17 +78,13 @@ async function updatePersonalFile(
     });
     if (req.error) throw new Error(req.error.message);
 
-    const updateReq = await supabase
-      .from("profiles")
-      .update({ [mediaField]: fileName })
-      .eq("id", id);
+    const profileUpdate = mediaField === "profile_pic" ? { profile_pic: fileName } : { banner: fileName };
+    const updateReq = await supabase.from("profiles").update(profileUpdate).eq("id", id);
     if (updateReq.error) throw new Error(updateReq.error.message);
   } else if (profile[mediaField]) {
     await supabase.storage.from(bucket).remove([profile[mediaField]]);
-    const updateReq = await supabase
-      .from("profiles")
-      .update({ [mediaField]: null })
-      .eq("id", id);
+    const profileUpdate = mediaField === "profile_pic" ? { profile_pic: null } : { banner: null };
+    const updateReq = await supabase.from("profiles").update(profileUpdate).eq("id", id);
     if (updateReq.error) throw new Error(updateReq.error.message);
   }
 }
@@ -846,10 +842,10 @@ const queries = {
 
       if (req.error) throw new Error(req.error.message);
 
-      const categories = req.data.postsCategories.map((pc) => pc.categories as Tables<"categories">);
+      const categories = req.data.postsCategories.map((pc) => pc.categories);
 
       return {
-        post: req.data as Tables<"posts">,
+        post: req.data,
         categories,
       };
     },
@@ -868,7 +864,7 @@ const queries = {
             profiles:profiles(*)
           ),
           likes:likes(count),
-          rt_of:posts!rt_of(count)
+          reposts:posts!rt_of(count)
         `,
         )
         .eq("id", id)
@@ -876,16 +872,16 @@ const queries = {
 
       if (req.error) throw new Error(req.error.message);
 
-      const categories = req.data.postsCategories.map((pc) => pc.categories as Tables<"categories">);
+      const categories = req.data.postsCategories.map((pc) => pc.categories);
 
-      const profiles = req.data.authors.map((pc) => pc.profiles as Tables<"profiles">);
+      const profiles = req.data.authors.map((pc) => pc.profiles);
 
       return {
-        post: req.data as Tables<"posts">,
+        post: req.data,
         categories,
         profiles,
         likesCount: req.data.likes[0]?.count ?? 0,
-        rtCount: req.data.rt_of?.count ?? 0,
+        rtCount: req.data.reposts[0]?.count ?? 0,
       };
     },
   },

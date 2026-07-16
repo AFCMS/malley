@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "check-functions": "deno check */*.ts --reload",
+    "check-functions": "deno check */*.ts",
     "check-format-functions": "deno fmt --check */*.ts",
     "lint-functions": "deno lint */*.ts",
     "test-functions": "deno test */*.test.ts"

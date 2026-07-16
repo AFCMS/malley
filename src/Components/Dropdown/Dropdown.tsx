@@ -42,7 +42,7 @@ export default function Dropdown(props: DropdownProps) {
       className={`dropdown menu rounded-box bg-base-100 mb-2 w-52 shadow-sm ${getDropdownClasses()}`}
       popover="auto"
       id={props.id}
-      style={{ positionAnchor: `--${props.id}` } as React.CSSProperties}
+      style={{ positionAnchor: `--${props.id}` }}
     >
       {props.children
         .filter((e) => e.disabled !== true)

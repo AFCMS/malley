@@ -17,7 +17,7 @@ export default function TopNavbar() {
             <button
               className="avatar"
               popoverTarget="popover-top-navbar-profile"
-              style={{ anchorName: "--popover-top-navbar-profile" } as React.CSSProperties}
+              style={{ anchorName: "--popover-top-navbar-profile" }}
             >
               <div className="w-10 rounded-full">
                 <img src={utils.getAvatarUrl(auth.profile)} />

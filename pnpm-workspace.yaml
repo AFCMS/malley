@@ -1,0 +1,6 @@
+allowBuilds:
+  sharp: true
+
+blockExoticSubdeps: true
+minimumReleaseAgeStrict: true
+minimumReleaseAge: 1440

@@ -26,7 +26,7 @@ jobs:
         with:
           version: 11
 
-      - name: Use Node.js LTS/Jod
+      - name: Use Node.js LTS/Krypton
         uses: actions/setup-node@v7
         with:
           node-version-file: ".node-version"

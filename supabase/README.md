@@ -1,6 +1,7 @@
 # Database documentation
 
 ## Glossary
+
 - anon
   - a supabase role. Anon applies to everyone which means users that are not logged in and is unpriviledged
 - service
@@ -9,10 +10,12 @@
 ## Structure
 
 The database looks a bit weird at first. This is because it was built with rather specific constraints in mind for a few features we really wanted, notably :
+
 - Co-authoring
 - Tagging of users and posts
 
 Row Level Security Policies :
+
 - profiles
   - the user alone controls their profile and can edit it
   - there are a few contraints. Notably, a trigger runs to limit the pinned posts array size to 10
@@ -32,7 +35,7 @@ Row Level Security Policies :
   - to refuse (reciever) or cancel (sender), both parties have deletion access. In case the request is accepted, deletion of the record is handled by the `accept_co_authoring` function.
 - categories
   - fundamentally, posts and users get the same tags/categories applied to them. All categorising is readable by anon
-  - the clients « request » a category to exist for a name with the `id_of_ensured_category` function. If there is no category with this name, it is created, and a valid id is always returned to the client. Note that in the client library `supabase.ts`, the category adding functions take as argument the *name* of the category and call `queries.categories.idOfEnsuredCategory` internally.
+  - the clients « request » a category to exist for a name with the `id_of_ensured_category` function. If there is no category with this name, it is created, and a valid id is always returned to the client. Note that in the client library `supabase.ts`, the category adding functions take as argument the _name_ of the category and call `queries.categories.idOfEnsuredCategory` internally.
 - profilesCategories
   - applies categories to users. Writeable to by the user themselves and readable by anon
 - postsCategories
@@ -48,7 +51,8 @@ Row Level Security Policies :
 
 Mermaid js schema of the database :
 
-Date:   Fri Jun 13 15:08:27 2025 +0200
+Date: Fri Jun 13 15:08:27 2025 +0200
+
 ```mermaid
 erDiagram
     profiles {
@@ -146,10 +150,11 @@ Users can only have one associated file at a time.
 There are a few special, complex queries.
 The feed algorithms for getting relevant posts and profiles to present to the user. These are the functions `get_posts_feeds` and `get_profiles_feeds`, which have a lot of potential arguments. They also serve as search functions, because a feed is defined by the client, both as part of the wish to be a transparent platform and to give full control to our users if they so wish. All their arguments are optionnal, and they support pagination.
 The `estimated_categories_usage` is a materialized view for performance. It is refreshed every 5 minutes. How it works is actually somewhat complex :
-  - Before refreshing it, we run `ANALYZE` on the postsCategories and profilesCategories
-  - This allows us to use `pg_stat` to estimate the size of the tables with high efficiency
-  - Knowing this, we can take a representative sample of the table. If the table is small, we can afford to read every row, but with bigger tables, we can take a small proportion of the table and make an accurate guess on the actual usage from it.
-  - All this allows for an extremely quick and decently accurate retrieval of usage statistics.
+
+- Before refreshing it, we run `ANALYZE` on the postsCategories and profilesCategories
+- This allows us to use `pg_stat` to estimate the size of the tables with high efficiency
+- Knowing this, we can take a representative sample of the table. If the table is small, we can afford to read every row, but with bigger tables, we can take a small proportion of the table and make an accurate guess on the actual usage from it.
+- All this allows for an extremely quick and decently accurate retrieval of usage statistics.
 
 ## Cron and automations
 

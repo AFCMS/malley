@@ -39,11 +39,9 @@ export default function EmojiPicker(props: EmojiPickerProps) {
         popover="auto"
         hidden={isMobile}
         id={props.id}
-        style={
-          {
-            positionAnchor: `--${props.id}`,
-          }
-        }
+        style={{
+          positionAnchor: `--${props.id}`,
+        }}
       >
         <Picker
           data={data}

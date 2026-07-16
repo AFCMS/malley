@@ -2,11 +2,10 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.detectIndentation": false,
+  "oxc.fmt.configPath": "oxfmt.config.ts",
   "git.autoStash": true,
-  "typescript.validate.enable": true,
-  "deno.enablePaths": [
-    "supabase/functions"
-  ],
+  "js/ts.validate.enabled": true,
+  "deno.enablePaths": ["supabase/functions"],
   "deno.lint": true,
   "deno.unstable": [
     "bare-node-builtins",
@@ -23,29 +22,31 @@
     "http",
     "net"
   ],
-  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
-  "github.copilot.chat.codeGeneration.instructions": [
-    {
-      "file": "./.vscode/copilot/project.md",
-    },
-    {
-      "file": "./.vscode/copilot/daisyui.md",
-    }
-  ],
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2,
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.tabSize": 2
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.tabSize": 2,
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.tabSize": 2
   },
   "[json]": {
     "editor.quickSuggestions": {
       "strings": true
     },
     "editor.suggest.insertMode": "replace",
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "editor.tabSize": 2
+  },
+  "[jsonc]": {
+    "editor.quickSuggestions": {
+      "strings": true
+    },
+    "editor.suggest.insertMode": "replace",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.tabSize": 2
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   }
 }

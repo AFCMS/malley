@@ -68,7 +68,7 @@ export default function Home() {
     // Use refs to check current state values to avoid stale closures
     const currentLoadingMore = loadingMoreRef.current;
     const currentHasMore = hasMoreRef.current;
-    
+
     if (currentLoadingMore || !currentHasMore) {
       return;
     }
@@ -122,7 +122,7 @@ export default function Home() {
         const isIntersecting = entries[0]?.isIntersecting;
         const currentHasMore = hasMoreRef.current;
         const currentLoadingMore = loadingMoreRef.current;
-        
+
         if (isIntersecting && currentHasMore && !currentLoadingMore) {
           void loadMorePosts();
         }

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "lint": "eslint .",
     "preview": "vite preview",
     "supabase": "supabase",
@@ -31,8 +33,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
-    "prettier": "^3.9.5",
-    "prettier-plugin-tailwindcss": "^0.8.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-icons": "^5.7.0",
@@ -47,13 +47,14 @@
     "vitest": "^4.1.10"
   },
   "devDependencies": {
-    "@types/node": "^24.12.2"
+    "@types/node": "^24.12.2",
+    "oxfmt": "^0.59.0"
   },
   "devEngines": {
-		"runtime": {
-			"name": "node",
-			"version": "^24",
-			"onFail": "error"
-		}
-	}
+    "runtime": {
+      "name": "node",
+      "version": "^24",
+      "onFail": "error"
+    }
+  }
 }

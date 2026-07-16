@@ -269,7 +269,7 @@ Connexions par centres d'intérêt
       <li>Co-création collaborative</li>
     </ul>
   </div>
-  
+
   <div class="value-section">
     <div class="section-header">
       <div class="section-icon">🚀</div>
@@ -281,7 +281,7 @@ Connexions par centres d'intérêt
       <li>Architecture cloud native</li>
     </ul>
   </div>
-  
+
   <div class="unique-proposition">
     <p class="unique-text">🔗 Écosystème d'interactions uniques</p>
   </div>
@@ -349,9 +349,9 @@ Connexions par centres d'intérêt
     <div class="arch-title">Supabase Cloud</div>
     <div class="arch-subtitle">Backend-as-a-Service</div>
   </div>
-  
+
   <div class="arrow">↔</div>
-  
+
   <div class="arch-component">
     <img src="./assets/vercel-icon-light.svg" alt="Vercel" class="arch-icon">
     <div class="arch-title">Vercel</div>
@@ -422,19 +422,19 @@ Connexions par centres d'intérêt
     <div class="tech-title">React 19</div>
     <div class="tech-description">Interface utilisateur moderne</div>
   </div>
-  
+
   <div class="tech-item">
     <img src="./assets/typescript.svg" alt="TypeScript" class="tech-icon">
     <div class="tech-title">TypeScript</div>
     <div class="tech-description">Typage statique & robustesse</div>
   </div>
-  
+
   <div class="tech-item">
     <img src="./assets/tailwind.svg" alt="TailwindCSS" class="tech-icon">
     <div class="tech-title">TailwindCSS</div>
     <div class="tech-description">Avec daisyUI pour un CSS moderne et cohérent</div>
   </div>
-  
+
   <div class="tech-item">
     <img src="./assets/pwa.svg" alt="PWA" class="tech-icon">
     <div class="tech-title">PWA</div>

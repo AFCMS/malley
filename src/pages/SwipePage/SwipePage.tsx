@@ -558,7 +558,7 @@ export default function SwipePage() {
           <div className="text-center">
             <div className="loading loading-spinner loading-lg mb-4"></div>
             <p>Preparing profiles...</p>
-            {process.env.NODE_ENV === "development" && (
+            {import.meta.env.DEV && (
               <div className="mt-4 text-xs text-gray-500">
                 Queue: {profileIdQueue.length.toString()}, Index: {currentIndex.toString()}, Refilling:{" "}
                 {isRefilling ? "yes" : "no"}

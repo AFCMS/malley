@@ -18,19 +18,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - name: Install PNPM
+        uses: pnpm/setup@v2
         with:
-          version: 11
-
-      - name: Use Node.js LTS/Krypton
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".node-version"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install
+          install: true
 
       - name: Start Database
         run: pnpm run supabase db start
@@ -87,19 +78,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - name: Install PNPM
+        uses: pnpm/setup@v2
         with:
-          version: 11
-
-      - name: Use Node.js LTS/Krypton
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".node-version"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install
+          install: true
 
       - name: Check formatting
         run: pnpm run format:check
@@ -117,19 +99,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - name: Install PNPM
+        uses: pnpm/setup@v2
         with:
-          version: 11
-
-      - name: Use Node.js LTS/Krypton
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".node-version"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install
+          install: true
 
       - name: Start Supabase
         run: |
@@ -184,16 +157,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - name: Install PNPM
+        uses: pnpm/setup@v2
         with:
-          version: 11
-
-      - name: Use Node.js LTS/Krypton
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".node-version"
-          cache: "pnpm"
+          install: true
 
       - name: Install dependencies
         run: pnpm install
@@ -212,19 +179,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - name: Install PNPM
+        uses: pnpm/setup@v2
         with:
-          version: 11
-
-      - name: Use Node.js LTS/Krypton
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".node-version"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install
+          install: true
 
       - name: Install Vercel CLI
         run: pnpm install --global vercel@latest

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { HiCalendar } from "react-icons/hi2";
 import { queries, utils } from "../../contexts/supabase/supabase";
 import { Tables } from "../../contexts/supabase/database";
+import type { stdProfileInfo } from "../../contexts/supabase/supabase";
 import PostViewer from "../PostViewer/PostViewer";
 import { formatDate } from "../../utils/date";
 
@@ -9,7 +10,7 @@ interface FetchCardProps {
   profileId: string;
 }
 
-interface ProfileData {
+interface FetchCardData {
   profile: Tables<"profiles">;
   featuredByHandles: string[];
   pinnedPost: Tables<"posts"> | null;
@@ -19,40 +20,34 @@ interface ProfileData {
 }
 
 export default function FetchCard({ profileId }: FetchCardProps) {
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [profileData, setProfileData] = useState<FetchCardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAllData() {
       setIsLoading(true);
       try {
+        // Get basic profile first to get the handle
         const profile = await queries.profiles.get(profileId);
-        const [pinnedPostResult, allPostsResult, featuredProfilesResult, featuredCountResult, categoriesResult] =
-          await Promise.allSettled([
-            profile.pinned_posts?.length
-              ? queries.posts.get(profile.pinned_posts[0]).catch(() => null)
-              : Promise.resolve(null),
-            queries.authors.postsOf(profileId).catch(() => []),
-            queries.features.byUser(profileId).catch(() => []),
-            queries.features.byUserCount(profileId).catch(() => 0),
-            queries.profilesCategories.get(profileId).catch(() => []),
-          ]);
-        const allPostsData = allPostsResult.status === "fulfilled" ? allPostsResult.value : [];
-        const pinnedPostIds = profile.pinned_posts ?? [];
-        const recentPosts = allPostsData
-          .filter((post) => post.parent_post === null)
-          .filter((post) => !pinnedPostIds.includes(post.id))
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        
+        // Use our optimized function to get comprehensive profile data
+        const fullProfileInfo = await queries.views.standardProfileInfo(profile.handle);
+        
+        // Get additional data that's not in standardProfileInfo
+        const featuredProfiles = await queries.features.byUser(profileId).catch(() => []);
+        
+        // Transform the data to match the expected format
+        const recentPosts = fullProfileInfo.mainPosts
+          .filter(post => post.parent_post === null)
           .slice(0, 2);
 
         setProfileData({
-          profile,
-          pinnedPost: pinnedPostResult.status === "fulfilled" ? pinnedPostResult.value : null,
+          profile: fullProfileInfo.profile,
+          pinnedPost: fullProfileInfo.pinnedPosts[0] || null,
           recentPosts,
-          featuredByHandles:
-            featuredProfilesResult.status === "fulfilled" ? featuredProfilesResult.value.map((p) => p.handle) : [],
-          featuredCount: featuredCountResult.status === "fulfilled" ? featuredCountResult.value : 0,
-          profileCategories: categoriesResult.status === "fulfilled" ? categoriesResult.value : [],
+          featuredByHandles: featuredProfiles.map(p => p.handle),
+          featuredCount: fullProfileInfo.featuredCount,
+          profileCategories: fullProfileInfo.categories,
         });
       } catch {
         setProfileData(null);

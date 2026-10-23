@@ -155,13 +155,7 @@ jobs:
   supabase_deploy:
     name: Supabase Deploy
     runs-on: ubuntu-latest
-    needs:
-      [
-        supabase_database_checks,
-        supabase_functions_checks,
-        frontend_checks,
-        supabase_tests,
-      ]
+    needs: [supabase_database_checks, supabase_functions_checks, frontend_checks, supabase_tests]
     if: github.event_name == 'push'
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -188,13 +182,7 @@ jobs:
   frontend_deploy:
     name: Frontend Deploy
     runs-on: ubuntu-latest
-    needs:
-      [
-        supabase_database_checks,
-        supabase_functions_checks,
-        frontend_checks,
-        supabase_tests,
-      ]
+    needs: [supabase_database_checks, supabase_functions_checks, frontend_checks, supabase_tests]
     if: github.event_name == 'push'
 
     steps:

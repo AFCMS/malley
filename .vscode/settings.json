@@ -1,10 +1,15 @@
 {
   "editor.formatOnSave": true,
-  "editor.formatOnPaste": true,
+  "editor.formatOnPaste": false,
   "editor.detectIndentation": false,
   "oxc.fmt.configPath": "oxfmt.config.ts",
   "git.autoStash": true,
   "js/ts.validate.enabled": true,
+  "files.associations": {
+    "**/.github/workflows/*.{yml,yaml}": "github-actions-workflow",
+    "*.css": "tailwindcss",
+    "llms.txt": "markdown"
+  },
   "deno.enablePaths": ["supabase/functions"],
   "deno.lint": true,
   "deno.unstable": [

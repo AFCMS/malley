@@ -1,6 +1,5 @@
 {
   "recommendations": [
-    "dbaeumer.vscode-eslint",
     "oxc.oxc-vscode",
     "bradlc.vscode-tailwindcss",
     "pkief.material-icon-theme",

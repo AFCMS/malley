@@ -2,6 +2,7 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": false,
   "editor.detectIndentation": false,
+  "oxc.configPath": "oxlint.config.ts",
   "oxc.fmt.configPath": "oxfmt.config.ts",
   "git.autoStash": true,
   "js/ts.validate.enabled": true,

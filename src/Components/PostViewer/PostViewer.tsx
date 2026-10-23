@@ -572,7 +572,6 @@ export default function PostViewer(props: PostViewerProps) {
                   icon: HiOutlineShare,
                   onClick: () => {
                     const shareUrl = `${window.location.origin}/post/${props.post.id}`;
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     if (navigator.share) {
                       void navigator.share({
                         url: shareUrl,

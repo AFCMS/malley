@@ -4,3 +4,5 @@ allowBuilds:
 blockExoticSubdeps: true
 minimumReleaseAgeStrict: true
 minimumReleaseAge: 1440
+
+pmOnFail: ignore

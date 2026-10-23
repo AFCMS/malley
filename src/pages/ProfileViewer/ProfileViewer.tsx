@@ -251,7 +251,6 @@ const ProfileViewer = () => {
                   icon: HiOutlineShare,
                   onClick: () => {
                     const shareUrl = `${window.location.origin}/@${profile.handle}`;
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     if (navigator.share) {
                       void navigator.share({
                         url: shareUrl,

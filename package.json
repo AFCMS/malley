@@ -24,7 +24,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-icons": "^5.7.0",
-    "react-router": "^8.5.0",
+    "react-router": "^8.5.1",
     "uuid": "^14.0.3"
   },
   "devDependencies": {
@@ -35,8 +35,8 @@
     "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-react": "^6.1.2",
     "daisyui": "5.7.50",
-    "oxfmt": "^0.74.0",
-    "oxlint": "^1.89.0",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
     "oxlint-tsgolint": "^7.0.2005",
     "supabase": "^2.122.0",
     "tailwindcss": "^4.3.3",

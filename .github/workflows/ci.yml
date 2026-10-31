@@ -28,9 +28,7 @@ jobs:
       - name: Start Database
         run: pnpm run supabase db start
 
-      - name: Run Database Tests
-        run: pnpm run supabase test db
-
+      # Database integration tests run with Vitest in the supabase_tests job.
       - name: Verify generated types match Postgres schema
         run: |
           pnpm --silent run supabase gen types typescript --local > src/contexts/supabase/database.d.ts
